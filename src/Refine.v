@@ -1,4 +1,5 @@
 Require Import FreeSpec.Program.
+Require Import FreeSpec.Interp.
 
 Section REFINEMENT.
   Parameters (Ii: Type -> Type)
@@ -17,9 +18,9 @@ Section REFINEMENT.
     mkInterp (fun {A: Type}
                   (st: (S * Interp Io))
                   (i: Ii A)
-              => (fst (fst (runProgram (snd st) (sr A i (fst st)))),
-                  (snd (fst (runProgram (snd st) (sr A i (fst st)))),
-                   (snd (runProgram (snd st) (sr A i (fst st)))))))
+              => (fst (evalProgram (sr A i (fst st)) (snd st)),
+                  (snd (evalProgram (sr A i (fst st)) (snd st)),
+                   (execProgram (sr A i (fst st)) (snd st)))))
              (s, int).
 
   Definition PureRefinement

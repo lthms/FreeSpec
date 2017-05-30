@@ -1,6 +1,9 @@
+src/Equiv.v
+src/Interp.v
 src/Program.v
 src/Refine.v
 src/TemporalLogic.v
+src/Tuple.v
 src/Utils.v
 
 examples/Map.v

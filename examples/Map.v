@@ -1,25 +1,21 @@
 Require Import FreeSpec.TemporalLogic.
 Require Import FreeSpec.Program.
+Require Import FreeSpec.Interp.
 Require Import FreeSpec.Utils.
+Require Import FreeSpec.Equiv.
 
 Require Import Sumbool.
 
-Class Eq (T: Type) :=
-  { eq (t t': T): Prop
-  ; eq_refl (t: T): eq t t
-  ; eq_sym (t t': T): eq t t' -> eq t' t
-  ; eq_trans (t t' t'': T): eq t t' -> eq t' t'' -> eq t t''
-  ; eq_dec (t t': T): {eq t t'}+{~ eq t t'}
-  }.
+Local Open Scope eq_scope.
 
 Lemma neq_sym
       {T: Type}
      `{Eq T}
       (t: T)
-      (Hneq_sym: ~ eq t t)
+      (Hneq_sym: ~ (t == t))
   : False.
 Proof.
-  assert (eq t t) as Heq by (apply eq_refl).
+  assert (t == t) as Heq by (reflexivity).
   apply Hneq_sym in Heq.
   exact Heq.
 Qed.
@@ -29,8 +25,10 @@ Section MAP.
 
   Variables (Key: Type)
             (key_eq: Eq Key)
+            (key_eqdec: EqDec Key)
             (Value: Type)
-            (value_eq: Eq Value).
+            (value_eq: Eq Value)
+            (value_eqdec: EqDec Value).
 
   Inductive Instruction: Type -> Type :=
   | Read (k: Key)
@@ -49,7 +47,7 @@ Section MAP.
     match i with
     | Read k => (map k, map)
     | Write k v => (tt, fun k' =>
-                          if eq_dec k k'
+                          if k =? k'
                           then v
                           else map k')
     end.
@@ -72,10 +70,10 @@ Section MAP.
         (s: State)
         (k: Key)
         (v: Value)
-    : MapInterp s <· read_then_write k v = v.
+    : evalProgram (read_then_write k v) (MapInterp s) == v.
   Proof.
     cbn.
-    destruct (eq_dec) as [He|Hne].
+    destruct (equiv_dec) as [He|Hne].
     + reflexivity.
     + apply neq_sym in Hne.
       destruct Hne.
@@ -85,13 +83,13 @@ Section MAP.
         (s: State)
         (k k': Key)
         (v: Value)
-        (Hneq: ~ eq k k')
-    : MapInterp s <· (_ <- [Write k' v];
-                      [Read k])
-       = MapInterp s <· [Read k].
+        (Hneq: ~ (k == k'))
+    : evalProgram (_ <- [Write k' v];
+                   [Read k]) (MapInterp s)
+       == evalProgram ([Read k]) (MapInterp s).
   Proof.
     cbn.
-    destruct (eq_dec k' k) as [He|Hne].
+    destruct (equiv_dec k' k) as [He|Hne].
     + apply eq_sym in He.
       apply Hneq in He.
       destruct He.
@@ -106,7 +104,7 @@ Section MAP.
                (i: Instruction A) :=
       match i with
       | Read k => True
-      | Write k v => ~ eq v x
+      | Write k v => ~ (v == x)
       end.
 
     Definition never_read_x_promises
@@ -114,7 +112,7 @@ Section MAP.
                (i: Instruction A)
       : typeret i -> Prop :=
       match i with
-      | Read k => fun v => ~ eq v x
+      | Read k => fun v => ~ v == x
       | Write k v => fun x => True
       end.
 
@@ -126,7 +124,7 @@ Section MAP.
     Definition x_free_map
                (s: State)
       : Prop :=
-      forall k, ~eq (s k) x.
+      forall k, ~ ((s k) == x).
 
     Lemma map_interp_preserves_inv
       : contract_preserves_inv map_program_step x_free_map never_read_x_contract.
@@ -139,10 +137,10 @@ Section MAP.
         cbn in *.
         unfold x_free_map.
         intros k'.
-        destruct (eq_dec k k').
-        - exact Hreq.
-        - unfold x_free_map in Hinv.
-          apply (Hinv k').
+        destruct (equiv_dec k k').
+        ++ exact Hreq.
+        ++ unfold x_free_map in Hinv.
+           apply (Hinv k').
     Qed.
 
     Lemma map_interp_enforces_promises
@@ -151,7 +149,6 @@ Section MAP.
       unfold contract_enforces_promises.
       induction i.
       + intros s Hinv Hreq.
-        cbn in *.
         apply (Hinv k).
       + intros s Hinv Hreq.
         cbn in *.
@@ -188,15 +185,14 @@ Section MAP.
       + intros int Henf.
         constructor.
         inversion Henf as [Hprom Hreq].
-        assert (never_read_x_promises Value (Read k) (fst (interpret int (Read k))))
+        assert (never_read_x_promises Value (Read k) (evalInstruction  (Read k) int))
           as Hnext
             by (apply Hprom; cbn; trivial).
-
-        cbn in *.
         exact Hnext.
     Qed.
   End CONTRACT.
 
+  (*
   Section TL.
     Variables (k: Key)
               (v: Value).
@@ -363,4 +359,6 @@ Section MAP.
       Qed.
     End PROOF.
   End TL.
+End MAP.
+*)
 End MAP.
