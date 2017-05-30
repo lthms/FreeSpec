@@ -1,0 +1,7 @@
+Makefile.proj
+docs/*
+.make
+*.v.d
+*.vo.aux
+*.glob
+*.vo
