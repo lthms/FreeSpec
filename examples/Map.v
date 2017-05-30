@@ -165,5 +165,31 @@ Section MAP.
                                            map_interp_preserves_inv
                                            map_interp_enforces_promises).
     Qed.
+
+    Variables (k k': Key).
+
+    Definition read_write
+      : MapProgram unit :=
+      v <- [Read k];
+      [Write k' v].
+
+    Lemma read_write_contractful
+      : contractfull_program never_read_x_contract read_write.
+    Proof.
+      unfold read_write.
+      constructor.
+      + constructor.
+        cbn.
+        trivial.
+      + intros int Henf.
+        constructor.
+        inversion Henf as [Hprom Hreq].
+        assert (never_read_x_promises Value (Read k) (fst (interpret int (Read k))))
+          as Hnext
+            by (apply Hprom; cbn; trivial).
+
+        cbn in *.
+        exact Hnext.
+    Qed.
   End CONTRACT.
 End MAP.

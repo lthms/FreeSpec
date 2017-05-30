@@ -1,4 +1,5 @@
 Require Import Coq.Program.Tactics.
+Require Import Coq.Program.Equality.
 
 Section PROGRAM.
   Variables (Instruction: Type -> Type).
@@ -188,26 +189,93 @@ Section PROGRAM.
         : typeret i -> Prop
      }.
 
+    Variable (c: Contract).
+
     CoInductive Enforcer
-                (c: Contract)
                 (int: Interp)
       : Prop :=
-    | enforced (Hproof: forall {A: Type}
-                               (i: Instruction A),
+    | enforced (Hprom: forall {A: Type}
+                              (i: Instruction A),
                    requirements c i
-                   -> (promises c i) (fst (interpret int i))
-                      /\ Enforcer c (snd (interpret int i)))
-      : Enforcer c int.
+                   -> (promises c i) (fst (interpret int i)))
+               (Henf:  forall {A: Type}
+                              (i: Instruction A),
+                   requirements c i
+                   -> Enforcer (snd (interpret int i)))
+      : Enforcer int.
 
-    Inductive contractfull_program
-               {A:   Type}
-               (c:   Contract)
-               (p:   Program A) :=
-    | program_enforces_contract
-        (Hreq: forall (int: Interp),
-            Enforcer c int
-            -> Enforcer c (snd (runProgram int p)))
-        : contractfull_program c p.
+    Section PROGRAM_CONTRACT.
+      Inductive contractfull_program
+        : forall {A: Type}, Program A -> Type :=
+      | contractfull_instr {A: Type}
+                           (i: Instruction A)
+                           (Hreq: requirements c i)
+        : contractfull_program (instr A i)
+      | contractfull_ret {A: Type}
+                         (a: A)
+        : contractfull_program (ret A a)
+      | contractfull_inv {A B: Type}
+                         (p: Program A)
+                         (f: A -> Program B)
+                         (Hcp: contractfull_program p)
+                         (Hnext: forall (int: Interp)
+                                        (Henf: Enforcer int),
+                             contractfull_program (f (fst (runProgram int p))))
+        : contractfull_program (bind B p f).
+
+      Lemma contractfull_instr_enforcement
+            {A: Type}
+            (i: Instruction A)
+        : forall (int: Interp),
+          contractfull_program (instr A i)
+          -> Enforcer int
+          -> Enforcer (snd (runProgram int (instr A i))).
+      Proof.
+        intros int Hc Henf.
+        cbn in *.
+        destruct Henf as [Hprom Henf].
+        apply (Henf A i).
+        inversion Hc; simpl_existT; subst.
+        exact Hreq.
+      Qed.
+
+      Lemma contractfull_ret_enforcement
+            {A: Type}
+            (a: A)
+        : forall (int: Interp),
+          contractfull_program (ret A a)
+          -> Enforcer int
+          -> Enforcer (snd (runProgram int (ret A a))).
+      Proof.
+        intros int Hc Henf.
+        cbn in *.
+        exact Henf.
+      Qed.
+
+      Lemma contractfull_program_enforcement
+            {A B: Type}
+            (p: Program A)
+        : forall (int: Interp),
+          contractfull_program p
+          -> Enforcer int
+          -> Enforcer (snd (runProgram int p)).
+      Proof.
+        induction p.
+        + intros int Hc Henf.
+          assert (contractfull_program (f (fst (runProgram int p)))) as Hc'.
+          * inversion Hc; repeat simpl_existT; subst.
+            apply (Hnext int Henf).
+          * inversion Hc; repeat simpl_existT; subst.
+            apply H with (int:=snd (runProgram int p)) in Hc'.
+            cbn.
+            exact Hc'.
+            apply IHp; [ exact Hcp
+                       | exact Henf
+                       ].
+        + apply contractfull_instr_enforcement.
+        + apply contractfull_ret_enforcement.
+      Qed.
+    End PROGRAM_CONTRACT.
   End CONTRACT.
 
   Section MAKE_INTERP.
@@ -273,13 +341,11 @@ Section PROGRAM.
       Proof.
         cofix.
         intros s Hinv.
-        split.
-        intros A i Hreq.
-        split; cbn.
+        split; intros A i Hreq; cbn.
         + apply (Henf A i s Hinv Hreq).
-        + apply (Hpres A i) in Hinv.
-          * apply (stateful_contract_enforcement  (snd (step A s i)) Hinv).
-          * exact Hreq.
+        + apply (Hpres A i s) in Hinv.
+          - apply (stateful_contract_enforcement  (snd (step A s i)) Hinv).
+          - exact Hreq.
       Qed.
     End STATEFUL_INTERP_ENFORCER.
   End MAKE_INTERP.
@@ -300,6 +366,8 @@ Arguments Enforcer [Instruction] (c int).
 Arguments stateful_contract_enforcement [Instruction State] (step inv c Hpres Henf s).
 Arguments contract_enforces_promises [Instruction State] (step inv c).
 Arguments contract_preserves_inv [Instruction State] (step inv c).
+
+Arguments contractfull_program [Instruction] c [A].
 
 Notation "int <· p" := (fst (runProgram int p)) (at level 50) : prog_scope.
 Notation "p >>= f" := (bind p f) (at level 50) : prog_scope.
