@@ -14,6 +14,9 @@ Section TEMPORAL_LOGIC.
   Notation "p .? a" := (prop p a) (at level 51).
 
   Inductive TL: Type :=
+  | loop (gold: TL)
+         (current: TL)
+    : TL
   | next (tl: TL)
     : TL
   | switch (tl1: TL)
@@ -29,21 +32,23 @@ Section TEMPORAL_LOGIC.
   | false
     : TL.
 
-  Definition halt_satisfies
+  Fixpoint halt_satisfies
              (tl: TL)
     : Prop :=
     match tl with
+    | loop _ current => halt_satisfies current
     | eventually _ => False
     | next _ => False
     | switch before _ _ => halt_satisfies before
     | _ => True
     end.
 
-  Definition halt_satisfies_dec
+  Fixpoint halt_satisfies_dec
           (tl: TL)
     : {halt_satisfies tl}+{~halt_satisfies tl}.
     refine (
         match tl with
+        | loop _ current => decide_dec (halt_satisfies_dec current)
         | eventually _ => false_dec
         | next _ => false_dec
         | switch before _ _ => decide_dec (halt_satisfies_dec before)
@@ -58,6 +63,8 @@ Section TEMPORAL_LOGIC.
            (tl: TL)
     : Prop :=
     match tl with
+    | loop _ current
+      => instruction_satisfies a current
     | next _
       => True
     | switch before prop after
@@ -76,6 +83,8 @@ Section TEMPORAL_LOGIC.
     : {instruction_satisfies a tl}+{~instruction_satisfies a tl}.
     refine (
         match tl with
+        | loop _ current
+          => decide_dec (instruction_satisfies_dec a current)
         | next _
           => true_dec
         | globally prop
@@ -120,6 +129,12 @@ Section TEMPORAL_LOGIC.
     : TL :=
     if instruction_satisfies_dec a tl
     then match tl with
+         | loop gold current
+           => match (tl_step a current) with
+              | true => loop gold gold
+              | false => false
+              | c' => loop gold c'
+              end
          | next tl
            => tl
          | switch before p after
