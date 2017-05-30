@@ -1,1 +1,2 @@
 -R src FreeSpec
+-R examples FreeSpec.Examples
