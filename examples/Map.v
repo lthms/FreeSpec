@@ -1,4 +1,8 @@
+Require Import FreeSpec.TemporalLogic.
 Require Import FreeSpec.Program.
+Require Import FreeSpec.Utils.
+
+Require Import Sumbool.
 
 Class Eq (T: Type) :=
   { eq (t t': T): Prop
@@ -192,4 +196,171 @@ Section MAP.
         exact Hnext.
     Qed.
   End CONTRACT.
+
+  Section TL.
+    Variables (k: Key)
+              (v: Value).
+
+    Definition write_k_v
+               (i: ISet Instruction)
+      : Prop :=
+      match i with
+      | instruction _ (Write k' v')
+        => eq k k' /\ eq v v'
+      | _
+        => False
+      end.
+
+    Definition write_k_v_dec
+               (i: ISet Instruction)
+      : {write_k_v i}+{~write_k_v i}.
+      induction i.
+      refine (
+          match i with
+          | (Write k' v')
+            => decide_dec (sumbool_and _ _ _ _
+                                       (eq_dec k k')
+                                       (eq_dec v v'))
+          | _
+            => false_dec
+          end
+        ); cbn; intuition.
+    Defined.
+
+    Definition write_k_v_inst
+      : Instant (ISet Instruction) :=
+      {| prop := write_k_v
+       ; prop_dec := write_k_v_dec
+      |}.
+
+    Definition not_read_k
+               (i: ISet Instruction)
+      : Prop :=
+      match i with
+      | instruction _ (Read k')
+        => ~eq k k'
+      | _
+        => False
+      end.
+
+    Definition not_read_k_dec
+               (i: ISet Instruction)
+      : {not_read_k i}+{~not_read_k i}.
+      induction i.
+      refine (
+          match i with
+          | (Read k')
+            => if eq_dec k k'
+               then false_dec
+               else true_dec
+          | _
+            => false_dec
+          end
+        ); cbn; intuition.
+    Defined.
+
+    Definition not_read_k_inst
+      : Instant (ISet Instruction) :=
+      {| prop := not_read_k
+       ; prop_dec := not_read_k_dec
+      |}.
+
+    Definition erase_k
+               (i: ISet Instruction)
+      : Prop :=
+      match i with
+      | instruction _ (Write k v')
+        => eq v v'
+      | _
+        => False
+      end.
+
+    Definition erase_k_dec
+               (i: ISet Instruction)
+      : {erase_k i}+{~erase_k i}.
+      induction i.
+      refine (
+          match i with
+          | (Write k v')
+            => eq_dec v v'
+          | _
+            => false_dec
+          end
+        ); cbn; intuition.
+    Defined.
+
+    Definition erase_k_inst
+      : Instant (ISet Instruction) :=
+      {| prop := erase_k
+       ; prop_dec := erase_k_dec
+      |}.
+
+    Definition policy_step
+      : TL (ISet Instruction) :=
+      switch _
+             (true _)
+             write_k_v_inst
+             (switch _
+                     (globally _ not_read_k_inst)
+                     erase_k_inst
+                     (true _)).
+
+    Definition policy
+      : TL (ISet Instruction) :=
+      loop _ policy_step policy_step.
+
+    Definition write_read_write
+               (k': Key)
+               (v': Value)
+      : MapProgram unit :=
+      _ <- [Write k v];
+      _ <- [Read k'];
+      [Write k v'].
+
+    Section PROOF.
+      Variables (int: Interp Instruction).
+
+      Lemma enforces_policy
+            (s: State)
+      : forall k' v',
+        ~ eq k k'
+        -> ~ eq v v'
+        -> halt_satisfies _ (snd (runTL _
+                                        int
+                                        (write_read_write k' v')
+                                        policy)).
+        intros.
+        cbn.
+        destruct (sumbool_and _ _ _ _ (eq_dec k k) (eq_dec v v)).
+        cbn.
+        destruct (eq_dec v v).
+        destruct (sumbool_and _ _ _ _ (true_dec) (true_dec)).
+        cbn.
+        destruct (eq_dec k k').
+        cbn.
+        trivial.
+        cbn.
+        destruct (eq_dec v v').
+        apply H0 in e0.
+        destruct e0.
+        destruct a0.
+        destruct H1.
+        cbn.
+        trivial.
+        cbn.
+        trivial.
+        cbn.
+        trivial.
+        cbn.
+        destruct (sumbool_and _ _ _ _ (eq_dec k k) (eq_dec v v')).
+        destruct (eq_dec v v').
+        cbn.
+        trivial.
+        cbn.
+        trivial.
+        cbn.
+        trivial.
+      Qed.
+    End PROOF.
+  End TL.
 End MAP.

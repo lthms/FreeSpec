@@ -3,6 +3,9 @@ Require Import Coq.Program.Equality.
 Require Import Coq.Relations.Relations.
 Require Import Coq.Setoids.Setoid.
 
+
+Require Import FreeSpec.TemporalLogic.
+
 Section PROGRAM.
   Variables (Instruction: Type -> Type).
 
@@ -295,6 +298,29 @@ Section PROGRAM.
         = fst (runProgram (snd (runProgram int p)) (f (fst (runProgram int p)))).
 
   End INTERP.
+
+  Section TL.
+    Inductive ISet: Type :=
+    | instruction {A: Type}
+                  (i: Instruction A)
+      : ISet.
+
+    Fixpoint runTL
+             {A: Type}
+             (int: Interp)
+             (p: Program A)
+             (tl: TL (ISet))
+      : (A * Interp * TL (ISet)) :=
+      match p with
+      | ret _ a => (a, int, tl)
+      | instr _ i => (fst (interpret int i),
+                      snd (interpret int i),
+                      tl_step _ (instruction i) tl)
+      | bind _ p' f => runTL (snd (fst (runTL int p' tl)))
+                             (f (fst (fst (runTL int p' tl))))
+                             (snd (runTL int p' tl))
+      end.
+  End TL.
 
   Section CONTRACT.
     Definition typeret
