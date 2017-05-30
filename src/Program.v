@@ -173,42 +173,6 @@ Section PROGRAM.
 
   End INTERP.
 
-  Section MAKE_INTERP.
-    Variables (State: Type).
-
-    Definition PS
-      := forall {A: Type}, State -> Instruction A -> (A * State).
-
-    CoFixpoint mkInterp
-               (ps: PS)
-               (s: State)
-      : Interp :=
-      interp (
-          fun (A: Type)
-              (p: Instruction A) =>
-            (fst  (ps A s p), mkInterp ps (snd (ps A s p)))).
-
-    Lemma mkInterp_is_assoc
-          (ps: PS)
-          (s: State)
-      : interp_assoc (mkInterp ps s).
-    Proof.
-      unfold interp_assoc.
-      intros A B C p f g.
-      induction p; (constructor; [ reflexivity | apply interp_eq_refl]).
-    Qed.
-
-    Lemma mkInterp_is_assoc2
-          (ps: PS)
-          (s: State)
-      : interp_assoc2 (mkInterp ps s).
-    Proof.
-      unfold interp_assoc2.
-      intros A B p f.
-      induction p; reflexivity.
-    Qed.
-  End MAKE_INTERP.
-
   Section CONTRACT.
     Definition typeret
                {A: Type}
@@ -245,6 +209,80 @@ Section PROGRAM.
             -> Enforcer c (snd (runProgram int p)))
         : contractfull_program c p.
   End CONTRACT.
+
+  Section MAKE_INTERP.
+    Variables (State: Type).
+
+    Definition PS
+      := forall {A: Type}, State -> Instruction A -> (A * State).
+
+    CoFixpoint mkInterp
+               (ps: PS)
+               (s: State)
+      : Interp :=
+      interp (
+          fun (A: Type)
+              (p: Instruction A) =>
+            (fst  (ps A s p), mkInterp ps (snd (ps A s p)))).
+
+    Lemma mkInterp_is_assoc
+          (ps: PS)
+          (s: State)
+      : interp_assoc (mkInterp ps s).
+    Proof.
+      unfold interp_assoc.
+      intros A B C p f g.
+      induction p; (constructor; [ reflexivity | apply interp_eq_refl]).
+    Qed.
+
+    Lemma mkInterp_is_assoc2
+          (ps: PS)
+          (s: State)
+      : interp_assoc2 (mkInterp ps s).
+    Proof.
+      unfold interp_assoc2.
+      intros A B p f.
+      induction p; reflexivity.
+    Qed.
+
+    Section STATEFUL_INTERP_ENFORCER.
+      Variables (step: PS)
+                (inv: State -> Prop)
+                (c: Contract).
+
+      Definition contract_preserves_inv
+        := forall {A: Type}
+                  (i: Instruction A)
+                  (s: State),
+           inv s
+           -> requirements c i
+           -> inv (snd (step A s i)).
+
+      Definition contract_enforces_promises
+        := forall {A: Type}
+                  (i: Instruction A)
+                  (s: State),
+          inv s
+          -> requirements c i
+          -> promises c i (fst (step A s i)).
+
+      Lemma stateful_contract_enforcement
+            (Hpres: contract_preserves_inv)
+            (Henf: contract_enforces_promises)
+        : forall (s: State), inv s -> Enforcer c (mkInterp step s).
+      Proof.
+        cofix.
+        intros s Hinv.
+        split.
+        intros A i Hreq.
+        split; cbn.
+        + apply (Henf A i s Hinv Hreq).
+        + apply (Hpres A i) in Hinv.
+          * apply (stateful_contract_enforcement  (snd (step A s i)) Hinv).
+          * exact Hreq.
+      Qed.
+    End STATEFUL_INTERP_ENFORCER.
+  End MAKE_INTERP.
 End PROGRAM.
 
 Arguments bind [Instruction A B] (p f).
@@ -257,6 +295,7 @@ Arguments interpret [Instruction A] (int i).
 Arguments runProgram [Instruction A] (int p).
 
 Arguments typeret [Instruction A] (i).
+Arguments Enforcer [Instruction] (c int).
 
 Notation "int <· p" := (fst (runProgram int p)) (at level 50) : prog_scope.
 Notation "p >>= f" := (bind p f) (at level 50) : prog_scope.
