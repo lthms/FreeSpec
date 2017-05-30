@@ -297,6 +297,10 @@ Arguments runProgram [Instruction A] (int p).
 Arguments typeret [Instruction A] (i).
 Arguments Enforcer [Instruction] (c int).
 
+Arguments stateful_contract_enforcement [Instruction State] (step inv c Hpres Henf s).
+Arguments contract_enforces_promises [Instruction State] (step inv c).
+Arguments contract_preserves_inv [Instruction State] (step inv c).
+
 Notation "int <· p" := (fst (runProgram int p)) (at level 50) : prog_scope.
 Notation "p >>= f" := (bind p f) (at level 50) : prog_scope.
 Notation "a <- p ; q" :=

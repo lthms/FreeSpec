@@ -118,5 +118,52 @@ Section MAP.
       {| requirements := never_read_x_requirements
        ; promises     := never_read_x_promises
        |}.
+
+    Definition x_free_map
+               (s: State)
+      : Prop :=
+      forall k, ~eq (s k) x.
+
+    Lemma map_interp_preserves_inv
+      : contract_preserves_inv map_program_step x_free_map never_read_x_contract.
+    Proof.
+      unfold contract_preserves_inv.
+      induction i.
+      + intros s Hinv Hreq.
+        exact Hinv.
+      + intros s Hinv Hreq.
+        cbn in *.
+        unfold x_free_map.
+        intros k'.
+        destruct (eq_dec k k').
+        - exact Hreq.
+        - unfold x_free_map in Hinv.
+          apply (Hinv k').
+    Qed.
+
+    Lemma map_interp_enforces_promises
+      : contract_enforces_promises map_program_step x_free_map never_read_x_contract.
+    Proof.
+      unfold contract_enforces_promises.
+      induction i.
+      + intros s Hinv Hreq.
+        cbn in *.
+        apply (Hinv k).
+      + intros s Hinv Hreq.
+        cbn in *.
+        trivial.
+    Qed.
+
+    Lemma MapInterp_enforce_contract
+      : forall (s:    State)
+               (Hinv: x_free_map s),
+        Enforcer never_read_x_contract (MapInterp s).
+    Proof.
+      apply (stateful_contract_enforcement map_program_step
+                                           x_free_map
+                                           never_read_x_contract
+                                           map_interp_preserves_inv
+                                           map_interp_enforces_promises).
+    Qed.
   End CONTRACT.
 End MAP.
