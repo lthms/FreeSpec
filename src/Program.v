@@ -1,5 +1,7 @@
 Require Import Coq.Program.Tactics.
 Require Import Coq.Program.Equality.
+Require Import Coq.Relations.Relations.
+Require Import Coq.Setoids.Setoid.
 
 Section PROGRAM.
   Variables (Instruction: Type -> Type).
@@ -27,7 +29,7 @@ Section PROGRAM.
       : (A * Interp) :=
         match int with interp f => f A i end.
 
-      Program Fixpoint runProgram
+      Fixpoint runProgram
                {A: Type}
                (int: Interp)
                (p: Program A)
@@ -97,6 +99,126 @@ Section PROGRAM.
                                (Hnext1 A p)
                                (Hnext2 A p)).
     Qed.
+
+    Add Parametric Relation : (Interp) (interp_eq)
+      reflexivity proved by (interp_eq_refl)
+      symmetry proved by (interp_eq_sym)
+      transitivity proved by (interp_eq_trans)
+        as interp_rel.
+
+    Require Import Morphisms.
+
+    Definition interp_ret_eq
+               {A: Type}
+               (x: (A * Interp))
+               (y: (A * Interp))
+      : Prop :=
+      fst x = fst y /\ interp_eq (snd x) (snd y).
+
+    Lemma interp_ret_eq_refl
+          {A: Type}
+          (x: (A * Interp))
+      : interp_ret_eq x x.
+    Proof.
+      split; reflexivity.
+    Qed.
+
+    Lemma interp_ret_eq_sym
+          {A: Type}
+          (x: (A * Interp))
+          (y: (A * Interp))
+      : interp_ret_eq x y -> interp_ret_eq y x.
+    Proof.
+      intros [H1 H2].
+      split; symmetry; assumption.
+    Qed.
+
+    Lemma interp_ret_eq_trans
+          {A: Type}
+          (x: (A * Interp))
+          (y: (A * Interp))
+          (z: (A * Interp))
+      : interp_ret_eq x y
+        -> interp_ret_eq y z
+        -> interp_ret_eq x z.
+    Proof.
+      intros [H1 H2] [H1' H2'].
+      split.
+      + transitivity (fst y); assumption.
+      + transitivity (snd y); assumption.
+    Qed.
+
+    Add Parametric Relation (A: Type) : (A * Interp) (@interp_ret_eq A)
+      reflexivity proved by (interp_ret_eq_refl)
+      symmetry proved by (interp_ret_eq_sym)
+      transitivity proved by (interp_ret_eq_trans)
+        as interp_ret_rel.
+
+    Add Parametric Morphism
+        (A: Type): (@snd A Interp)
+        with signature (@interp_ret_eq A) ==> (interp_eq)
+          as snd_interp_ret.
+    Proof.
+      intros [a int] [b int'] [Heq1 Heq2].
+      exact Heq2.
+    Qed.
+
+    Add Parametric Morphism
+        (A: Type): (@fst A Interp)
+        with signature (@interp_ret_eq A) ==> (@eq A)
+          as fst_interp_ret.
+    Proof.
+      intros [a int] [b int'] [Heq1 Heq2].
+      exact Heq1.
+    Qed.
+
+    Add Parametric Morphism
+        (A: Type) (i: Instruction A): (fun int => snd (interpret int i))
+        with signature (@interp_eq) ==> (@interp_eq)
+          as interp_morph.
+    Proof.
+      intros int int' Heq.
+      destruct Heq as [H1 H2].
+      apply H2.
+    Qed.
+
+    Add Parametric Morphism
+        (A: Type) (i: Instruction A): (fun int => fst (interpret int i))
+        with signature (@interp_eq) ==> (@eq A)
+          as interp_res_morph.
+    Proof.
+      intros int int' Heq.
+      destruct Heq as [H1 H2].
+      apply H1.
+    Qed.
+
+    Add Parametric Morphism
+        (A: Type) (p: Program A): (fun int => snd (runProgram int p))
+        with signature (@interp_eq) ==> (@interp_eq)
+          as runProgram_morph.
+    Proof.
+      intros int int' Heq.
+      induction p.
+      + admit.
+      + destruct Heq as [H1 H2];
+          cbn;
+          apply H2.
+      + cbn; exact Heq.
+    Admitted.
+
+    Add Parametric Morphism
+        (A: Type) (p: Program A): (fun int => fst (runProgram int p))
+        with signature (@interp_eq) ==> (@eq A)
+          as runProgram_ret_morph.
+    Proof.
+      intros int int' Heq.
+      induction p.
+      + admit.
+      + destruct Heq as [H1 H2];
+          cbn;
+          apply H1.
+      + cbn; reflexivity.
+    Admitted.
 
     CoInductive program_eq
                 (i: Interp)
