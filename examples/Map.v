@@ -192,7 +192,6 @@ Section MAP.
     Qed.
   End CONTRACT.
 
-  (*
   Section TL.
     Variables (k: Key)
               (v: Value).
@@ -202,7 +201,7 @@ Section MAP.
       : Prop :=
       match i with
       | instruction _ (Write k' v')
-        => eq k k' /\ eq v v'
+        => k == k' /\ v == v'
       | _
         => False
       end.
@@ -215,8 +214,8 @@ Section MAP.
           match i with
           | (Write k' v')
             => decide_dec (sumbool_and _ _ _ _
-                                       (eq_dec k k')
-                                       (eq_dec v v'))
+                                       (k =? k')
+                                       (v =? v'))
           | _
             => false_dec
           end
@@ -234,7 +233,7 @@ Section MAP.
       : Prop :=
       match i with
       | instruction _ (Read k')
-        => ~eq k k'
+        => k /= k'
       | _
         => False
       end.
@@ -246,7 +245,7 @@ Section MAP.
       refine (
           match i with
           | (Read k')
-            => if eq_dec k k'
+            => if k =? k'
                then false_dec
                else true_dec
           | _
@@ -266,7 +265,7 @@ Section MAP.
       : Prop :=
       match i with
       | instruction _ (Write k v')
-        => eq v v'
+        => v == v'
       | _
         => False
       end.
@@ -278,7 +277,7 @@ Section MAP.
       refine (
           match i with
           | (Write k v')
-            => eq_dec v v'
+            => v =? v'
           | _
             => false_dec
           end
@@ -319,24 +318,24 @@ Section MAP.
       Lemma enforces_policy
             (s: State)
       : forall k' v',
-        ~ eq k k'
-        -> ~ eq v v'
+        k /= k'
+        -> v /= v'
         -> halt_satisfies _ (snd (runTL _
                                         int
                                         (write_read_write k' v')
                                         policy)).
         intros.
         cbn.
-        destruct (sumbool_and _ _ _ _ (eq_dec k k) (eq_dec v v)).
+        destruct (sumbool_and _ _ _ _ (k =? k) (v =? v)).
         cbn.
-        destruct (eq_dec v v).
+        destruct (v =? v).
         destruct (sumbool_and _ _ _ _ (true_dec) (true_dec)).
         cbn.
-        destruct (eq_dec k k').
+        destruct (k =? k').
         cbn.
         trivial.
         cbn.
-        destruct (eq_dec v v').
+        destruct (v =? v').
         apply H0 in e0.
         destruct e0.
         destruct a0.
@@ -348,8 +347,8 @@ Section MAP.
         cbn.
         trivial.
         cbn.
-        destruct (sumbool_and _ _ _ _ (eq_dec k k) (eq_dec v v')).
-        destruct (eq_dec v v').
+        destruct (sumbool_and _ _ _ _ (k =? k) (v =? v')).
+        destruct (v =? v').
         cbn.
         trivial.
         cbn.
@@ -359,6 +358,4 @@ Section MAP.
       Qed.
     End PROOF.
   End TL.
-End MAP.
-*)
 End MAP.

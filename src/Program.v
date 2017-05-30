@@ -3,13 +3,12 @@ Require Import Coq.Program.Tactics.
 Require Import Coq.Relations.Relations.
 Require Import Coq.Setoids.Setoid.
 
-Require Import FreeSpec.Equiv.
-Require Import FreeSpec.TemporalLogic.
 Require Import FreeSpec.Tuple.
 Require Import FreeSpec.Interp.
 
 Local Open Scope eq_scope.
 
+Require Import FreeSpec.Equiv.
 Section PROGRAM.
   Variables (I: Type -> Type).
 
@@ -123,45 +122,6 @@ Section PROGRAM.
               (f: A -> Program B),
       evalProgram (bind B p f) int
       == evalProgram (f (evalProgram p int)) (execProgram p int).
-
-  (*
-  Section TL.
-    Inductive ISet: Type :=
-    | instruction {A: Type}
-                  (i: Instruction A)
-      : ISet.
-
-    Fixpoint runTL
-             {A: Type}
-             (int: Interp)
-             (p: Program A)
-             (tl: TL (ISet))
-      : (A * Interp * TL (ISet)) :=
-      match p with
-      | ret _ a => (a, int, tl)
-      | instr _ i => (fst (interpret int i),
-                      snd (interpret int i),
-                      tl_step _ (instruction i) tl)
-      | bind _ p' f => runTL (snd (fst (runTL int p' tl)))
-                             (f (fst (fst (runTL int p' tl))))
-                             (snd (runTL int p' tl))
-      end.
-
-    Lemma run_tl_run_program_interp_eq
-          {A: Type}
-      : forall (p: Program A)
-               (tl: TL (ISet))
-               (int: Interp),
-        interp_eq (snd (fst (runTL int p tl))) (snd (runProgram int p)).
-    Proof.
-      cofix.
-      induction p.
-      + admit.
-      + cbn.
-        intros tl int.
-    Admitted.
-  End TL.
-  *)
 
   Section CONTRACT.
     Definition typeret

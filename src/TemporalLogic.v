@@ -1,9 +1,12 @@
 Require Import Coq.Bool.Sumbool.
 Require Import Coq.Logic.Classical.
 Require Import FreeSpec.Utils.
+Require Import FreeSpec.Interp.
+Require Import FreeSpec.Program.
 
 Section TEMPORAL_LOGIC.
-  Variable (A: Type).
+  Variables (A: Type)
+            (I: Type -> Type).
 
   Record Instant :=
     { prop: A -> Prop
@@ -103,24 +106,24 @@ Section TEMPORAL_LOGIC.
           => false_dec
         end
       ); cbn; trivial.
-    - split.
-      + intro _H; exact a0.
-      + intro False; apply False in p0; destruct p0.
-    - intro False.
+    + split.
+      ++ intro _H; exact a0.
+      ++ intro False; apply False in p0; destruct p0.
+    + intro False.
       destruct False as [False _H].
       apply False in p0.
       apply or_not_and in o.
       apply o in p0.
       destruct p0.
-    - split.
-      + intro False; apply n in False; destruct False.
-      + intro _H; exact i.
-    - intro False.
+    + split.
+      ++ intro False; apply n in False; destruct False.
+      ++ intro _H; exact i.
+    + intro False.
       destruct False as [_H False].
       apply False in n.
       apply n0 in n.
       destruct n.
-    - intro False; destruct False.
+    + intro False; destruct False.
   Defined.
 
   Fixpoint tl_step
@@ -150,3 +153,42 @@ Section TEMPORAL_LOGIC.
          end
     else false.
 End TEMPORAL_LOGIC.
+
+Section RUN_TL.
+  Variable (I: Type -> Type).
+
+  Inductive ISet: Type :=
+  | instruction {A: Type}
+                (i: I A)
+    : ISet.
+
+  Fixpoint runTL
+           {A: Type}
+           (int: Interp I)
+           (p: Program I A)
+           (tl: TL (ISet))
+    : (A * (Interp I) * TL (ISet)) :=
+    match p with
+    | ret a => (a, int, tl)
+    | instr i => (evalInstruction i int,
+                    execInstruction i int,
+                    tl_step _ (instruction i) tl)
+    | bind p' f => runTL (snd (fst (runTL int p' tl)))
+                           (f (fst (fst (runTL int p' tl))))
+                           (snd (runTL int p' tl))
+    end.
+
+  Lemma run_tl_run_program_interp_eq
+        {A: Type}
+    : forall (p: Program I A)
+             (tl: TL (ISet))
+             (int: Interp I),
+      interp_eq (snd (fst (runTL int p tl))) (execProgram p int).
+  Proof.
+    cofix.
+    induction p.
+    + admit.
+    + cbn.
+      intros tl int.
+  Admitted.
+End RUN_TL.
