@@ -210,9 +210,18 @@ Section PROGRAM.
   End MAKE_INTERP.
 
   Section CONTRACT.
+    Definition typeret
+               {A: Type}
+               (i: Instruction A)
+    : Type := A.
+
     Record Contract :=
-     { requirements (A: Type): Instruction A -> Prop
-     ; promises (A: Type): Instruction A -> (A -> Prop)
+      { requirements {A: Type}
+                     (i: Instruction A)
+        : Prop
+      ; promises {A: Type}
+                 (i: Instruction A)
+        : typeret i -> Prop
      }.
 
     CoInductive Enforcer
@@ -221,8 +230,8 @@ Section PROGRAM.
       : Prop :=
     | enforced (Hproof: forall {A: Type}
                                (i: Instruction A),
-                   requirements c A i
-                   -> (promises c A i) (fst (interpret int i))
+                   requirements c i
+                   -> (promises c i) (fst (interpret int i))
                       /\ Enforcer c (snd (interpret int i)))
       : Enforcer c int.
 
@@ -246,6 +255,8 @@ Arguments mkInterp [Instruction State] (ps s).
 
 Arguments interpret [Instruction A] (int i).
 Arguments runProgram [Instruction A] (int p).
+
+Arguments typeret [Instruction A] (i).
 
 Notation "int <· p" := (fst (runProgram int p)) (at level 50) : prog_scope.
 Notation "p >>= f" := (bind p f) (at level 50) : prog_scope.

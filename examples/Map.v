@@ -25,7 +25,8 @@ Section MAP.
 
   Variables (Key: Type)
             (key_eq: Eq Key)
-            (Value: Type).
+            (Value: Type)
+            (value_eq: Eq Value).
 
   Inductive Instruction: Type -> Type :=
   | Read (k: Key)
@@ -92,4 +93,30 @@ Section MAP.
       destruct He.
     + reflexivity.
   Qed.
+
+  Section CONTRACT.
+    Variable (x: Value).
+
+    Definition never_read_x_requirements
+               (A: Type)
+               (i: Instruction A) :=
+      match i with
+      | Read k => True
+      | Write k v => ~ eq v x
+      end.
+
+    Definition never_read_x_promises
+               (A: Type)
+               (i: Instruction A)
+      : typeret i -> Prop :=
+      match i with
+      | Read k => fun v => ~ eq v x
+      | Write k v => fun x => True
+      end.
+
+    Definition never_read_x_contract :=
+      {| requirements := never_read_x_requirements
+       ; promises     := never_read_x_promises
+       |}.
+  End CONTRACT.
 End MAP.
