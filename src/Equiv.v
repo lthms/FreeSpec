@@ -17,6 +17,7 @@ Class EqDec
 Arguments equiv_dec [A _ _] (_ _).
 
 Notation "a == b" := (equiv a b) (at level 70, no associativity) : eq_scope.
+Notation "a /= b" := (~ equiv a b) (at level 70, no associativity) : eq_scope.
 Notation "a =? b" := (equiv_dec a b) (at level 70, no associativity) : eq_scope.
 Local Open Scope eq_scope.
 

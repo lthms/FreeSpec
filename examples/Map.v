@@ -12,7 +12,7 @@ Lemma neq_sym
       {T: Type}
      `{Eq T}
       (t: T)
-      (Hneq_sym: ~ (t == t))
+      (Hneq_sym: t /= t)
   : False.
 Proof.
   assert (t == t) as Heq by (reflexivity).
@@ -104,7 +104,7 @@ Section MAP.
                (i: Instruction A) :=
       match i with
       | Read k => True
-      | Write k v => ~ (v == x)
+      | Write k v => v /= x
       end.
 
     Definition never_read_x_promises
@@ -112,7 +112,7 @@ Section MAP.
                (i: Instruction A)
       : typeret i -> Prop :=
       match i with
-      | Read k => fun v => ~ v == x
+      | Read k => fun v => v /= x
       | Write k v => fun x => True
       end.
 
@@ -124,7 +124,7 @@ Section MAP.
     Definition x_free_map
                (s: State)
       : Prop :=
-      forall k, ~ ((s k) == x).
+      forall k, (s k) /= x.
 
     Lemma map_interp_preserves_inv
       : contract_preserves_inv map_program_step x_free_map never_read_x_contract.
