@@ -1,3 +1,5 @@
+Require Import Coq.Program.Tactics.
+
 Section PROGRAM.
   Variables (Instruction: Type -> Type).
 
@@ -13,17 +15,26 @@ Section PROGRAM.
 
   Section INTERP.
     CoInductive Interp: Type :=
-    | interp (f: forall {A: Type}, Program A -> (A * Interp))
+    | interp (f: forall {A: Type}, Instruction A -> (A * Interp))
       : Interp.
 
     Section DO_INTERP.
       Definition interpret
                  {A: Type}
                  (int: Interp)
-                 (p: Program A)
+                 (i: Instruction A)
       : (A * Interp) :=
-        match int with
-        | interp f => f A p
+        match int with interp f => f A i end.
+
+      Program Fixpoint runProgram
+               {A: Type}
+               (int: Interp)
+               (p: Program A)
+        : (A * Interp) :=
+        match p with
+        | ret _ a => (a, int)
+        | instr _ i => interpret int i
+        | bind _ p' f => runProgram (snd (runProgram int p')) (f (fst (runProgram int p')))
         end.
     End DO_INTERP.
 
@@ -32,10 +43,10 @@ Section PROGRAM.
                 (i2: Interp)
       : Prop :=
     | interp_is_eq (Hres: forall {A: Type}
-                                 {p: Program A},
+                                 {p: Instruction A},
                        fst (interpret i1 p) = fst (interpret i2 p))
                    (Hnext: forall {A: Type}
-                                  {p: Program A},
+                                  {p: Instruction A},
                        interp_eq (snd (interpret i1 p)) (snd (interpret i2 p)))
       : interp_eq i1 i2.
 
@@ -91,8 +102,8 @@ Section PROGRAM.
                 {A: Type}
                 (p: Program A)
                 (p': Program A) :=
-    | program_is_eq (Hres: fst (interpret i p) = fst (interpret i p'))
-                    (Hnext: interp_eq (snd (interpret i p)) (snd (interpret i p'))): program_eq i p p'.
+    | program_is_eq (Hres: fst (runProgram i p) = fst (runProgram i p'))
+                    (Hnext: interp_eq (snd (runProgram i p)) (snd (runProgram i p'))): program_eq i p p'.
 
     Lemma program_eq_refl
           (i: Interp)
@@ -119,8 +130,8 @@ Section PROGRAM.
       destruct H1 as [Hres Hnext].
       constructor.
       + symmetry; exact Hres.
-      + apply (interp_eq_sym (snd (interpret i p))
-                             (snd (interpret i p'))
+      + apply (interp_eq_sym (snd (runProgram i p))
+                             (snd (runProgram i p'))
                              Hnext).
     Qed.
 
@@ -137,9 +148,9 @@ Section PROGRAM.
       intros p p' p'' [Hres1 Hnext1] [Hres2 Hnext2].
       constructor.
       + rewrite <- Hres2; exact Hres1.
-      + apply (interp_eq_trans (snd (interpret i p))
-                               (snd (interpret i p'))
-                               (snd (interpret i p''))
+      + apply (interp_eq_trans (snd (runProgram i p))
+                               (snd (runProgram i p'))
+                               (snd (runProgram i p''))
                                Hnext1
                                Hnext2).
     Qed.
@@ -157,8 +168,8 @@ Section PROGRAM.
       := forall {A B: Type}
                 (p: Program A)
                 (f: A -> Program B),
-        fst (interpret int (bind _ p f))
-        = fst (interpret (snd (interpret int p)) (f (fst (interpret int p)))).
+        fst (runProgram int (bind _ p f))
+        = fst (runProgram (snd (runProgram int p)) (f (fst (runProgram int p)))).
 
   End INTERP.
 
@@ -168,26 +179,14 @@ Section PROGRAM.
     Definition PS
       := forall {A: Type}, State -> Instruction A -> (A * State).
 
-    Fixpoint s_interp
-             (ps: PS)
-             (s: State)
-             {A: Type}
-             (p: Program A)
-      : (A * State) :=
-      match p with
-      | ret _ a => (a, s)
-      | instr _ i => ps A s i
-      | bind _ p' f => s_interp ps (snd (s_interp ps s p')) (f (fst (s_interp ps s p')))
-      end.
-
     CoFixpoint mkInterp
                (ps: PS)
                (s: State)
       : Interp :=
       interp (
           fun (A: Type)
-              (p: Program A) =>
-            (fst (s_interp ps s p), mkInterp ps (snd (s_interp ps s p)))).
+              (p: Instruction A) =>
+            (fst  (ps A s p), mkInterp ps (snd (ps A s p)))).
 
     Lemma mkInterp_is_assoc
           (ps: PS)
@@ -223,9 +222,19 @@ Section PROGRAM.
     | enforced (Hproof: forall {A: Type}
                                (i: Instruction A),
                    requirements c A i
-                   -> (promises c A i) (fst (interpret int (instr A i)))
-                      /\ Enforcer c (snd (interpret int (instr A i))))
+                   -> (promises c A i) (fst (interpret int i))
+                      /\ Enforcer c (snd (interpret int i)))
       : Enforcer c int.
+
+    Inductive contractfull_program
+               {A:   Type}
+               (c:   Contract)
+               (p:   Program A) :=
+    | program_enforces_contract
+        (Hreq: forall (int: Interp),
+            Enforcer c int
+            -> Enforcer c (snd (runProgram int p)))
+        : contractfull_program c p.
   End CONTRACT.
 End PROGRAM.
 
@@ -235,9 +244,10 @@ Arguments ret [Instruction A] (a).
 
 Arguments mkInterp [Instruction State] (ps s).
 
-Arguments interpret [Instruction A] (int p).
+Arguments interpret [Instruction A] (int i).
+Arguments runProgram [Instruction A] (int p).
 
-Notation "int <· p" := (fst (interpret int p)) (at level 50) : prog_scope.
+Notation "int <· p" := (fst (runProgram int p)) (at level 50) : prog_scope.
 Notation "p >>= f" := (bind p f) (at level 50) : prog_scope.
 Notation "a <- p ; q" :=
   (bind p (fun a => q)) (at level 60, right associativity, p at next level)

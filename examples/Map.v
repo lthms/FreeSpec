@@ -20,10 +20,9 @@ Proof.
   exact Heq.
 Qed.
 
-Require Import FreeSpec.Program.
-
 Section MAP.
-  Open Scope prog_scope.
+  Local Open Scope prog_scope.
+
   Variables (Key: Type)
             (key_eq: Eq Key)
             (Value: Type).
@@ -56,8 +55,6 @@ Section MAP.
 
 
   Definition MapProgram := Program Instruction.
-
-  Local Open Scope prog_scope.
 
   Definition read_then_write
              (k: Key)

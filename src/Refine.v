@@ -17,9 +17,9 @@ Section REFINEMENT.
     mkInterp (fun {A: Type}
                   (st: (S * Interp Io))
                   (i: Ii A)
-              => (fst (fst (interpret (snd st) (sr A i (fst st)))),
-                  (snd (fst (interpret (snd st) (sr A i (fst st)))),
-                   (snd (interpret (snd st) (sr A i (fst st)))))))
+              => (fst (fst (runProgram (snd st) (sr A i (fst st)))),
+                  (snd (fst (runProgram (snd st) (sr A i (fst st)))),
+                   (snd (runProgram (snd st) (sr A i (fst st)))))))
              (s, int).
 
   Definition PureRefinement
