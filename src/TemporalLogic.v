@@ -403,6 +403,13 @@ Section RUN_TL.
       (prop: Instant A)
     : TL_derive (switch before prop after) false.
 
+  Lemma tl_derive_trans
+        {A: Type}
+        (tl tl' tl'': TL A)
+    : TL_derive tl tl' -> TL_derive tl' tl'' -> TL_derive tl tl''.
+  Proof.
+  Admitted.
+
   Lemma tl_step_is_tl_derive
         {A: Type}
     : forall (tl tl': TL A),
@@ -468,6 +475,20 @@ Section RUN_TL.
          apply IHtl2.
          exact Hderive0.
       ++ repeat constructor.
+  Qed.
+
+  Lemma tl_derives_implies_tl_run
+        {A: Type}
+    : forall (tl tl': TL A),
+      TL_run tl tl' -> TL_derive  tl tl'.
+  Proof.
+    intros.
+    induction H.
+    + constructor.
+    + apply tl_step_is_tl_derive in Hstep.
+      exact Hstep.
+    + apply tl_step_is_tl_derive in Hstep.
+      apply (tl_derive_trans from tl to Hstep IHTL_run).
   Qed.
 
   Lemma run_tl_run_program_interp_eq
