@@ -306,8 +306,9 @@ Section RUN_TL.
     Qed.
 
   Lemma switch_derives_after_big
-        (tl1 tl2 tl3: TL ISet)
-        (prop: Instant ISet)
+        {A: Type}
+        (tl1 tl2 tl3: TL A)
+        (prop: Instant A)
         (Hderive: TL_run tl2 tl3)
     : TL_run (switch tl1 prop tl2) tl3.
   Proof.
@@ -318,8 +319,9 @@ Section RUN_TL.
   Qed.
 
   Lemma switch_derives_before_big
-        (tl1 tl2 tl3: TL ISet)
-        (prop: Instant ISet)
+        {A: Type}
+        (tl1 tl2 tl3: TL A)
+        (prop: Instant A)
         (Hderive: TL_run tl1 tl2)
     : TL_run (switch tl1 prop tl3) (switch tl2 prop tl3).
   Proof.
@@ -459,8 +461,14 @@ Section RUN_TL.
     + intros tl' Hderive.
       inversion Hderive; subst.
       ++ apply tl_run_refl.
-      ++
-  Admitted.
+      ++ apply (switch_derives_before_big tl1 tl tl2).
+         apply IHtl1.
+         exact Hderive0.
+      ++ apply (switch_derives_after_big tl1 tl2 tl').
+         apply IHtl2.
+         exact Hderive0.
+      ++ repeat constructor.
+  Qed.
 
   Lemma run_tl_run_program_interp_eq
         {A: Type}
