@@ -403,13 +403,6 @@ Section RUN_TL.
       (prop: Instant A)
     : TL_derive (switch before prop after) false.
 
-  Lemma tl_derive_trans
-        {A: Type}
-        (tl tl' tl'': TL A)
-    : TL_derive tl tl' -> TL_derive tl' tl'' -> TL_derive tl tl''.
-  Proof.
-  Admitted.
-
   Lemma tl_step_is_tl_derive
         {A: Type}
     : forall (tl tl': TL A),
@@ -429,18 +422,6 @@ Section RUN_TL.
     + constructor; constructor.
     + apply switch_derives_fail.
   Qed.
-
-  Lemma tl_run_switch_before
-        {A: Type}
-  : forall (tl tl' tl2: TL A)
-           (prop: Instant A),
-      TL_run tl tl'
-      -> TL_run (switch tl prop tl2) (switch tl' prop tl2).
-  Proof.
-    induction tl.
-    + intros.
-      assert (tl' = true) as Heqt.
-  Admitted.
 
   Lemma tl_run_implies_tl_derive
         {A: Type}
@@ -477,7 +458,72 @@ Section RUN_TL.
       ++ repeat constructor.
   Qed.
 
-  Lemma tl_derives_implies_tl_run
+  Lemma switch_derives_before_helper
+        {A: Type}
+        (tl1 tl2 tl3: TL A)
+        (prop: Instant A)
+        (Hderive: TL_derive tl1 tl2)
+    : TL_derive (switch tl1 prop tl3) (switch tl2 prop tl3).
+  Proof.
+    induction Hderive.
+    + constructor.
+    + constructor.
+    + constructor.
+    + constructor.
+    + repeat constructor.
+    + constructor.
+    + repeat constructor.
+    + apply switch_derives_before.
+      constructor.
+      exact Hderive.
+    + apply switch_derives_before.
+      apply switch_derives_before.
+      exact Hderive.
+    + apply switch_derives_before.
+      apply switch_derives_after.
+      exact Hderive.
+    + apply switch_derives_before.
+      apply switch_derives_fail.
+  Qed.
+
+  Lemma tl_derive_trans'
+        {A: Type}
+    : forall (tl tl': TL A),
+      TL_derive tl tl' -> (forall (tl'': TL A), TL_derive tl' tl'' -> TL_derive tl tl'').
+  Proof.
+    intros tl tl' H1; induction H1; intros tl'' H2; try exact H2.
+    + inversion_clear H2;
+        constructor.
+    + inversion_clear H2;
+        constructor.
+    + constructor.
+      apply (IHTL_derive tl'' H2).
+    + inversion_clear H2.
+      ++ apply switch_derives_before_helper.
+         exact H1.
+      ++ apply switch_derives_before_helper.
+         apply (IHTL_derive tl0 Hderive).
+      ++ apply switch_derives_after.
+         exact Hderive.
+      ++ apply switch_derives_fail.
+    + apply switch_derives_after.
+      apply IHTL_derive in H2.
+      exact H2.
+    + inversion_clear H2.
+      ++ apply switch_derives_fail.
+      ++ apply switch_derives_fail.
+  Qed.
+
+  Lemma tl_derive_trans
+        {A: Type}
+    : forall (tl tl' tl'': TL A),
+      TL_derive tl tl' -> TL_derive tl' tl'' -> TL_derive tl tl''.
+  Proof.
+    intros tl tl' tl'' H1 H2.
+    apply (tl_derive_trans' tl tl' H1 tl'' H2).
+  Qed.
+
+  Lemma tl_derive_implies_tl_run
         {A: Type}
     : forall (tl tl': TL A),
       TL_run tl tl' -> TL_derive  tl tl'.
