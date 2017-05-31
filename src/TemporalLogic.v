@@ -537,6 +537,20 @@ Section RUN_TL.
       apply (tl_derive_trans from tl to Hstep IHTL_run).
   Qed.
 
+  Lemma tl_run_switch_before
+        {A: Type}
+  : forall (tl tl' tl2: TL A)
+           (prop: Instant A),
+      TL_run tl tl'
+      -> TL_run (switch tl prop tl2) (switch tl' prop tl2).
+  Proof.
+    intros tl tl' tl2 prop Hrun.
+    apply tl_run_implies_tl_derive.
+    apply tl_derive_implies_tl_run in Hrun.
+    apply switch_derives_before.
+    exact Hrun.
+  Qed.
+
   Lemma run_tl_run_program_interp_eq
         {A: Type}
     : forall (p: Program I A)
