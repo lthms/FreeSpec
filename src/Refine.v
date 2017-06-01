@@ -1,6 +1,7 @@
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Interp.
 
+(*
 Section REFINEMENT.
   Parameters (Ii: Type -> Type)
              (Io: Type -> Type)
@@ -29,3 +30,4 @@ Section REFINEMENT.
     := forall (A: Type),
       Ii A -> Program Io A.
 End REFINEMENT.
+*)

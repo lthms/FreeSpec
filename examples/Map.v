@@ -56,7 +56,6 @@ Section MAP.
              (s: State)
     := mkInterp map_program_step s.
 
-
   Definition MapProgram := Program Instruction.
 
   Definition read_then_write
@@ -190,49 +189,44 @@ Section MAP.
             by (apply Hprom; cbn; trivial).
         exact Hnext.
     Qed.
-  End CONTRACT.
 
-  Section TL.
-    Variables (k: Key)
-              (v: Value).
-
-    Definition write_k_v
+    Definition write_k_x
                (i: ISet Instruction)
       : Prop :=
       match i with
-      | instruction _ (Write k' v')
-        => k == k' /\ v == v'
+      | instruction (Write k' v')
+        => k == k' /\ x == v'
       | _
         => False
       end.
 
-    Definition write_k_v_dec
+    Definition write_k_x_dec
                (i: ISet Instruction)
-      : {write_k_v i}+{~write_k_v i}.
+      : {write_k_x i}+{~write_k_x i}.
       induction i.
       refine (
           match i with
           | (Write k' v')
             => decide_dec (sumbool_and _ _ _ _
                                        (k =? k')
-                                       (v =? v'))
+                                       (x =? v'))
           | _
             => false_dec
           end
         ); cbn; intuition.
     Defined.
 
-    Definition write_k_v_inst
+    Definition write_k_x_inst
       : Instant (ISet Instruction) :=
-      {| prop := write_k_v
-       ; prop_dec := write_k_v_dec
+      {| prop := write_k_x
+       ; prop_dec := write_k_x_dec
       |}.
 
     Definition not_read_k
                (i: ISet Instruction)
       : Prop :=
       match i with
-      | instruction _ (Read k')
+      | instruction (Read k')
         => k /= k'
       | _
         => False
@@ -260,109 +254,67 @@ Section MAP.
        ; prop_dec := not_read_k_dec
       |}.
 
-    Definition erase_k
-               (i: ISet Instruction)
-      : Prop :=
-      match i with
-      | instruction _ (Write k v')
-        => v /= v'
-      | _
-        => False
-      end.
-
-    Definition erase_k_dec
-               (i: ISet Instruction)
-      : {erase_k i}+{~erase_k i}.
-      induction i.
-      refine (
-          match i with
-          | (Write k v')
-            => if v =? v'
-               then false_dec
-               else true_dec
-          | _
-            => false_dec
-          end
-        ); cbn; intuition.
-    Defined.
-
-    Definition erase_k_inst
-      : Instant (ISet Instruction) :=
-      {| prop := erase_k
-       ; prop_dec := erase_k_dec
-      |}.
-
-    Definition not_write_k
-               (i: ISet Instruction)
-      : Prop :=
-      match i with
-      | instruction _ (Write k _)
-        => False
-      | _
-        => True
-      end.
-
-    Definition not_write_k_dec
-               (i: ISet Instruction)
-      : {not_write_k i}+{~not_write_k i}.
-      induction i.
-      refine (
-          match i with
-          | (Write k _)
-            => false_dec
-          | _
-            => true_dec
-          end
-        ); cbn; intuition.
-    Defined.
-
-    Definition not_write_k_inst
-      : Instant (ISet Instruction) :=
-      {| prop := not_write_k
-       ; prop_dec := not_write_k_dec
-      |}.
-
     Definition policy_step
       : TL (ISet Instruction) :=
       switch true
-             write_k_v_inst
+             write_k_x_inst
              (globally not_read_k_inst).
-
-    Inductive invar
-              (s: State)
-      : TL (ISet Instruction) -> Prop :=
-    | invar_1 (H: s k /= v)
-      : invar s policy_step
-    | invar_2
-      : invar s (globally not_read_k_inst).
 
     Definition write_read_write
                (k': Key)
                (v': Value)
       : MapProgram unit :=
-      _ <- [Write k v];
+      _ <- [Write k x];
       _ <- [Read k'];
       [Write k v'].
 
-    Section PROOF.
-      Variables (int: Interp Instruction).
+    Variables (int: Interp Instruction).
 
-      Lemma enforces_policy
-            (s: State)
+    Lemma enforces_policy
+          (s: State)
       : forall k' v',
         k /= k'
-        -> v /= v'
+        -> x /= v'
         -> halt_satisfies _ (snd (runTL _
                                         int
                                         (write_read_write k' v')
                                         policy_step)).
-      Proof.
-        intros.
-        cbn.
-        destruct (sumbool_and _ _ _ _ (k =? k) (v =? v)); cbn.
-        + trivial.
-        + destruct (sumbool_and _ _ _ _ (k =? k) (v =? v')); cbn; trivial.
-      Qed.
-    End PROOF.
-  End TL.
+    Proof.
+      intros.
+      cbn.
+      destruct (sumbool_and _ _ _ _ (k =? k) (x =? x)); cbn.
+      + trivial.
+      + destruct (sumbool_and _ _ _ _ (k =? k) (x =? v')); cbn; trivial.
+    Qed.
+
+    Inductive invar
+              (s: State)
+      : TL (ISet Instruction) -> Prop :=
+    | invar_1 (H: s k /= x)
+      : invar s policy_step
+    | invar_2
+      : invar s (globally not_read_k_inst).
+
+    Definition tl_never_read_x_contract :=
+      {| tl_requirements := policy_step
+       ; tl_promises     := never_read_x_promises
+       |}.
+
+    Lemma enforcing_policy_step_invar
+          {A: Type}
+          (i: Instruction A)
+          (s: State)
+      : invar s policy_step
+        -> instruction_satisfies (instruction i) policy_step
+        -> invar (snd (map_program_step _ s i)) (tl_step (instruction i) policy_step).
+    Proof.
+      intros Hinvar Hinst.
+      inversion Hinvar.
+      induction i.
+      + cbn.
+        apply invar_1.
+        exact H.
+      + cbn in *.
+    Admitted.
+  End CONTRACT.
 End MAP.
