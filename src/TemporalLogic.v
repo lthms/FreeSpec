@@ -612,6 +612,18 @@ Section RUN_TL.
       apply (tl_derive_trans from tl to Hstep IHTL_run).
   Qed.
 
+  Corollary TL_derive_is_runTL
+    : forall {A: Type}
+             (p: Program I A)
+             (tl: TL ISet)
+             (int: Interp I),
+      TL_derive tl (deriveTL int p tl).
+  Proof.
+    intros A p tl int.
+    apply tl_derive_implies_tl_run.
+    apply TL_run_is_runTL.
+  Qed.
+
   Lemma tl_run_switch_before
         {A: Type}
   : forall (tl tl' tl2: TL A)
