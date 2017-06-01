@@ -602,17 +602,16 @@ Section RUN_TL.
     exact Hrun.
   Qed.
 
-  Lemma run_tl_run_program_interp_eq
+  Lemma run_tl_run_program_same
         {A: Type}
     : forall (p: Program I A)
              (tl: TL (ISet))
              (int: Interp I),
-      interp_eq (snd (fst (runTL int p tl))) (execProgram p int).
+      fst (runTL int p tl) = runProgram p int.
   Proof.
-    cofix.
-    induction p.
-    + admit.
-    + cbn.
-      intros tl int.
-  Admitted.
+    induction p; intros tl int; cbn.
+    + rewrite H; rewrite IHp; reflexivity.
+    + apply injective_projections; reflexivity.
+    + reflexivity.
+  Qed.
 End RUN_TL.
