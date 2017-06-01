@@ -265,7 +265,7 @@ Section MAP.
       : Prop :=
       match i with
       | instruction _ (Write k v')
-        => v == v'
+        => v /= v'
       | _
         => False
       end.
@@ -277,7 +277,9 @@ Section MAP.
       refine (
           match i with
           | (Write k v')
-            => v =? v'
+            => if v =? v'
+               then false_dec
+               else true_dec
           | _
             => false_dec
           end
@@ -290,19 +292,49 @@ Section MAP.
        ; prop_dec := erase_k_dec
       |}.
 
+    Definition not_write_k
+               (i: ISet Instruction)
+      : Prop :=
+      match i with
+      | instruction _ (Write k _)
+        => False
+      | _
+        => True
+      end.
+
+    Definition not_write_k_dec
+               (i: ISet Instruction)
+      : {not_write_k i}+{~not_write_k i}.
+      induction i.
+      refine (
+          match i with
+          | (Write k _)
+            => false_dec
+          | _
+            => true_dec
+          end
+        ); cbn; intuition.
+    Defined.
+
+    Definition not_write_k_inst
+      : Instant (ISet Instruction) :=
+      {| prop := not_write_k
+       ; prop_dec := not_write_k_dec
+      |}.
+
     Definition policy_step
       : TL (ISet Instruction) :=
-      switch _
-             (true _)
+      switch true
              write_k_v_inst
-             (switch _
-                     (globally _ not_read_k_inst)
-                     erase_k_inst
-                     (true _)).
+             (globally not_read_k_inst).
 
-    Definition policy
-      : TL (ISet Instruction) :=
-      loop _ policy_step policy_step.
+    Inductive invar
+              (s: State)
+      : TL (ISet Instruction) -> Prop :=
+    | invar_1 (H: s k /= v)
+      : invar s policy_step
+    | invar_2
+      : invar s (globally not_read_k_inst).
 
     Definition write_read_write
                (k': Key)
@@ -323,38 +355,13 @@ Section MAP.
         -> halt_satisfies _ (snd (runTL _
                                         int
                                         (write_read_write k' v')
-                                        policy)).
+                                        policy_step)).
+      Proof.
         intros.
         cbn.
-        destruct (sumbool_and _ _ _ _ (k =? k) (v =? v)).
-        cbn.
-        destruct (v =? v).
-        destruct (sumbool_and _ _ _ _ (true_dec) (true_dec)).
-        cbn.
-        destruct (k =? k').
-        cbn.
-        trivial.
-        cbn.
-        destruct (v =? v').
-        apply H0 in e0.
-        destruct e0.
-        destruct a0.
-        destruct H1.
-        cbn.
-        trivial.
-        cbn.
-        trivial.
-        cbn.
-        trivial.
-        cbn.
-        destruct (sumbool_and _ _ _ _ (k =? k) (v =? v')).
-        destruct (v =? v').
-        cbn.
-        trivial.
-        cbn.
-        trivial.
-        cbn.
-        trivial.
+        destruct (sumbool_and _ _ _ _ (k =? k) (v =? v)); cbn.
+        + trivial.
+        + destruct (sumbool_and _ _ _ _ (k =? k) (v =? v')); cbn; trivial.
       Qed.
     End PROOF.
   End TL.
