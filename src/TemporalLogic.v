@@ -16,6 +16,49 @@ Section TEMPORAL_LOGIC.
   Notation "p ? a" := (prop_dec p a) (at level 51).
   Notation "p .? a" := (prop p a) (at level 51).
 
+  Definition prop_eq
+             (p p': Instant)
+    : Prop :=
+    forall (a: A), p .? a <-> p' .? a.
+
+  Lemma prop_eq_refl
+        (p: Instant)
+    : prop_eq p p.
+  Proof.
+    intro a; split; intro Hp; exact Hp.
+  Qed.
+
+  Lemma prop_eq_sym
+        (p p': Instant)
+    : prop_eq p p'
+      -> prop_eq p' p.
+  Proof.
+    intros Hp a.
+    split; intro Hp'; destruct (Hp a) as [H1 H2].
+    + apply (H2 Hp').
+    + apply (H1 Hp').
+  Qed.
+
+  Lemma prop_eq_trans
+        (p p' p'': Instant)
+    : prop_eq p p'
+      -> prop_eq p' p''
+      -> prop_eq p p''.
+  Proof.
+    intros H1 H2 a.
+    destruct (H1 a) as [H1_1 H1_2].
+    destruct (H2 a) as [H2_1 H2_2].
+    split; intro H.
+    + apply (H2_1 (H1_1 H)).
+    + apply (H1_2 (H2_2 H)).
+  Qed.
+
+  Add Parametric Relation: (Instant) (prop_eq)
+      reflexivity proved by (prop_eq_refl)
+      symmetry proved by (prop_eq_sym)
+      transitivity proved by (prop_eq_trans)
+        as prop_eq_rel.
+
   Inductive TL: Type :=
   | true
     : TL
@@ -209,8 +252,16 @@ Arguments switch [_].
 Arguments TL_step [_].
 Arguments tl_step [_].
 
+Arguments prop_dec [_].
+Arguments prop [_].
+
+Notation "p ? a" := (prop_dec p a) (at level 51): instant_scope.
+Notation "p .? a" := (prop p a) (at level 51): instant_scope.
+
 Section RUN_TL.
   Variable (I: Type -> Type).
+
+  Local Open Scope instant_scope.
 
   Inductive ISet: Type :=
   | instruction {A: Type}
