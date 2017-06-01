@@ -284,6 +284,30 @@ Section RUN_TL.
                          (snd (runTL int p' tl))
     end.
 
+  Definition evalTL
+             {A: Type}
+             (int: Interp I)
+             (p: Program I A)
+             (tl: TL (ISet))
+    : A :=
+    fst (fst (runTL int p tl)).
+
+  Definition execTL
+             {A: Type}
+             (int: Interp I)
+             (p: Program I A)
+             (tl: TL (ISet))
+    : Interp I :=
+    snd (fst (runTL int p tl)).
+
+  Definition deriveTL
+             {A: Type}
+             (int: Interp I)
+             (p: Program I A)
+             (tl: TL (ISet))
+    : TL (ISet) :=
+    snd (runTL int p tl).
+
   Inductive TL_run
             {A: Type}
     : TL A -> TL A -> Prop :=
@@ -392,7 +416,7 @@ Section RUN_TL.
              (p: Program I A)
              (tl: TL ISet)
              (int: Interp I),
-      TL_run tl (snd (runTL int p tl)).
+      TL_run tl (deriveTL int p tl).
   Proof.
     induction p.
     + intros tl int.
