@@ -661,3 +661,67 @@ Section RUN_TL.
     + reflexivity.
   Qed.
 End RUN_TL.
+
+Section TL_CONTRACT.
+  Variable (I: Type -> Type).
+
+  Record TLContract :=
+    { tl_requirements
+      : TL (ISet I)
+    ; tl_promises {A: Type}
+                  (i: I A)
+      : typeret i -> Prop
+    }.
+
+  Definition contract_step
+             {A: Type}
+             (i: I A)
+             (c: TLContract)
+    : TLContract :=
+    {| tl_requirements := tl_step (instruction _ i) (tl_requirements c)
+     ; tl_promises := fun _ i => tl_promises c i
+     |}.
+
+  Definition contract_derive
+             {A: Type}
+             (p: Program I A)
+             (int: Interp I)
+             (c: TLContract)
+    : TLContract :=
+    {| tl_requirements := deriveTL _ int p (tl_requirements c)
+     ; tl_promises := fun _ i => tl_promises c i
+     |}.
+
+  CoInductive TLEnforcer
+              (int: Interp I)
+    : TLContract -> Prop :=
+  | enforced (c: TLContract)
+             (Hprom: forall {A: Type}
+                            (i: I A),
+                 instruction_satisfies _ (instruction _ i) (tl_requirements c)
+                 -> (tl_promises c i) (evalInstruction i int))
+             (Henf:  forall {A: Type}
+                            (i: I A),
+                 instruction_satisfies _ (instruction _ i) (tl_requirements c)
+                 -> TLEnforcer (execInstruction i int) (contract_step i c))
+    : TLEnforcer int c.
+
+  Inductive tl_contractfull_program
+            (c: TLContract)
+    : forall {A: Type}, Program I A -> Type :=
+  | tl_contractfull_instr {A: Type}
+                          (i: I A)
+                          (Hreq: instruction_satisfies _ (instruction _ i) (tl_requirements c))
+    : tl_contractfull_program c (instr i)
+  | tl_contractfull_ret {A: Type}
+                        (a: A)
+    : tl_contractfull_program c (ret a)
+  | tl_contractfull_inv {A B: Type}
+                        (p: Program I A)
+                        (f: A -> Program I B)
+                        (Hcp: tl_contractfull_program c p)
+                        (Hnext: forall (int: Interp I)
+                                       (Henf: TLEnforcer int (contract_derive p int c)),
+                            tl_contractfull_program (contract_derive p int c) (f (evalProgram p int)))
+    : tl_contractfull_program c (bind p f).
+End TL_CONTRACT.
