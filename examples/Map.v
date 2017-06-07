@@ -69,7 +69,7 @@ Section MAP.
         (s: State)
         (k: Key)
         (v: Value)
-    : evalProgram (read_then_write k v) (MapInterp s) == v.
+    : evalProgram (MapInterp s) (read_then_write k v) == v.
   Proof.
     cbn.
     destruct (equiv_dec) as [He|Hne].
@@ -83,9 +83,10 @@ Section MAP.
         (k k': Key)
         (v: Value)
         (Hneq: ~ (k == k'))
-    : evalProgram (_ <- [Write k' v];
-                   [Read k]) (MapInterp s)
-       == evalProgram ([Read k]) (MapInterp s).
+    : evalProgram (MapInterp s)
+                  (_ <- [Write k' v];
+                     [Read k])
+       == evalProgram (MapInterp s) ([Read k]) .
   Proof.
     cbn.
     destruct (equiv_dec k' k) as [He|Hne].
@@ -126,7 +127,7 @@ Section MAP.
       forall k, (s k) /= x.
 
     Lemma map_interp_preserves_inv
-      : contract_preserves_inv map_program_step x_free_map never_read_x_contract.
+      : contract_preserves_inv never_read_x_contract x_free_map map_program_step.
     Proof.
       unfold contract_preserves_inv.
       induction i.
@@ -143,7 +144,7 @@ Section MAP.
     Qed.
 
     Lemma map_interp_enforces_promises
-      : contract_enforces_promises map_program_step x_free_map never_read_x_contract.
+      : contract_enforces_promises never_read_x_contract x_free_map map_program_step.
     Proof.
       unfold contract_enforces_promises.
       induction i.
@@ -154,16 +155,17 @@ Section MAP.
         trivial.
     Qed.
 
-    Lemma MapInterp_enforce_contract
-      : forall (s:    State)
-               (Hinv: x_free_map s),
-        Enforcer never_read_x_contract (MapInterp s).
+    Corollary MapInterp_enforce_contract
+              (s:    State)
+              (Hinv: x_free_map s)
+      : Enforcer never_read_x_contract (MapInterp s).
     Proof.
-      apply (stateful_contract_enforcement map_program_step
+      apply (stateful_contract_enforcement never_read_x_contract
                                            x_free_map
-                                           never_read_x_contract
+                                           map_program_step
                                            map_interp_preserves_inv
                                            map_interp_enforces_promises).
+      exact Hinv.
     Qed.
 
     Variables (k k': Key).
@@ -184,7 +186,7 @@ Section MAP.
       + intros int Henf.
         constructor.
         inversion Henf as [Hprom Hreq].
-        assert (never_read_x_promises Value (Read k) (evalInstruction  (Read k) int))
+        assert (never_read_x_promises Value (Read k) (evalInstruction int (Read k)))
           as Hnext
             by (apply Hprom; cbn; trivial).
         exact Hnext.
@@ -275,10 +277,9 @@ Section MAP.
       : forall k' v',
         k /= k'
         -> x /= v'
-        -> halt_satisfies _ (snd (runTL _
-                                        int
-                                        (write_read_write k' v')
-                                        policy_step)).
+        -> halt_satisfies (snd (runTL int
+                                      (write_read_write k' v')
+                                      policy_step)).
     Proof.
       intros.
       cbn.

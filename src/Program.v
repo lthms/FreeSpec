@@ -366,20 +366,18 @@ Lemma stateful_contract_enforcement
       (step: PS State)
       (Hpres: contract_preserves_inv c inv step)
       (Henf: contract_enforces_promises c inv step)
-  : forall {A: Type}
-           (i: I A)
-           (s: State)
+  : forall (s: State)
   , inv s
     -> Enforcer c (mkInterp step s).
 Proof.
   cofix.
-  intros A i s Hinv.
+  intros s Hinv.
   constructor.
-  + intros B i' Hreq.
-    apply (Henf B i' s Hinv Hreq).
-  + intros B i' Hreq.
-    apply (Hpres B i' s) in Hinv.
-    ++ apply (stateful_contract_enforcement B i' (snd (step B s i')) Hinv).
+  + intros A i Hreq.
+    apply (Henf A i s Hinv Hreq).
+  + intros A i Hreq.
+    apply (Hpres A i s) in Hinv.
+    ++ apply (stateful_contract_enforcement (snd (step A s i)) Hinv).
     ++ exact Hreq.
 Qed.
 
