@@ -9,6 +9,40 @@ Require Import FreeSpec.Equiv.
 
 Local Open Scope eq_scope.
 
+(** * The [Program] Monad
+
+    In this section, we introduce the [Program] Monad. Its definition
+    is inspired by the Haskell #<a
+    href="https://hackage.haskell.org/package/operational">#operational#</a>#
+    package.  Thanks to the [Program] Monad, it becomes easy to
+    specify complex computations upon a given set of instructions.
+
+    To realize a given computation, the [runProgram] function is
+    provided. This functions takes an [Interp] in addition to a
+    [Program] and returns the result of the computation along with a
+    new interpreter. Two helpers functions ([evalProgram] and
+    [execProgram]) are provided.
+
+ *)
+
+(** ** Definition
+
+    Given [I] a set of instructions (that is, of kind [Type -> Type])
+    and [A] the type of the result of a given computation, the type of
+    this computation specification is [Program I A].
+
+    Under the hood, a [Program] is an AST to wrap and chain several
+    call to an underlying interface. More precisely, a [Program] can
+    be:
+
+    - [ret a], a pure value
+    - [instr i], a call to the underlying interface through the
+      instruction [i]
+    - [bind p f], a first computation whose result determines the
+      following computation to execute
+
+ *)
+
 Inductive Program
           (I: Type -> Type)
           (A: Type) :=
@@ -24,6 +58,14 @@ Inductive Program
 Arguments ret [I A] (a).
 Arguments instr [I A] (i).
 Arguments bind [I A B] (p f).
+
+(** ** Execution
+
+    To actually perform a computation [Program I A], one needs a
+    corresponding interpreter [Interp I] for the interface described
+    by [I].
+
+ *)
 
 Fixpoint runProgram
          {I: Type -> Type}
@@ -53,6 +95,14 @@ Definition execProgram
   : Interp I :=
   snd (runProgram int p).
 
+(** ** [Program]s Equivalence
+
+    Two [Program] are equivalent when they always gives both the exact
+    same result and two equivalent interpreter (according to
+    [interp_eq]), no matter the input interpreter.
+
+ *)
+
 CoInductive program_eq
             {I: Type -> Type}
             {A: Type}
@@ -60,9 +110,19 @@ CoInductive program_eq
             (p': Program I A) :=
 | program_is_eq (Hres: forall (int: Interp I),
                     evalProgram int p = evalProgram int p')
+(*
+  TODO: Do we really need the interpreter equivalence? maybe the
+  simple equality is enough
+ *)
                 (Hnext: forall (int: Interp I),
                     execProgram int p == execProgram int p')
   : program_eq p p'.
+
+(**
+    We can easily prove this property is indeed and equivalence by
+    showing it is reflexive, symmetric and transitive.
+
+ *)
 
 Lemma program_eq_refl
       {I: Type -> Type}
@@ -118,30 +178,11 @@ Add Parametric Relation
     transitivity proved by (program_eq_trans)
       as program_equiv.
 
-Lemma interp_assoc
-      {I: Type -> Type}
-      {A B C: Type}
-      (p: Program I A)
-      (f: A -> Program I B)
-      (g: B -> Program I C)
-  : program_eq (bind (bind p f) g) (bind p (fun x => bind (f x) g)).
-Proof.
-  constructor.
-  + reflexivity.
-  + reflexivity.
-Qed.
+(** Also, we can easily show the [program_eq] property is strong
+    enough to be used to replace two equivalent programs in several
+    cases.
 
-Lemma interp_assoc2
-           {I: Type -> Type}
-           {A B: Type}
-           (int: Interp I)
-           (p: Program I A)
-           (f: A -> Program I B)
-  : runProgram int (bind p f)
-    == runProgram (execProgram int p) (f (evalProgram int p)).
-Proof.
-  reflexivity.
-Qed.
+ *)
 
 Add Parametric Morphism
     (I: Type -> Type)
@@ -181,6 +222,54 @@ Proof.
   unfold execProgram.
   rewrite Heq.
   reflexivity.
+Qed.
+
+(** ** Monad Laws
+
+    [Program] _is_ a Monad and therefore obeys the Monad laws.  The
+    #<a href="https://wiki.haskell.org/Monad_laws">#Haskell Wiki#</a>#
+    explains in depth what are the laws and why they are usefull. In a
+    nutshell, the laws are intended to ease the use of a given by a
+    programmer by making the monad functionning more predictible.
+
+    Fortunately, in our case, proving the Monad laws is straightforward.
+
+ *)
+
+Fact program_left_identity
+     {I: Type -> Type}
+     {A B: Type}
+     (a: A)
+     (f: A -> Program I B)
+  : program_eq (bind (ret a) f) (f a).
+Proof.
+  constructor.
+  + reflexivity.
+  + reflexivity.
+Qed.
+
+Fact program_right_identity
+     {I: Type -> Type}
+     {A: Type}
+     (p: Program I A)
+  : program_eq (bind p (@ret I A)) p.
+Proof.
+  constructor.
+  + reflexivity.
+  + reflexivity.
+Qed.
+
+Fact program_associativity
+     {I: Type -> Type}
+     {A B C: Type}
+     (p: Program I A)
+     (f: A -> Program I B)
+     (g: B -> Program I C)
+  : program_eq (bind (bind p f) g) (bind p (fun x => bind (f x) g)).
+Proof.
+  constructor.
+  + reflexivity.
+  + reflexivity.
 Qed.
 
 Definition typeret

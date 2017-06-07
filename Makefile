@@ -34,6 +34,7 @@ html:
 	rm -rf docs/html
 	make -f $(SUBMAKE) gallinahtml
 	mv html docs/
+	cp docs/assets/coqdoc.css docs/html
 
 tex:
 	make -f $(SUBMAKE) all-gal.pdf
