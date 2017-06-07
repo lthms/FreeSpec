@@ -5,6 +5,13 @@ Require Import FreeSpec.Equiv.
 
 Local Open Scope eq_scope.
 
+Definition typeret
+           {I: Type -> Type}
+           {A: Type}
+           (i: I A)
+  : Type := A.
+
+
 CoInductive Interp
             (I: Type -> Type)
   : Type :=
@@ -264,3 +271,19 @@ Proof.
   rewrite Heq.
   reflexivity.
 Qed.
+
+Definition PS
+           {I: Type -> Type}
+           (State: Type)
+  := forall {A: Type}, State -> I A -> (A * State).
+
+CoFixpoint mkInterp
+           {I: Type -> Type}
+           {State: Type}
+           (ps: PS State)
+           (s: State)
+  : Interp I :=
+  interp (
+      fun (A: Type)
+          (p: I A) =>
+        (fst  (ps A s p), mkInterp ps (snd (ps A s p)))).

@@ -3,6 +3,7 @@ Require Import FreeSpec.Program.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Utils.
 Require Import FreeSpec.Equiv.
+Require Import FreeSpec.Contract.
 
 Require Import Sumbool.
 

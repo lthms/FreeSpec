@@ -1,6 +1,7 @@
 src/Equiv.v
 src/Interp.v
 src/Program.v
+src/Contract.v
 src/Refine.v
 src/TemporalLogic.v
 src/Utils.v
