@@ -804,18 +804,6 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma contract_derives_bind_ret
-      {I: Type -> Type}
-      {A B: Type}
-      (a: A)
-      (f: A -> Program I B)
-      (int: Interp I)
-      (c: TLContract I)
-  : contract_derive (bind (ret a) f) int c = contract_derive (f a) int c.
-Proof.
-  reflexivity.
-Qed.
-
 CoInductive TLEnforcer
             {I: Type -> Type}
             (int: Interp I)
@@ -1067,4 +1055,131 @@ Proof.
     ++ exact Hcp.
     ++ apply Hnext.
        exact He.
+Qed.
+
+Definition tl_contract_preserves_inv
+           {I: Type -> Type}
+           {State: Type}
+           (c: TLContract I)
+           (inv: TL (ISet I) -> State -> Prop)
+           (step: PS State)
+  := forall {A: Type}
+            (i: I A)
+            (s: State)
+            (tl: TL (ISet I))
+            (Hderive: TL_derive (tl_requirements c) tl),
+    inv tl s
+    -> instruction_satisfies (instruction i) tl
+    -> inv (tl_step (instruction i) tl) (snd (step A s i)).
+
+Lemma tl_contract_preserves_inv_propagates
+      {I: Type -> Type}
+      {State: Type}
+      (c: TLContract I)
+      (inv: TL (ISet I) -> State -> Prop)
+      (step: PS State)
+  : forall {A: Type}
+           (i: I A),
+    tl_contract_preserves_inv c inv step
+    -> instruction_satisfies (instruction i) (tl_requirements c)
+    -> tl_contract_preserves_inv (contract_step i c) inv step.
+Admitted.
+
+Definition tl_contract_enforces_promises
+           {I: Type -> Type}
+           {State: Type}
+           (c: TLContract I)
+           (inv: TL (ISet I) -> State -> Prop)
+           (step: PS State)
+  := forall {A: Type}
+            (i: I A)
+            (s: State)
+            (tl: TL (ISet I))
+            (Hderive: TL_derive (tl_requirements c) tl),
+    inv tl s
+    -> instruction_satisfies (instruction i) tl
+    -> tl_promises c i (fst (step A s i)).
+
+Lemma tl_contract_enforces_promises_propagates
+      {I: Type -> Type}
+      {State: Type}
+      (c: TLContract I)
+      (inv: TL (ISet I) -> State -> Prop)
+      (step: PS State)
+  : forall {A: Type}
+           (i: I A),
+    tl_contract_enforces_promises c inv step
+    -> instruction_satisfies (instruction i) (tl_requirements c)
+    -> tl_contract_enforces_promises (contract_step i c) inv step.
+Admitted.
+
+Fact _stateful_contract_enforcement
+     {I: Type -> Type}
+     {State: Type}
+     (c: TLContract I)
+     (inv: TL (ISet I) -> State -> Prop)
+     (step: PS State)
+  : forall (c': TLContract I)
+           (Hpres: tl_contract_preserves_inv c' inv step)
+           (Henf: tl_contract_enforces_promises c' inv step)
+           (s: State),
+    tl_promises c = tl_promises c'
+    -> TL_derive (tl_requirements c) (tl_requirements c')
+    -> inv (tl_requirements c') s
+    -> TLEnforcer (mkInterp step s) c'.
+Proof.
+  cofix.
+  intros c' Hpres Henf s Hprom_eq Hderive Hinv .
+  assert (TL_derive (tl_requirements c') (tl_requirements c'))
+    as Hderive'
+      by (apply tl_derives_tl).
+  constructor.
+  + intros A i Hreq.
+    unfold tl_contract_enforces_promises in Henf.
+    cbn.
+    apply (Henf A i s (tl_requirements c') Hderive' Hinv Hreq).
+  + intros A i Hreq.
+    apply _stateful_contract_enforcement.
+    ++ apply tl_contract_preserves_inv_propagates.
+       +++ exact Hpres.
+       +++ exact Hreq.
+    ++ apply tl_contract_enforces_promises_propagates.
+       +++ exact Henf.
+       +++ exact Hreq.
+    ++ rewrite Hprom_eq.
+       reflexivity.
+    ++ unfold contract_step.
+       cbn.
+       apply tl_derive_trans with (tl':=tl_requirements c').
+       +++ exact Hderive.
+       +++ apply tl_step_is_tl_derive.
+           apply TL_step_is_tl_step.
+    ++ unfold tl_contract_preserves_inv in Hpres.
+       cbn.
+       apply (Hpres A i s (tl_requirements c')).
+       +++ apply tl_derives_tl.
+       +++ exact Hinv.
+       +++ exact Hreq.
+Qed.
+
+Lemma tl_stateful_contract_enforcement
+      {I: Type -> Type}
+      {State: Type}
+      (c: TLContract I)
+      (inv: TL (ISet I) -> State -> Prop)
+      (step: PS State)
+      (Hpres: tl_contract_preserves_inv c inv step)
+      (Henf: tl_contract_enforces_promises c inv step)
+  : forall (s: State),
+    inv (tl_requirements c) s
+    -> TLEnforcer (mkInterp step s) c.
+Proof.
+  intros s Hinv.
+  assert (tl_promises c = tl_promises c)
+    as Heq
+      by reflexivity.
+  assert (TL_derive (tl_requirements c) (tl_requirements c))
+    as Hderive
+      by (apply tl_derives_tl).
+  apply (_stateful_contract_enforcement c inv step c Hpres Henf s Heq Hderive Hinv).
 Qed.
