@@ -1,7 +1,6 @@
 Require Import Coq.Classes.Equivalence.
 Require Import Coq.Setoids.Setoid.
 
-Require Import FreeSpec.Tuple.
 Require Import FreeSpec.Equiv.
 
 Local Open Scope eq_scope.
