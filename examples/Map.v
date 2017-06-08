@@ -1,4 +1,5 @@
 Require Import FreeSpec.TemporalLogic.
+Require Import FreeSpec.TemporalLogic.Notations.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Utils.

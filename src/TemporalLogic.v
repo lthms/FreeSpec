@@ -34,10 +34,10 @@ Arguments prop_dec [A] (_ _).
 
  *)
 
-Notation "p ? a" := (prop_dec p a) (at level 51): formula_scope.
-Notation "p .? a" := (prop p a) (at level 51): formula_scope.
+Notation "p ? a" := (prop_dec p a) (at level 51): dec_scope.
+Notation "p .? a" := (prop p a) (at level 51): dec_scope.
 
-Local Open Scope formula_scope.
+Local Open Scope dec_scope.
 Local Open Scope eq_scope.
 
 (** ** [Formula] Definition
@@ -68,17 +68,6 @@ Arguments globally [_] (_).
 Arguments eventually [_] (_).
 Arguments next [_] (_).
 Arguments switch [_] (_ _ _).
-
-(** We define several notation to make a formula more readable.
-
- *)
-
-Notation "⬜ p" := (globally p) (at level 70): formula_scope.
-Notation "◊ p" := (eventually p) (at level 70): formula_scope.
-Notation "⃝ p" := (next p) (at level 70): formula_scope.
-Notation "⟙" := (true) (at level 70): formula_scope.
-Notation "⟘" := (false) (at level 70): formula_scope.
-Notation "f1 ⊢ p ⟶ f2" := (switch f1 p f2) (at level 70): formula_scope.
 
 Fixpoint halt_satisfies
          {A: Type}

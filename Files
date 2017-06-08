@@ -5,6 +5,7 @@ src/Equiv.v
 src/Contract.v
 src/Refine.v
 src/TemporalLogic.v
+src/TemporalLogic/Notations.v
 src/Utils.v
 
 examples/Map.v
