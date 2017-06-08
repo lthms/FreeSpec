@@ -1,14 +1,26 @@
+(* begin hide *)
 Require Import Coq.Program.Equality.
 Require Import Coq.Bool.Sumbool.
 Require Import Coq.Logic.Classical.
 Require Import Coq.Setoids.Setoid.
+(* end hide *)
 
 Require Import FreeSpec.Utils.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Equiv.
 
-Record Instant
+(** * Temporal Logic [Formula]
+
+    ** [Dec]idable Proprety
+
+    A Decidable Property is a predicate for which an answer can be
+    computed. Not all predicate can be easily turned into decidable
+    properties.
+
+ *)
+
+Record Dec
        (A: Type) :=
   { prop: A -> Prop
   ; prop_dec: forall (a: A), {prop a}+{~prop a}
@@ -17,29 +29,38 @@ Record Instant
 Arguments prop [A] (_ _).
 Arguments prop_dec [A] (_ _).
 
-Notation "p ? a" := (prop_dec p a) (at level 51): instant_scope.
-Notation "p .? a" := (prop p a) (at level 51): instant_scope.
+(** We define two notations, [p? a] and [p.? a] to use either the
+    predicate or the decidable version of the predicate.
 
-Local Open Scope instant_scope.
+ *)
+
+Notation "p ? a" := (prop_dec p a) (at level 51): formula_scope.
+Notation "p .? a" := (prop p a) (at level 51): formula_scope.
+
+Local Open Scope formula_scope.
 Local Open Scope eq_scope.
 
-Inductive TL
+(** ** [Formula] Definition
+
+ *)
+
+Inductive Formula
           (A: Type)
   : Type :=
 | true
-  : TL A
+  : Formula A
 | false
-  : TL A
-| globally (prop: Instant A)
-  : TL A
-| eventually (prop: Instant A)
-  : TL A
-| next (tl: TL A)
-  : TL A
-| switch (tl1: TL A)
-         (prop: Instant A)
-         (tl2: TL A)
-  : TL A.
+  : Formula A
+| globally (prop: Dec A)
+  : Formula A
+| eventually (prop: Dec A)
+  : Formula A
+| next (tl: Formula A)
+  : Formula A
+| switch (tl1: Formula A)
+         (prop: Dec A)
+         (tl2: Formula A)
+  : Formula A.
 
 Arguments true [_].
 Arguments false [_].
@@ -48,9 +69,20 @@ Arguments eventually [_] (_).
 Arguments next [_] (_).
 Arguments switch [_] (_ _ _).
 
+(** We define several notation to make a formula more readable.
+
+ *)
+
+Notation "⬜ p" := (globally p) (at level 70): formula_scope.
+Notation "◊ p" := (eventually p) (at level 70): formula_scope.
+Notation "⃝ p" := (next p) (at level 70): formula_scope.
+Notation "⟙" := (true) (at level 70): formula_scope.
+Notation "⟘" := (false) (at level 70): formula_scope.
+Notation "f1 ⊢ p ⟶ f2" := (switch f1 p f2) (at level 70): formula_scope.
+
 Fixpoint halt_satisfies
          {A: Type}
-         (tl: TL A)
+         (tl: Formula A)
   : Prop :=
   match tl with
   | eventually _ => False
@@ -61,7 +93,7 @@ Fixpoint halt_satisfies
 
 Fixpoint halt_satisfies_dec
          {A: Type}
-         (tl: TL A)
+         (tl: Formula A)
   : {halt_satisfies tl}+{~halt_satisfies tl}.
   refine (
       match tl with
@@ -74,39 +106,39 @@ Fixpoint halt_satisfies_dec
     firstorder.
 Defined.
 
-Inductive TL_step
+Inductive Formula_step
           {A: Type}
-  : TL A -> TL A -> Prop :=
-| true_stays_true: TL_step true true
-| false_stays_false: TL_step false false
+  : Formula A -> Formula A -> Prop :=
+| true_stays_true: Formula_step true true
+| false_stays_false: Formula_step false false
 | globally_stays_globally
-    (prop: Instant A)
-  : TL_step (globally prop) (globally prop)
+    (prop: Dec A)
+  : Formula_step (globally prop) (globally prop)
 | globally_can_fail
-    (prop: Instant A)
-  : TL_step (globally prop) false
+    (prop: Dec A)
+  : Formula_step (globally prop) false
 | eventually_stays_eventually
-    (prop: Instant A)
-  : TL_step (eventually prop) (eventually prop)
+    (prop: Dec A)
+  : Formula_step (eventually prop) (eventually prop)
 | eventually_can_succeed
-    (prop: Instant A)
-  : TL_step (eventually prop) true
+    (prop: Dec A)
+  : Formula_step (eventually prop) true
 | next_steps_unwrap
-    (tl: TL A)
-  : TL_step (next tl) tl
+    (tl: Formula A)
+  : Formula_step (next tl) tl
 | switch_steps_before
-    (tl1 tl2 tl3: TL A)
-    (prop: Instant A)
-    (Hderive: TL_step tl1 tl2)
-  : TL_step (switch tl1 prop tl3) (switch tl2 prop tl3)
+    (tl1 tl2 tl3: Formula A)
+    (prop: Dec A)
+    (Hderive: Formula_step tl1 tl2)
+  : Formula_step (switch tl1 prop tl3) (switch tl2 prop tl3)
 | switch_step_after_small
-    (tl1 tl2: TL A)
-    (prop: Instant A)
-  : TL_step (switch tl1 prop tl2) tl2
+    (tl1 tl2: Formula A)
+    (prop: Dec A)
+  : Formula_step (switch tl1 prop tl2) tl2
 | switch_can_fail
-    (tl1 tl2: TL A)
-    (prop: Instant A)
-  : TL_step (switch tl1 prop tl2) false.
+    (tl1 tl2: Formula A)
+    (prop: Dec A)
+  : Formula_step (switch tl1 prop tl2) false.
 
 Arguments true_stays_true [_].
 Arguments false_stays_false [_].
@@ -122,7 +154,7 @@ Arguments switch_can_fail [_] (_ _ _).
 Fixpoint instruction_satisfies
          {A: Type}
          (a: A)
-         (tl: TL A)
+         (tl: Formula A)
   : Prop :=
   match tl with
   | true => True
@@ -140,7 +172,7 @@ Fixpoint instruction_satisfies
 Fixpoint instruction_satisfies_dec
          {A: Type}
          (a: A)
-         (tl: TL A)
+         (tl: Formula A)
   : {instruction_satisfies a tl}+{~instruction_satisfies a tl}.
   refine (
       match tl with
@@ -185,8 +217,8 @@ Defined.
 Fixpoint tl_step
          {A: Type}
          (a: A)
-         (tl: TL A)
-  : TL A :=
+         (tl: Formula A)
+  : Formula A :=
   if instruction_satisfies_dec a tl
   then match tl with
        | next tl
@@ -204,11 +236,11 @@ Fixpoint tl_step
        end
   else false.
 
-Lemma TL_step_is_tl_step
+Lemma Formula_step_is_tl_step
       {A: Type}
       (a: A)
-      (tl: TL A)
-  : TL_step tl (tl_step a tl).
+      (tl: Formula A)
+  : Formula_step tl (tl_step a tl).
 Proof.
   induction tl.
   + constructor.
@@ -240,57 +272,57 @@ Inductive ISet
 
 Arguments instruction [_ _].
 
-Fixpoint runTL
+Fixpoint runFormula
          {I: Type -> Type}
          {A: Type}
          (int: Interp I)
          (p: Program I A)
-         (tl: TL (ISet I))
-  : (A * (Interp I) * TL (ISet I)) :=
+         (tl: Formula (ISet I))
+  : (A * (Interp I) * Formula (ISet I)) :=
   match p with
   | ret a => (a, int, tl)
   | instr i => (evalInstruction int i,
                 execInstruction int i,
                 tl_step (instruction i) tl)
-  | bind p' f => runTL (snd (fst (runTL int p' tl)))
-                       (f (fst (fst (runTL int p' tl))))
-                       (snd (runTL int p' tl))
+  | bind p' f => runFormula (snd (fst (runFormula int p' tl)))
+                       (f (fst (fst (runFormula int p' tl))))
+                       (snd (runFormula int p' tl))
   end.
 
-Definition evalTL
+Definition evalFormula
            {I: Type -> Type}
            {A: Type}
            (int: Interp I)
            (p: Program I A)
-           (tl: TL (ISet I))
+           (tl: Formula (ISet I))
   : A :=
-  fst (fst (runTL int p tl)).
+  fst (fst (runFormula int p tl)).
 
-Definition execTL
+Definition execFormula
            {I: Type -> Type}
            {A: Type}
            (int: Interp I)
            (p: Program I A)
-           (tl: TL (ISet I))
+           (tl: Formula (ISet I))
   : Interp I :=
-  snd (fst (runTL int p tl)).
+  snd (fst (runFormula int p tl)).
 
-Definition deriveTL
+Definition deriveFormula
            {I: Type -> Type}
            {A: Type}
            (int: Interp I)
            (p: Program I A)
-           (tl: TL (ISet I))
-  : TL (ISet I) :=
-  snd (runTL int p tl).
+           (tl: Formula (ISet I))
+  : Formula (ISet I) :=
+  snd (runFormula int p tl).
 
 Lemma run_tl_run_program_same
       {I: Type -> Type}
       {A: Type}
   : forall (p: Program I A)
-           (tl: TL (ISet I))
+           (tl: Formula (ISet I))
            (int: Interp I),
-    fst (runTL int p tl) = runProgram int p.
+    fst (runFormula int p tl) = runProgram int p.
 Proof.
   induction p; intros tl int; cbn.
   + reflexivity.
@@ -302,12 +334,12 @@ Lemma exec_tl_exec_program_same
       {I: Type -> Type}
       {A: Type}
   : forall (p: Program I A)
-           (tl: TL (ISet I))
+           (tl: Formula (ISet I))
            (int: Interp I),
-    execTL int p tl = execProgram int p.
+    execFormula int p tl = execProgram int p.
 Proof.
   intros p tl int.
-  unfold execTL, execProgram.
+  unfold execFormula, execProgram.
   rewrite run_tl_run_program_same.
   reflexivity.
 Qed.
@@ -316,12 +348,12 @@ Lemma eval_tl_eval_program_same
       {I: Type -> Type}
       {A: Type}
   : forall (p: Program I A)
-           (tl: TL (ISet I))
+           (tl: Formula (ISet I))
            (int: Interp I),
-    evalTL int p tl = evalProgram int p.
+    evalFormula int p tl = evalProgram int p.
 Proof.
   intros p tl int.
-  unfold evalTL, execProgram.
+  unfold evalFormula, execProgram.
   rewrite run_tl_run_program_same.
   reflexivity.
 Qed.
@@ -329,12 +361,12 @@ Qed.
 Add Parametric Morphism
     (I: Type -> Type)
     (A: Type)
-  : (evalTL)
+  : (evalFormula)
     with signature (eq) ==> (@program_eq I A) ==> (eq) ==> (eq)
       as eval_tl_morphism.
 Proof.
   intros int p p' Heq tl.
-  unfold evalTL.
+  unfold evalFormula.
   rewrite run_tl_run_program_same.
   rewrite run_tl_run_program_same.
   rewrite Heq.
@@ -344,12 +376,12 @@ Qed.
 Add Parametric Morphism
     (I: Type -> Type)
     (A: Type)
-  : (execTL)
+  : (execFormula)
     with signature (eq) ==> (@program_eq I A) ==> (eq) ==> (@interp_eq I)
       as exec_tl_morphism.
 Proof.
   intros int p p' Heq tl.
-  unfold execTL.
+  unfold execFormula.
   rewrite run_tl_run_program_same.
   rewrite run_tl_run_program_same.
   rewrite Heq.
@@ -362,8 +394,8 @@ Lemma run_tl_bind_ret
       (int: Interp I)
       (a: A)
       (f: A -> Program I B)
-      (tl: TL (ISet I))
-  : runTL int (bind (ret a) f) tl = runTL int (f a) tl.
+      (tl: Formula (ISet I))
+  : runFormula int (bind (ret a) f) tl = runFormula int (f a) tl.
 Proof.
   reflexivity.
 Qed.
@@ -374,8 +406,8 @@ Lemma exec_tl_bind_ret
       (int: Interp I)
       (a: A)
       (f: A -> Program I B)
-      (tl: TL (ISet I))
-  : execTL int (bind (ret a) f) tl = execTL int (f a) tl.
+      (tl: Formula (ISet I))
+  : execFormula int (bind (ret a) f) tl = execFormula int (f a) tl.
 Proof.
   reflexivity.
 Qed.
@@ -386,34 +418,34 @@ Lemma derive_tl_bind_ret
       (int: Interp I)
       (a: A)
       (f: A -> Program I B)
-      (tl: TL (ISet I))
-  : deriveTL int (bind (ret a) f) tl = deriveTL int (f a) tl.
+      (tl: Formula (ISet I))
+  : deriveFormula int (bind (ret a) f) tl = deriveFormula int (f a) tl.
 Proof.
   reflexivity.
 Qed.
 
-Inductive TL_run
+Inductive Formula_run
           {A: Type}
-  : TL A -> TL A -> Prop :=
+  : Formula A -> Formula A -> Prop :=
 | tl_run_refl
-    (tl: TL A)
-  : TL_run tl tl
+    (tl: Formula A)
+  : Formula_run tl tl
 | tl_run_small_step
-    (from to: TL A)
-    (Hstep: TL_step from to)
-  : TL_run from to
+    (from to: Formula A)
+    (Hstep: Formula_step from to)
+  : Formula_run from to
 | tl_run_big_step
-    (from tl to: TL A)
-    (Hstep: TL_step from tl)
-    (Hrun: TL_run tl to)
-  : TL_run from to.
+    (from tl to: Formula A)
+    (Hstep: Formula_step from tl)
+    (Hrun: Formula_run tl to)
+  : Formula_run from to.
 
 Lemma tl_step_run_trans
       {A: Type}
-      (tl tl' tl'': TL A)
-  : TL_step tl tl'
-    -> TL_step tl' tl''
-    -> TL_run tl tl''.
+      (tl tl' tl'': Formula A)
+  : Formula_step tl tl'
+    -> Formula_step tl' tl''
+    -> Formula_run tl tl''.
 Proof.
   intros H1 H2.
   apply (tl_run_big_step tl tl' tl'').
@@ -423,42 +455,42 @@ Qed.
 
 Lemma tl_run_step_run
       {A: Type}
-      (tl tl' tl'': TL A)
-  : TL_run tl tl'
-    -> TL_step tl' tl''
-    -> TL_run tl tl''.
+      (tl tl' tl'': Formula A)
+  : Formula_run tl tl'
+    -> Formula_step tl' tl''
+    -> Formula_run tl tl''.
 Proof.
   intros H1 H2.
   induction H1.
   ++ constructor.
      exact H2.
   ++ apply (tl_step_run_trans from to tl'' Hstep H2).
-  ++ apply IHTL_run in H2.
+  ++ apply IHFormula_run in H2.
      apply (tl_run_big_step from tl tl'' Hstep H2).
 Qed.
 
 Lemma tl_run_trans
       {A: Type}
-      (tl tl' tl'': TL A)
-  : TL_run tl tl'
-    -> TL_run tl' tl''
-    -> TL_run tl tl''.
+      (tl tl' tl'': Formula A)
+  : Formula_run tl tl'
+    -> Formula_run tl' tl''
+    -> Formula_run tl tl''.
 Proof.
   intros H1 H2.
   induction H1.
   + exact H2.
   + apply (tl_run_big_step from to tl'' Hstep H2).
-  + apply IHTL_run in H2.
+  + apply IHFormula_run in H2.
     apply (tl_run_big_step from tl tl'' Hstep H2).
 Qed.
 
 Lemma next_derives_big
       {A: Type}
-      (tl tl': TL A)
-      (Hderive: TL_run tl tl')
-  : TL_run (next tl) tl'.
+      (tl tl': Formula A)
+      (Hderive: Formula_run tl tl')
+  : Formula_run (next tl) tl'.
 Proof.
-  assert (TL_run (next tl) tl)
+  assert (Formula_run (next tl) tl)
     as Hbefore
       by (repeat constructor).
   apply (tl_run_trans (next tl) tl tl' Hbefore Hderive).
@@ -466,12 +498,12 @@ Qed.
 
 Lemma switch_derives_after_big
       {A: Type}
-      (tl1 tl2 tl3: TL A)
-      (prop: Instant A)
-      (Hderive: TL_run tl2 tl3)
-  : TL_run (switch tl1 prop tl2) tl3.
+      (tl1 tl2 tl3: Formula A)
+      (prop: Dec A)
+      (Hderive: Formula_run tl2 tl3)
+  : Formula_run (switch tl1 prop tl2) tl3.
 Proof.
-  assert (TL_run (switch tl1 prop tl2) tl2)
+  assert (Formula_run (switch tl1 prop tl2) tl2)
     as Hrun'
       by (repeat constructor).
   apply (tl_run_trans (switch tl1 prop tl2) tl2 tl3 Hrun' Hderive).
@@ -479,10 +511,10 @@ Qed.
 
 Lemma switch_derives_before_big
       {A: Type}
-      (tl1 tl2 tl3: TL A)
-      (prop: Instant A)
-      (Hderive: TL_run tl1 tl2)
-  : TL_run (switch tl1 prop tl3) (switch tl2 prop tl3).
+      (tl1 tl2 tl3: Formula A)
+      (prop: Dec A)
+      (Hderive: Formula_run tl1 tl2)
+  : Formula_run (switch tl1 prop tl3) (switch tl2 prop tl3).
 Proof.
   induction Hderive.
   + apply tl_run_refl.
@@ -495,13 +527,13 @@ Proof.
     ++ exact IHHderive.
 Qed.
 
-Lemma TL_run_is_runTL
+Lemma Formula_run_is_runFormula
   : forall {I: Type -> Type}
            {A: Type}
            (p: Program I A)
-           (tl: TL (ISet I))
+           (tl: Formula (ISet I))
            (int: Interp I),
-    TL_run tl (deriveTL int p tl).
+    Formula_run tl (deriveFormula int p tl).
 Proof.
   induction p.
   + intros tl int.
@@ -510,58 +542,58 @@ Proof.
   + intros tl int.
     cbn.
     constructor.
-    apply TL_step_is_tl_step.
+    apply Formula_step_is_tl_step.
   + intros tl int.
     cbn.
     apply (tl_run_trans tl
-                        (snd (runTL int p tl))
+                        (snd (runFormula int p tl))
                         (snd
-                           (runTL (snd (fst (runTL int p tl))) (f (fst (fst (runTL int p tl))))
-                                  (snd (runTL int p tl))))).
+                           (runFormula (snd (fst (runFormula int p tl))) (f (fst (fst (runFormula int p tl))))
+                                  (snd (runFormula int p tl))))).
     ++ apply IHp.
     ++ apply H.
 Qed.
 
-Inductive TL_derive
+Inductive Formula_derive
           {A: Type}
-  : TL A -> TL A -> Prop :=
+  : Formula A -> Formula A -> Prop :=
 | tl_derives_tl
-    (x: TL A)
-  : TL_derive x x
+    (x: Formula A)
+  : Formula_derive x x
 | true_derives_true
-  : TL_derive true true
+  : Formula_derive true true
 | false_derives_false
-  : TL_derive false false
+  : Formula_derive false false
 | globally_derives_globally
-    (prop: Instant A)
-  : TL_derive (globally prop) (globally prop)
+    (prop: Dec A)
+  : Formula_derive (globally prop) (globally prop)
 | globally_derives_fail
-    (prop: Instant A)
-  : TL_derive (globally prop) false
+    (prop: Dec A)
+  : Formula_derive (globally prop) false
 | eventually_derives_eventually
-    (prop: Instant A)
-  : TL_derive (eventually prop) (eventually prop)
+    (prop: Dec A)
+  : Formula_derive (eventually prop) (eventually prop)
 | eventually_derives_fail
-    (prop: Instant A)
-  : TL_derive (eventually prop) true
+    (prop: Dec A)
+  : Formula_derive (eventually prop) true
 | next_derives_unwrap
-    (tl tl': TL A)
-    (Hderive: TL_derive tl tl')
-  : TL_derive (next tl) tl'
+    (tl tl': Formula A)
+    (Hderive: Formula_derive tl tl')
+  : Formula_derive (next tl) tl'
 | switch_derives_before
-    (before after tl: TL A)
-    (prop: Instant A)
-    (Hderive: TL_derive before tl)
-  : TL_derive (switch before prop after) (switch tl prop after)
+    (before after tl: Formula A)
+    (prop: Dec A)
+    (Hderive: Formula_derive before tl)
+  : Formula_derive (switch before prop after) (switch tl prop after)
 | switch_derives_after
-    (before after tl: TL A)
-    (prop: Instant A)
-    (Hderive: TL_derive after tl)
-  : TL_derive (switch before prop after) tl
+    (before after tl: Formula A)
+    (prop: Dec A)
+    (Hderive: Formula_derive after tl)
+  : Formula_derive (switch before prop after) tl
 | switch_derives_fail
-    (before after: TL A)
-    (prop: Instant A)
-  : TL_derive (switch before prop after) false.
+    (before after: Formula A)
+    (prop: Dec A)
+  : Formula_derive (switch before prop after) false.
 
 Arguments tl_derives_tl [_].
 Arguments true_derives_true [_].
@@ -577,8 +609,8 @@ Arguments switch_derives_fail [_].
 
 Lemma tl_step_is_tl_derive
       {A: Type}
-  : forall (tl tl': TL A),
-    TL_step  tl tl' -> TL_derive tl tl'.
+  : forall (tl tl': Formula A),
+    Formula_step  tl tl' -> Formula_derive tl tl'.
 Proof.
   induction tl; intros; inversion H; subst.
   + constructor.
@@ -597,8 +629,8 @@ Qed.
 
 Lemma tl_run_implies_tl_derive
       {A: Type}
-  : forall (tl tl': TL A),
-    TL_derive tl tl' -> TL_run  tl tl'.
+  : forall (tl tl': Formula A),
+    Formula_derive tl tl' -> Formula_run  tl tl'.
 Proof.
   induction tl.
   + intros tl' Hderive.
@@ -612,7 +644,7 @@ Proof.
   + intros tl' Hderive.
     inversion Hderive; subst.
     ++ apply tl_run_refl.
-    ++ assert (TL_run (next tl) tl)
+    ++ assert (Formula_run (next tl) tl)
         as Hstep
           by (repeat constructor).
        apply (tl_run_trans (next tl) tl tl' Hstep).
@@ -632,10 +664,10 @@ Qed.
 
 Lemma switch_derives_before_helper
       {A: Type}
-      (tl1 tl2 tl3: TL A)
-      (prop: Instant A)
-      (Hderive: TL_derive tl1 tl2)
-  : TL_derive (switch tl1 prop tl3) (switch tl2 prop tl3).
+      (tl1 tl2 tl3: Formula A)
+      (prop: Dec A)
+      (Hderive: Formula_derive tl1 tl2)
+  : Formula_derive (switch tl1 prop tl3) (switch tl2 prop tl3).
 Proof.
   induction Hderive.
   + constructor.
@@ -660,8 +692,8 @@ Qed.
 
 Lemma tl_derive_trans'
       {A: Type}
-  : forall (tl tl': TL A),
-    TL_derive tl tl' -> (forall (tl'': TL A), TL_derive tl' tl'' -> TL_derive tl tl'').
+  : forall (tl tl': Formula A),
+    Formula_derive tl tl' -> (forall (tl'': Formula A), Formula_derive tl' tl'' -> Formula_derive tl tl'').
 Proof.
   intros tl tl' H1; induction H1; intros tl'' H2; try exact H2.
   + inversion_clear H2;
@@ -669,17 +701,17 @@ Proof.
   + inversion_clear H2;
       constructor.
   + constructor.
-    apply (IHTL_derive tl'' H2).
+    apply (IHFormula_derive tl'' H2).
   + inversion_clear H2.
     ++ apply switch_derives_before_helper.
        exact H1.
     ++ apply switch_derives_before_helper.
-       apply (IHTL_derive tl0 Hderive).
+       apply (IHFormula_derive tl0 Hderive).
     ++ apply switch_derives_after.
        exact Hderive.
     ++ apply switch_derives_fail.
   + apply switch_derives_after.
-    apply IHTL_derive in H2.
+    apply IHFormula_derive in H2.
     exact H2.
   + inversion_clear H2.
     ++ apply switch_derives_fail.
@@ -688,8 +720,8 @@ Qed.
 
 Lemma tl_derive_trans
       {A: Type}
-  : forall (tl tl' tl'': TL A),
-    TL_derive tl tl' -> TL_derive tl' tl'' -> TL_derive tl tl''.
+  : forall (tl tl' tl'': Formula A),
+    Formula_derive tl tl' -> Formula_derive tl' tl'' -> Formula_derive tl tl''.
 Proof.
   intros tl tl' tl'' H1 H2.
   apply (tl_derive_trans' tl tl' H1 tl'' H2).
@@ -697,8 +729,8 @@ Qed.
 
 Lemma tl_derive_implies_tl_run
       {A: Type}
-  : forall (tl tl': TL A),
-    TL_run tl tl' -> TL_derive  tl tl'.
+  : forall (tl tl': Formula A),
+    Formula_run tl tl' -> Formula_derive  tl tl'.
 Proof.
   intros.
   induction H.
@@ -706,38 +738,38 @@ Proof.
   + apply tl_step_is_tl_derive in Hstep.
     exact Hstep.
   + apply tl_step_is_tl_derive in Hstep.
-    apply (tl_derive_trans from tl to Hstep IHTL_run).
+    apply (tl_derive_trans from tl to Hstep IHFormula_run).
 Qed.
 
 Theorem derive_is_run_and_run_is_derive
         {A: Type}
-        (tl tl': TL A)
-  : TL_run tl tl' <-> TL_derive tl tl'.
+        (tl tl': Formula A)
+  : Formula_run tl tl' <-> Formula_derive tl tl'.
 Proof.
   split.
   + apply tl_derive_implies_tl_run.
   + apply tl_run_implies_tl_derive.
 Qed.
 
-Corollary TL_derive_is_runTL
+Corollary Formula_derive_is_runFormula
   : forall {I: Type -> Type}
            {A: Type}
            (p: Program I A)
-           (tl: TL (ISet I))
+           (tl: Formula (ISet I))
            (int: Interp I),
-    TL_derive tl (deriveTL int p tl).
+    Formula_derive tl (deriveFormula int p tl).
 Proof.
   intros I A p tl int.
   apply tl_derive_implies_tl_run.
-  apply TL_run_is_runTL.
+  apply Formula_run_is_runFormula.
 Qed.
 
 Lemma tl_run_switch_before
       {A: Type}
-  : forall (tl tl' tl2: TL A)
-           (prop: Instant A),
-    TL_run tl tl'
-    -> TL_run (switch tl prop tl2) (switch tl' prop tl2).
+  : forall (tl tl' tl2: Formula A)
+           (prop: Dec A),
+    Formula_run tl tl'
+    -> Formula_run (switch tl prop tl2) (switch tl' prop tl2).
 Proof.
   intros tl tl' tl2 prop Hrun.
   apply tl_run_implies_tl_derive.
@@ -746,11 +778,11 @@ Proof.
   exact Hrun.
 Qed.
 
-Record TLContract
+Record FormulaContract
        (I: Type -> Type)
   :=
     { tl_requirements
-      : TL (ISet I)
+      : Formula (ISet I)
     ; tl_promises {A: Type}
                   (i: I A)
       : typeret i -> Prop
@@ -763,8 +795,8 @@ Definition contract_step
            {I: Type -> Type}
            {A: Type}
            (i: I A)
-           (c: TLContract I)
-  : TLContract I :=
+           (c: FormulaContract I)
+  : FormulaContract I :=
   {| tl_requirements := tl_step (instruction i) (tl_requirements c)
    ; tl_promises := fun _ i => tl_promises c i
   |}.
@@ -774,9 +806,9 @@ Definition contract_derive
            {A: Type}
            (p: Program I A)
            (int: Interp I)
-           (c: TLContract I)
-  : TLContract I :=
-  {| tl_requirements := deriveTL int p (tl_requirements c)
+           (c: FormulaContract I)
+  : FormulaContract I :=
+  {| tl_requirements := deriveFormula int p (tl_requirements c)
    ; tl_promises := fun _ i => tl_promises c i
   |}.
 
@@ -785,7 +817,7 @@ Lemma contract_derives_ret_eq
       {A: Type}
       (a: A)
       (int: Interp I)
-      (c: TLContract I)
+      (c: FormulaContract I)
   : contract_derive (ret a) int c = c.
 Proof.
   induction c.
@@ -797,18 +829,18 @@ Lemma contract_derives_contract_step
       {A: Type}
       (i: I A)
       (int: Interp I)
-      (c: TLContract I)
+      (c: FormulaContract I)
   : contract_derive (instr i) int c = contract_step i c.
 Proof.
   unfold contract_derive, contract_step.
   reflexivity.
 Qed.
 
-CoInductive TLEnforcer
+CoInductive FormulaEnforcer
             {I: Type -> Type}
             (int: Interp I)
-  : TLContract I -> Prop :=
-| enforced (c: TLContract I)
+  : FormulaContract I -> Prop :=
+| enforced (c: FormulaContract I)
            (Hprom: forall {A: Type}
                           (i: I A),
                instruction_satisfies (instruction i) (tl_requirements c)
@@ -816,16 +848,16 @@ CoInductive TLEnforcer
            (Henf:  forall {A: Type}
                           (i: I A),
                instruction_satisfies (instruction i) (tl_requirements c)
-               -> TLEnforcer (execInstruction int i) (contract_step i c))
-  : TLEnforcer int c.
+               -> FormulaEnforcer (execInstruction int i) (contract_step i c))
+  : FormulaEnforcer int c.
 
 Lemma enforcer_enforces_promises
       {I: Type -> Type}
       {A: Type}
       (i: I A)
       (int: Interp I)
-      (c: TLContract I)
-      (Henf: TLEnforcer int c)
+      (c: FormulaContract I)
+      (Henf: FormulaEnforcer int c)
       (Hreq: instruction_satisfies (instruction i) (tl_requirements c))
   : tl_promises c i (evalInstruction int i).
 Proof.
@@ -836,7 +868,7 @@ Qed.
 
 Inductive tl_contractfull_program
           {I: Type -> Type}
-          (c: TLContract I)
+          (c: FormulaContract I)
   : forall {A: Type}, Program I A -> Prop :=
 | tl_contractfull_instr {A: Type}
                         (i: I A)
@@ -850,7 +882,7 @@ Inductive tl_contractfull_program
                       (f: A -> Program I B)
                       (Hcp: tl_contractfull_program c p)
                       (Hnext: forall (int: Interp I)
-                                     (Henf: TLEnforcer int c),
+                                     (Henf: FormulaEnforcer int c),
                           tl_contractfull_program (contract_derive p int c) (f (evalProgram int p)))
   : tl_contractfull_program c (bind p f).
 
@@ -859,7 +891,7 @@ Lemma contractfull_program_bind_ret
       {A B: Type}
       (a: A)
       (f: A -> Program I B)
-      (c: TLContract I)
+      (c: FormulaContract I)
   : tl_contractfull_program c (f a) -> tl_contractfull_program c (bind (ret a) f).
 Proof.
   intros Hp.
@@ -876,7 +908,7 @@ Conjecture contractfull_program_bind_ret'
            {A B: Type}
            (a: A)
            (f: A -> Program I B)
-           (c: TLContract I),
+           (c: FormulaContract I),
     tl_contractfull_program c (bind (ret a) f) -> tl_contractfull_program c (f a).
 
 Lemma enforcer_instruction_contractfull_enforcer
@@ -884,10 +916,10 @@ Lemma enforcer_instruction_contractfull_enforcer
       {A: Type}
       (i: I A)
       (int: Interp I)
-      (c: TLContract I)
-      (H: TLEnforcer int c)
+      (c: FormulaContract I)
+      (H: FormulaEnforcer int c)
       (Hp: tl_contractfull_program c (instr i))
-  : TLEnforcer (execTL int (instr i) (tl_requirements c)) (contract_derive (instr i) int c).
+  : FormulaEnforcer (execFormula int (instr i) (tl_requirements c)) (contract_derive (instr i) int c).
 Proof.
   cbn.
   constructor.
@@ -918,12 +950,12 @@ Lemma enforcer_ret_contractfull_enforcer
       {A: Type}
       (a: A)
       (int: Interp I)
-      (c: TLContract I)
-      (H: TLEnforcer int c)
-  : TLEnforcer (execTL int (ret a) (tl_requirements c)) (contract_derive (ret a) int c).
+      (c: FormulaContract I)
+      (H: FormulaEnforcer int c)
+  : FormulaEnforcer (execFormula int (ret a) (tl_requirements c)) (contract_derive (ret a) int c).
 Proof.
   rewrite (contract_derives_ret_eq a int c).
-  unfold execTL.
+  unfold execFormula.
   cbn.
   exact H.
 Qed.
@@ -935,7 +967,7 @@ Lemma contract_derive_assoc
       (f: A -> Program I B)
       (f': B -> Program I C)
       (int: Interp I)
-      (c: TLContract I)
+      (c: FormulaContract I)
   : contract_derive (bind (bind p f) f') int c
     = contract_derive (bind p (fun x => bind (f x) f')) int c.
 Proof.
@@ -964,9 +996,9 @@ Lemma exec_tl_assoc
   : forall {B: Type}
            (f: A -> Program I B)
            (int: Interp I)
-           (c: TLContract I),
-    execTL int (bind p f) (tl_requirements c)
-    = execTL (execTL int p (tl_requirements c))
+           (c: FormulaContract I),
+    execFormula int (bind p f) (tl_requirements c)
+    = execFormula (execFormula int p (tl_requirements c))
              (f (evalProgram int p)) (tl_requirements (contract_derive p int c)).
 Proof.
   intros B f int c.
@@ -981,9 +1013,9 @@ Lemma eval_program_assoc
   : forall {B: Type}
            (f: A -> Program I B)
            (int: Interp I)
-           (c: TLContract I),
+           (c: FormulaContract I),
     evalProgram int (bind p f)
-    = evalProgram (execTL int p (tl_requirements c))
+    = evalProgram (execFormula int p (tl_requirements c))
                   (f (evalProgram int p)).
 Proof.
   intros B f int c.
@@ -998,8 +1030,8 @@ Lemma contract_derive_bind
   : forall {B: Type}
            (f: A -> Program I B)
            (int: Interp I)
-           (c: TLContract I),
-    contract_derive (f (evalProgram int p)) (execTL int p (tl_requirements c)) (contract_derive p int c) = contract_derive (bind p f) int c.
+           (c: FormulaContract I),
+    contract_derive (f (evalProgram int p)) (execFormula int p (tl_requirements c)) (contract_derive p int c) = contract_derive (bind p f) int c.
 Proof.
   induction p.
   + reflexivity.
@@ -1014,14 +1046,14 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma execTL_bind
+Lemma execFormula_bind
       {I: Type -> Type}
       {A B: Type}
       (p: Program I A)
   : forall (f: A -> Program I B)
            (int: Interp I)
-           (c: TLContract I),
-    execTL (execTL int p (tl_requirements c)) (f (evalProgram int p)) (tl_requirements (contract_derive p int c)) = execTL int (bind p f) (tl_requirements c).
+           (c: FormulaContract I),
+    execFormula (execFormula int p (tl_requirements c)) (f (evalProgram int p)) (tl_requirements (contract_derive p int c)) = execFormula int (bind p f) (tl_requirements c).
 Proof.
   intros f int c.
   repeat rewrite exec_tl_exec_program_same.
@@ -1032,11 +1064,11 @@ Lemma enforcer_contractfull_enforcer
       {I: Type -> Type}
       {A: Type}
       (p: Program I A)
-  : forall (c: TLContract I)
+  : forall (c: FormulaContract I)
            (int: Interp I)
-           (H: TLEnforcer int c)
+           (H: FormulaEnforcer int c)
            (Hp: tl_contractfull_program c p),
-    TLEnforcer (execTL int p (tl_requirements c)) (contract_derive p int c).
+    FormulaEnforcer (execFormula int p (tl_requirements c)) (contract_derive p int c).
 Proof.
   induction p.
   + intros c int He Hp;
@@ -1049,7 +1081,7 @@ Proof.
       repeat apply inj_pair2 in H4;
       subst.
     apply (IHp c int He) in Hcp.
-    rewrite <- execTL_bind.
+    rewrite <- execFormula_bind.
     rewrite <- contract_derive_bind.
     apply H.
     ++ exact Hcp.
@@ -1060,14 +1092,14 @@ Qed.
 Definition tl_contract_preserves_inv
            {I: Type -> Type}
            {State: Type}
-           (c: TLContract I)
-           (inv: TL (ISet I) -> State -> Prop)
+           (c: FormulaContract I)
+           (inv: Formula (ISet I) -> State -> Prop)
            (step: PS State)
   := forall {A: Type}
             (i: I A)
             (s: State)
-            (tl: TL (ISet I))
-            (Hderive: TL_derive (tl_requirements c) tl),
+            (tl: Formula (ISet I))
+            (Hderive: Formula_derive (tl_requirements c) tl),
     inv tl s
     -> instruction_satisfies (instruction i) tl
     -> inv (tl_step (instruction i) tl) (snd (step A s i)).
@@ -1075,8 +1107,8 @@ Definition tl_contract_preserves_inv
 Lemma tl_contract_preserves_inv_propagates
       {I: Type -> Type}
       {State: Type}
-      (c: TLContract I)
-      (inv: TL (ISet I) -> State -> Prop)
+      (c: FormulaContract I)
+      (inv: Formula (ISet I) -> State -> Prop)
       (step: PS State)
   : forall {A: Type}
            (i: I A),
@@ -1091,7 +1123,7 @@ Proof.
   + apply tl_derive_trans with (tl':=tl_requirements (contract_step i c)).
     ++ cbn.
        apply tl_step_is_tl_derive.
-       apply TL_step_is_tl_step.
+       apply Formula_step_is_tl_step.
     ++ exact Hderive.
   + exact Hinv.
   + exact Hreq'.
@@ -1100,14 +1132,14 @@ Qed.
 Definition tl_contract_enforces_promises
            {I: Type -> Type}
            {State: Type}
-           (c: TLContract I)
-           (inv: TL (ISet I) -> State -> Prop)
+           (c: FormulaContract I)
+           (inv: Formula (ISet I) -> State -> Prop)
            (step: PS State)
   := forall {A: Type}
             (i: I A)
             (s: State)
-            (tl: TL (ISet I))
-            (Hderive: TL_derive (tl_requirements c) tl),
+            (tl: Formula (ISet I))
+            (Hderive: Formula_derive (tl_requirements c) tl),
     inv tl s
     -> instruction_satisfies (instruction i) tl
     -> tl_promises c i (fst (step A s i)).
@@ -1115,8 +1147,8 @@ Definition tl_contract_enforces_promises
 Lemma tl_contract_enforces_promises_propagates
       {I: Type -> Type}
       {State: Type}
-      (c: TLContract I)
-      (inv: TL (ISet I) -> State -> Prop)
+      (c: FormulaContract I)
+      (inv: Formula (ISet I) -> State -> Prop)
       (step: PS State)
   : forall {A: Type}
            (i: I A),
@@ -1132,7 +1164,7 @@ Proof.
   + apply tl_derive_trans with (tl':=tl_requirements (contract_step i c)).
     ++ cbn.
        apply tl_step_is_tl_derive.
-       apply TL_step_is_tl_step.
+       apply Formula_step_is_tl_step.
     ++ exact Hderive.
   + exact Hinv.
   + exact Hreq'.
@@ -1141,21 +1173,21 @@ Qed.
 Fact _stateful_contract_enforcement
      {I: Type -> Type}
      {State: Type}
-     (c: TLContract I)
-     (inv: TL (ISet I) -> State -> Prop)
+     (c: FormulaContract I)
+     (inv: Formula (ISet I) -> State -> Prop)
      (step: PS State)
-  : forall (c': TLContract I)
+  : forall (c': FormulaContract I)
            (Hpres: tl_contract_preserves_inv c' inv step)
            (Henf: tl_contract_enforces_promises c' inv step)
            (s: State),
     tl_promises c = tl_promises c'
-    -> TL_derive (tl_requirements c) (tl_requirements c')
+    -> Formula_derive (tl_requirements c) (tl_requirements c')
     -> inv (tl_requirements c') s
-    -> TLEnforcer (mkInterp step s) c'.
+    -> FormulaEnforcer (mkInterp step s) c'.
 Proof.
   cofix.
   intros c' Hpres Henf s Hprom_eq Hderive Hinv .
-  assert (TL_derive (tl_requirements c') (tl_requirements c'))
+  assert (Formula_derive (tl_requirements c') (tl_requirements c'))
     as Hderive'
       by (apply tl_derives_tl).
   constructor.
@@ -1178,7 +1210,7 @@ Proof.
        apply tl_derive_trans with (tl':=tl_requirements c').
        +++ exact Hderive.
        +++ apply tl_step_is_tl_derive.
-           apply TL_step_is_tl_step.
+           apply Formula_step_is_tl_step.
     ++ unfold tl_contract_preserves_inv in Hpres.
        cbn.
        apply (Hpres A i s (tl_requirements c')).
@@ -1190,20 +1222,20 @@ Qed.
 Lemma tl_stateful_contract_enforcement
       {I: Type -> Type}
       {State: Type}
-      (c: TLContract I)
-      (inv: TL (ISet I) -> State -> Prop)
+      (c: FormulaContract I)
+      (inv: Formula (ISet I) -> State -> Prop)
       (step: PS State)
       (Hpres: tl_contract_preserves_inv c inv step)
       (Henf: tl_contract_enforces_promises c inv step)
   : forall (s: State),
     inv (tl_requirements c) s
-    -> TLEnforcer (mkInterp step s) c.
+    -> FormulaEnforcer (mkInterp step s) c.
 Proof.
   intros s Hinv.
   assert (tl_promises c = tl_promises c)
     as Heq
       by reflexivity.
-  assert (TL_derive (tl_requirements c) (tl_requirements c))
+  assert (Formula_derive (tl_requirements c) (tl_requirements c))
     as Hderive
       by (apply tl_derives_tl).
   apply (_stateful_contract_enforcement c inv step c Hpres Henf s Heq Hderive Hinv).

@@ -7,6 +7,7 @@ Require Import FreeSpec.Contract.
 
 Require Import Sumbool.
 
+Local Open Scope formula_scope.
 Local Open Scope eq_scope.
 
 Lemma neq_sym
@@ -220,7 +221,7 @@ Section MAP.
     Defined.
 
     Definition write_k_x_inst
-      : Instant (ISet Instruction) :=
+      : Dec (ISet Instruction) :=
       {| prop := write_k_x
        ; prop_dec := write_k_x_dec
       |}.
@@ -252,16 +253,14 @@ Section MAP.
     Defined.
 
     Definition not_read_k_inst
-      : Instant (ISet Instruction) :=
+      : Dec (ISet Instruction) :=
       {| prop := not_read_k
        ; prop_dec := not_read_k_dec
       |}.
 
     Definition policy_step
-      : TL (ISet Instruction) :=
-      switch true
-             write_k_x_inst
-             (globally not_read_k_inst).
+      : Formula (ISet Instruction) :=
+      (⟙) ⊢ write_k_x_inst ⟶ (⬜ not_read_k_inst).
 
     Definition write_read_write
                (k': Key)
@@ -278,7 +277,7 @@ Section MAP.
       : forall k' v',
         k /= k'
         -> x /= v'
-        -> halt_satisfies (snd (runTL int
+        -> halt_satisfies (snd (runFormula int
                                       (write_read_write k' v')
                                       policy_step)).
     Proof.
@@ -291,7 +290,7 @@ Section MAP.
 
     Inductive invar
               (s: State)
-      : TL (ISet Instruction) -> Prop :=
+      : Formula (ISet Instruction) -> Prop :=
     | invar_1 (H: s k /= x)
       : invar s policy_step
     | invar_2
