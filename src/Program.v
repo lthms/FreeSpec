@@ -27,7 +27,7 @@ Local Open Scope eq_scope.
 
 (** ** Definition
 
-    Given [I] a set of instructions (that is, of kind [Type -> Type])
+    Given [I] a set of instructions (that is, of kind [Interface])
     and [A] the type of the result of a given computation, the type of
     this computation specification is [Program I A].
 
@@ -44,7 +44,7 @@ Local Open Scope eq_scope.
  *)
 
 Inductive Program
-          (I: Type -> Type)
+          (I: Interface)
           (A: Type) :=
 | ret (a: A)
   : Program I A
@@ -68,7 +68,7 @@ Arguments bind [I A B] (p f).
  *)
 
 Fixpoint runProgram
-         {I: Type -> Type}
+         {I: Interface}
          {A: Type}
          (int: Interp I)
          (p: Program I A)
@@ -80,7 +80,7 @@ Fixpoint runProgram
   end.
 
 Definition evalProgram
-           {I: Type -> Type}
+           {I: Interface}
            {A: Type}
            (int: Interp I)
            (p: Program I A)
@@ -88,7 +88,7 @@ Definition evalProgram
   fst (runProgram int p).
 
 Definition execProgram
-           {I: Type -> Type}
+           {I: Interface}
            {A: Type}
            (int: Interp I)
            (p: Program I A)
@@ -104,7 +104,7 @@ Definition execProgram
  *)
 
 CoInductive program_eq
-            {I: Type -> Type}
+            {I: Interface}
             {A: Type}
             (p: Program I A)
             (p': Program I A) :=
@@ -125,7 +125,7 @@ CoInductive program_eq
  *)
 
 Lemma program_eq_refl
-      {I: Type -> Type}
+      {I: Interface}
       {A: Type}
       (p: Program I A)
   : program_eq p p.
@@ -134,7 +134,7 @@ Proof.
 Qed.
 
 Lemma program_eq_sym
-      {I: Type -> Type}
+      {I: Interface}
       {A: Type}
       (p p': Program I A)
   : program_eq p p'
@@ -152,7 +152,7 @@ Proof.
 Qed.
 
 Lemma program_eq_trans
-      {I: Type -> Type}
+      {I: Interface}
       {A: Type}
       (p p' p'': Program I A)
   : program_eq p p'
@@ -170,7 +170,7 @@ Proof.
 Qed.
 
 Add Parametric Relation
-    (I: Type -> Type)
+    (I: Interface)
     (A: Type)
   : (Program I A) (program_eq)
     reflexivity proved by (program_eq_refl)
@@ -185,7 +185,7 @@ Add Parametric Relation
  *)
 
 Add Parametric Morphism
-    (I: Type -> Type)
+    (I: Interface)
     (A: Type)
   : (runProgram)
     with signature eq ==> (program_eq) ==> (@run_interp_eq I A)
@@ -199,7 +199,7 @@ Proof.
 Qed.
 
 Add Parametric Morphism
-    (I: Type -> Type)
+    (I: Interface)
     (A: Type)
   : (evalProgram)
     with signature eq ==> (@program_eq I A) ==> (eq)
@@ -212,7 +212,7 @@ Proof.
 Qed.
 
 Add Parametric Morphism
-    (I: Type -> Type)
+    (I: Interface)
     (A: Type)
   : (execProgram)
     with signature eq ==> (@program_eq I A) ==> (@interp_eq I)
@@ -223,6 +223,12 @@ Proof.
   rewrite Heq.
   reflexivity.
 Qed.
+
+Instance program_eq_eq
+         (I: Interface)
+         (A: Type)
+  : Eq (Program I A) :=
+  {| equiv := program_eq |}.
 
 (** ** Monad Laws
 
@@ -240,7 +246,7 @@ Qed.
  *)
 
 Fact program_left_identity
-     {I: Type -> Type}
+     {I: Interface}
      {A B: Type}
      (a: A)
      (f: A -> Program I B)
@@ -252,7 +258,7 @@ Proof.
 Qed.
 
 Fact program_right_identity
-     {I: Type -> Type}
+     {I: Interface}
      {A: Type}
      (p: Program I A)
   : program_eq (bind p (@ret I A)) p.
@@ -263,7 +269,7 @@ Proof.
 Qed.
 
 Fact program_associativity
-     {I: Type -> Type}
+     {I: Interface}
      {A B C: Type}
      (p: Program I A)
      (f: A -> Program I B)

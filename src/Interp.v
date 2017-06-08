@@ -1,19 +1,61 @@
+(*begin hide *)
 Require Import Coq.Classes.Equivalence.
 Require Import Coq.Setoids.Setoid.
+(* end hide *)
 
 Require Import FreeSpec.Equiv.
 
 Local Open Scope eq_scope.
 
+(** * [Interface] Interpretation
+
+    We consider an [Interface] as a set of _Instructions_. An
+    Instruction may take one or more arguments and is associated and,
+    once “executed”, returns an element of a given type.
+
+    An [Interface] can easily be defined using a coq inductive
+    type. You can have a look at [FreeSpec.Examples] if you want to
+    see some simple or more complex examples.
+
+ *)
+
+Definition Interface := Type -> Type.
+
+(** That is, if [I] is an interface, [i : I A] is an instruction which
+    returns an element of [A] once interpreted. We define an helper
+    function, [typeret], to help Coq in case it struggles with the
+    return types. It has been useful for instance to deal with the
+    [Contract]s definition.
+
+ *)
+
 Definition typeret
-           {I: Type -> Type}
+           {I: Interface}
            {A: Type}
            (i: I A)
   : Type := A.
 
+(** ** [Interp]reter
+
+    In a nutshell, an Interpreter is function which takes an
+    instruction of a given [Interface] and returns both a result and a
+    new Interpreter. This choice of model has been made to abstract
+    away how a Interpreter is implemented. A stateless Interpreter
+    will simply returns itself when a stateful one will carry a state,
+    yet both can be use rigourously the same way.
+
+    Therefore, an Interpreter is defined as a coinductive type
+    [Interp] and is provided along with [interpret], a function to
+    actually performs the interpretation. Because an Interpreter
+    returns a tuple, a type which is not always great to work with, we
+    provide [evalInstruction] and [execInstruction] as
+    shortcuts. Their naming follows the same logic as the Haskell
+    state monad functions.
+
+ *)
 
 CoInductive Interp
-            (I: Type -> Type)
+            (I: Interface)
   : Type :=
 | interp (f: forall {A: Type}, I A -> (A * Interp I))
   : Interp I.
@@ -21,7 +63,7 @@ CoInductive Interp
 Arguments interp [I] (f).
 
 Definition interpret
-           {I: Type -> Type}
+           {I: Interface}
            {A: Type}
            (int: Interp I)
            (i: I A)
@@ -29,7 +71,7 @@ Definition interpret
   match int with interp f => f A i end.
 
 Definition evalInstruction
-           {I: Type -> Type}
+           {I: Interface}
            {A: Type}
            (int: Interp I)
            (i: I A)
@@ -37,15 +79,23 @@ Definition evalInstruction
   fst (interpret int i).
 
 Definition execInstruction
-           {I: Type -> Type}
+           {I: Interface}
            {A: Type}
            (int: Interp I)
            (i: I A)
     : Interp I :=
     snd (interpret int i).
 
+(** ** Interpreters Equivalence
+
+    Two Interpreters are said to be equivalent when they always return
+    the exact same result and when their resulting Interpreters are
+    equivalent themselves.
+
+ *)
+
 CoInductive interp_eq
-            {I: Type -> Type}
+            {I: Interface}
             (int1: Interp I)
             (int2: Interp I)
   : Prop :=
@@ -57,8 +107,12 @@ CoInductive interp_eq
                    interp_eq (execInstruction int1 i) (execInstruction int2 i))
   : interp_eq int1 int2.
 
+(** It is possible to prove [interp_eq] is effectively an equivalence.
+
+ *)
+
 Lemma interp_eq_refl
-      {I: Type -> Type}
+      {I: Interface}
   : forall (int: Interp I),
     interp_eq int int.
 Proof.
@@ -71,7 +125,7 @@ Proof.
 Qed.
 
 Lemma interp_eq_sym
-      {I: Type -> Type}
+      {I: Interface}
   : forall (int int': Interp I),
     interp_eq int int'
     -> interp_eq int' int.
@@ -88,7 +142,7 @@ Proof.
 Qed.
 
 Lemma interp_eq_trans
-      {I: Type -> Type}
+      {I: Interface}
   : forall (int int' int'': Interp I),
     interp_eq int int'
     -> interp_eq int' int''
@@ -112,25 +166,32 @@ Proof.
 Qed.
 
 Add Parametric Relation
-    (I: Type -> Type)
+    (I: Interface)
   : (Interp I) (@interp_eq I)
   reflexivity proved by (@interp_eq_refl I)
   symmetry proved by (@interp_eq_sym I)
   transitivity proved by (@interp_eq_trans I)
     as interp_rel.
 
-Instance eqInterp (I: Type -> Type): Eq (Interp I) :=
+Instance interp_eq_eq (I: Interface): Eq (Interp I) :=
   {| equiv := @interp_eq I |}.
 
+(** ** Interpretation Result Equivalence
+
+    To help Coq when it comes to generalized rewriting, we define an
+    equivalence relation for the result of an interpretation, along
+    with several morphisms.
+ *)
+
 Definition run_interp_eq
-           {I: Type -> Type}
+           {I: Interface}
            {A: Type}
            (o o': (A * Interp I))
   : Prop :=
   fst o = fst o' /\ snd o == snd o'.
 
 Lemma run_interp_eq_refl
-           {I: Type -> Type}
+           {I: Interface}
            {A: Type}
            (o: (A * Interp I))
   : run_interp_eq o o.
@@ -139,7 +200,7 @@ Proof.
 Qed.
 
 Lemma run_interp_eq_sym
-           {I: Type -> Type}
+           {I: Interface}
            {A: Type}
            (o o': (A * Interp I))
   : run_interp_eq o o'
@@ -150,7 +211,7 @@ Proof.
 Qed.
 
 Lemma run_interp_eq_trans
-           {I: Type -> Type}
+           {I: Interface}
            {A: Type}
            (o o' o'': (A * Interp I))
   : run_interp_eq o o'
@@ -164,7 +225,7 @@ Proof.
 Qed.
 
 Add Parametric Relation
-    (I: Type -> Type)
+    (I: Interface)
     (A: Type)
   : (A * Interp I) (@run_interp_eq I A)
     reflexivity proved by (run_interp_eq_refl)
@@ -173,7 +234,7 @@ Add Parametric Relation
       as run_interp_equiv.
 
 Add Parametric Morphism
-    (I: Type -> Type)
+    (I: Interface)
     (A: Type)
   : (@fst A (Interp I))
     with signature (run_interp_eq) ==> (@eq A)
@@ -184,7 +245,7 @@ Proof.
 Qed.
 
 Add Parametric Morphism
-    (I: Type -> Type)
+    (I: Interface)
     (A: Type)
   : (@snd A (Interp I))
     with signature (run_interp_eq) ==> (interp_eq)
@@ -195,13 +256,13 @@ Proof.
 Qed.
 
 Instance eq_run_interp
-         {I: Type -> Type}
+         {I: Interface}
          {A: Type}
   : Eq (A * Interp I) :=
   {| equiv := run_interp_eq |}.
 
 Add Parametric Morphism
-    (I: Type -> Type)
+    (I: Interface)
     (A: Type)
   : (interpret)
     with signature (@interp_eq I) ==> (@eq (I A)) ==> (run_interp_eq)
@@ -219,7 +280,7 @@ Proof.
 Qed.
 
 Add Parametric Morphism
-    (I: Type -> Type)
+    (I: Interface)
     (A: Type)
   : (evalInstruction)
     with signature (@interp_eq I) ==> (@eq (I A)) ==> (eq)
@@ -232,7 +293,7 @@ Proof.
 Qed.
 
 Add Parametric Morphism
-    (I: Type -> Type)
+    (I: Interface)
     (A: Type)
   : (execInstruction)
     with signature (@interp_eq I) ==> (@eq (I A)) ==> (@interp_eq I)
@@ -244,9 +305,11 @@ Proof.
   reflexivity.
 Qed.
 
+(* begin hide *)
+
 (* A list of goal to check the rewrite tactic actually works *)
 
-Goal (forall (I: Type -> Type)
+Goal (forall (I: Interface)
              (int int': Interp I)
              (A: Type)
              (eqA: Eq A)
@@ -259,7 +322,7 @@ Proof.
   reflexivity.
 Qed.
 
-Goal (forall (I: Type -> Type)
+Goal (forall (I: Interface)
              (int int': Interp I)
              (A: Type)
              (eqA: Eq A)
@@ -271,14 +334,25 @@ Proof.
   rewrite Heq.
   reflexivity.
 Qed.
+(* end hide *)
+
+(** ** Stateful Interpreter
+
+    The function [mkInterp] is here to ease the definition of new
+    so-called stateful interpreters. More precisely, it turns a
+    function which, given an internal state and an instruction to
+    interpret, returns a new state and the instruction
+    result. [mkInterp] wraps this function to make it an [Interp].
+
+ *)
 
 Definition PS
-           {I: Type -> Type}
+           {I: Interface}
            (State: Type)
   := forall {A: Type}, State -> I A -> (A * State).
 
 CoFixpoint mkInterp
-           {I: Type -> Type}
+           {I: Interface}
            {State: Type}
            (ps: PS State)
            (s: State)
