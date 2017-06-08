@@ -1083,7 +1083,19 @@ Lemma tl_contract_preserves_inv_propagates
     tl_contract_preserves_inv c inv step
     -> instruction_satisfies (instruction i) (tl_requirements c)
     -> tl_contract_preserves_inv (contract_step i c) inv step.
-Admitted.
+Proof.
+  intros A i Hpres Hreq.
+  unfold tl_contract_preserves_inv in *.
+  intros B i' s tl Hderive Hinv Hreq'.
+  apply Hpres.
+  + apply tl_derive_trans with (tl':=tl_requirements (contract_step i c)).
+    ++ cbn.
+       apply tl_step_is_tl_derive.
+       apply TL_step_is_tl_step.
+    ++ exact Hderive.
+  + exact Hinv.
+  + exact Hreq'.
+Qed.
 
 Definition tl_contract_enforces_promises
            {I: Type -> Type}
@@ -1111,7 +1123,20 @@ Lemma tl_contract_enforces_promises_propagates
     tl_contract_enforces_promises c inv step
     -> instruction_satisfies (instruction i) (tl_requirements c)
     -> tl_contract_enforces_promises (contract_step i c) inv step.
-Admitted.
+Proof.
+  intros A i Henf Hreq.
+  unfold tl_contract_enforces_promises in *.
+  intros B i' s tl Hderive Hinv Hreq'.
+  cbn.
+  apply Henf with (tl:=tl).
+  + apply tl_derive_trans with (tl':=tl_requirements (contract_step i c)).
+    ++ cbn.
+       apply tl_step_is_tl_derive.
+       apply TL_step_is_tl_step.
+    ++ exact Hderive.
+  + exact Hinv.
+  + exact Hreq'.
+Qed.
 
 Fact _stateful_contract_enforcement
      {I: Type -> Type}
