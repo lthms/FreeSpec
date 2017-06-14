@@ -5,6 +5,7 @@ Require Import FreeSpec.Interp.
 Require Import FreeSpec.Utils.
 Require Import FreeSpec.Equiv.
 Require Import FreeSpec.Contract.
+Require Import FreeSpec.Contract.Constant.
 
 Require Import Sumbool.
 
@@ -119,10 +120,8 @@ Section MAP.
       | Write k v => fun x => True
       end.
 
-    Definition never_read_x_contract :=
-      {| requirements := never_read_x_requirements
-       ; promises     := never_read_x_promises
-       |}.
+    Definition never_read_x_contract := constant_contract never_read_x_requirements
+                                                          never_read_x_promises.
 
     Definition x_free_map
                (s: State)
@@ -130,9 +129,9 @@ Section MAP.
       forall k, (s k) /= x.
 
     Lemma map_interp_preserves_inv
-      : contract_preserves_inv never_read_x_contract x_free_map map_program_step.
+      : requirements_preserves_inv never_read_x_requirements map_program_step x_free_map.
     Proof.
-      unfold contract_preserves_inv.
+      unfold requirements_preserves_inv.
       induction i.
       + intros s Hinv Hreq.
         exact Hinv.
@@ -147,9 +146,9 @@ Section MAP.
     Qed.
 
     Lemma map_interp_enforces_promises
-      : contract_enforces_promises never_read_x_contract x_free_map map_program_step.
+      : requirements_brings_promises never_read_x_requirements never_read_x_promises map_program_step x_free_map.
     Proof.
-      unfold contract_enforces_promises.
+      unfold requirements_brings_promises.
       induction i.
       + intros s Hinv Hreq.
         apply (Hinv k).
@@ -161,13 +160,14 @@ Section MAP.
     Corollary MapInterp_enforce_contract
               (s:    State)
               (Hinv: x_free_map s)
-      : Enforcer never_read_x_contract (MapInterp s).
+      : Enforcer (MapInterp s) never_read_x_contract.
     Proof.
-      apply (stateful_contract_enforcement never_read_x_contract
-                                           x_free_map
-                                           map_program_step
-                                           map_interp_preserves_inv
-                                           map_interp_enforces_promises).
+      apply (const_contract_enforcement never_read_x_requirements
+                                        never_read_x_promises
+                                        map_program_step
+                                        x_free_map
+                                        map_interp_preserves_inv
+                                        map_interp_enforces_promises).
       exact Hinv.
     Qed.
 
@@ -187,11 +187,15 @@ Section MAP.
         cbn.
         trivial.
       + intros int Henf.
-        constructor.
-        inversion Henf as [Hprom Hreq].
+        assert (contract_derive ([Read k]) int never_read_x_contract = never_read_x_contract).
+        reflexivity.
+        repeat rewrite H.
+        unfold never_read_x_contract in Henf.
+        inversion Henf as [c Hprom Hreq].
         assert (never_read_x_promises Value (Read k) (evalInstruction int (Read k)))
           as Hnext
             by (apply Hprom; cbn; trivial).
+        constructor.
         exact Hnext.
     Qed.
 
@@ -297,6 +301,7 @@ Section MAP.
     | invar_2
       : invar s (globally not_read_k_inst).
 
+    (*
     Definition tl_never_read_x_contract :=
       {| tl_requirements := policy_step
        ; tl_promises     := never_read_x_promises
@@ -318,5 +323,6 @@ Section MAP.
         exact H.
       + cbn in *.
     Admitted.
+     *)
   End CONTRACT.
 End MAP.

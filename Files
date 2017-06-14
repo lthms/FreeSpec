@@ -1,8 +1,11 @@
 src/Interp.v
 src/Program.v
+src/Abstract.v
+src/Contract.v
+src/Contract/Constant.v
+src/Contract/Temporal.v
 
 src/Equiv.v
-src/Contract.v
 src/Refine.v
 src/TemporalLogic.v
 src/TemporalLogic/Notations.v

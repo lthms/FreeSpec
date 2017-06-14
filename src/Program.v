@@ -281,6 +281,42 @@ Proof.
   + reflexivity.
 Qed.
 
+(** ** Alternative [Program] Execution
+
+    We provide the function [runProgram'] as a probably more efficient
+    way to run a given Program. The difference is actually quite
+    simple: [runProgram] makes no use of the [let ... in] feature
+    because our tests have shown Coq sometimes have some trouble
+    dealing with this construction. As a consequence, some calls are
+    made twice or even more.
+
+    Thanks to the [run_program_equiv] lemma, one can use [runProgram]
+    for her proofs and extract [runProgram'].
+
+ *)
+Fixpoint runProgram'
+         {I: Interface}
+         {A: Type}
+         (int: Interp I)
+         (p: Program I A)
+  : (A * Interp I) :=
+  match p with
+  | ret a => (a, int)
+  | instr i => interpret int i
+  | bind p' f => let o := runProgram int p'
+                 in runProgram (snd o) (f (fst o))
+  end.
+
+Lemma run_program_equiv
+      {I: Interface}
+      {A: Type}
+      (int: Interp I)
+      (p: Program I A)
+  : runProgram int p = runProgram' int p.
+Proof.
+  induction p; reflexivity.
+Qed.
+
 (** ** Notations
 
  *)
