@@ -501,3 +501,14 @@ Proof.
   rewrite <- Heq.
   apply (_stateful_contract_enforcement c inv step (abstract c) Hpres Henf s Hinv).
 Qed.
+
+Definition strongly_compliant_program
+           {I: Interface}
+           {A: Type}
+           {Sa: Type}
+           (c: Contract Sa I)
+           (p: Program I A)
+  := contractfull_program c p
+     /\ (forall (int: Interp I),
+            Enforcer int c
+            -> Enforcer (execProgram int p) c).
