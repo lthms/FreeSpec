@@ -13,12 +13,12 @@ Record Contract
   :=
     { abstract
       : S
-    ; abstract_step {A: Type}
+    ; abstract_step (A: Type)
                     (i: I A)
       : S -> S
-    ; requirements {A: Type}
+    ; requirements (A: Type)
       : I A -> S -> Prop
-    ; promises {A: Type}
+    ; promises (A: Type)
                (i: I A)
       : typeret i -> S -> Prop
     }.
@@ -35,9 +35,9 @@ Definition set_abstract
            (abs: S)
   : Contract S I :=
   {| abstract := abs
-   ; abstract_step := fun _ i' => abstract_step c i'
-   ; requirements := fun _ i' => requirements c i'
-   ; promises := fun _ i' => promises c i'
+   ; abstract_step := abstract_step c
+   ; requirements := requirements c
+   ; promises := promises c
   |}.
 
 Definition contract_step
@@ -48,9 +48,9 @@ Definition contract_step
            (i: I A)
   : Contract S I :=
   {| abstract := abstract_step c i (abstract c)
-   ; abstract_step := fun _ i' => abstract_step c i'
-   ; requirements := fun _ i' => requirements c i'
-   ; promises := fun _ i' => promises c i'
+   ; abstract_step := abstract_step c
+   ; requirements := requirements c
+   ; promises := promises c
   |}.
 
 Definition contract_derive
@@ -62,9 +62,9 @@ Definition contract_derive
            (c: Contract S I)
   : Contract S I :=
   {| abstract := deriveAbstraction (abstract c) (abstract_step c) int p
-   ; abstract_step := fun _ i' => abstract_step c i'
-   ; requirements := fun _ i' => requirements c i'
-   ; promises := fun _ i' => promises c i'
+   ; abstract_step := abstract_step c
+   ; requirements := requirements c
+   ; promises := promises c
   |}.
 
 Lemma contract_derives_ret_eq
@@ -480,8 +480,8 @@ Proof.
 Qed.
 
 Lemma stateful_contract_enforcement
+      {I: Interface}
       {S: Type}
-      {I: Type -> Type}
       {State: Type}
       (c: Contract S I)
       (inv: S -> State -> Prop)

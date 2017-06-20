@@ -1,17 +1,19 @@
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Contract.
+Require Import FreeSpec.Program.
+Require Import FreeSpec.Abstract.
 
 Definition const_contract_requirements
            {I: Interface}
            (requirements: forall (A: Type), I A -> Prop)
-  := fun {A: Type} (i: I A) (_: unit) => requirements A i.
+  := fun (A: Type) (i: I A) (_: unit) => requirements A i.
 
 Definition const_contract_promises
            {I: Interface}
            (promises: forall (A: Type)
                              (i: I A),
                typeret i -> Prop)
-  := fun {A: Type} (i: I A) (a: A) (_: unit) => promises A i a.
+  := fun (A: Type) (i: I A) (a: A) (_: unit) => promises A i a.
 
 Definition constant_contract
            {I: Interface}
@@ -113,4 +115,63 @@ Proof.
   + apply const_contract_enforces_promises.
     exact Henf.
   + exact Hinv.
+Qed.
+
+Lemma tt_singleton
+      (x y: unit)
+  : x = y.
+Proof.
+  induction x; induction y; reflexivity.
+Qed.
+
+Lemma constant_contract_derive
+      {I: Interface}
+      {A: Type}
+      (p: Program I A)
+      (c: Contract unit I)
+      (int: Interp I)
+  : contract_derive p int c = c.
+Proof.
+  induction p;
+    unfold contract_derive;
+    induction c;
+    cbn;
+    try reflexivity.
+  + rewrite <- (tt_singleton abstract (abstract_step A i abstract)).
+    reflexivity.
+  + rewrite <- (tt_singleton abstract (deriveAbstraction abstract abstract_step int (bind p f))).
+    reflexivity.
+Qed.
+
+Lemma contractfull_program_enforcer_enforcer_exec
+      {I: Interface}
+      {A: Type}
+      (p: Program I A)
+      (c: Contract unit I)
+      (int: Interp I)
+  : contractfull_program c p
+    -> Enforcer int c
+    -> Enforcer (execProgram int p) c.
+Proof.
+  intros Hc Henf.
+  apply (enforcer_contractfull_enforcer p c int) in Henf.
+  ++ rewrite abstract_exec_exec_program_same in Henf.
+     rewrite <- (constant_contract_derive p c int).
+     exact Henf.
+  ++ exact Hc.
+Qed.
+
+Lemma const_contractfull_is_strongly_compliant
+      {I: Interface}
+      {A: Type}
+      (p: Program I A)
+      (c: Contract unit I)
+  : contractfull_program c p
+    -> strongly_compliant_program c p.
+Proof.
+  intro Hp.
+  split.
+  + exact Hp.
+  + intros int Henf.
+    apply (contractfull_program_enforcer_enforcer_exec p c int Hp Henf).
 Qed.
