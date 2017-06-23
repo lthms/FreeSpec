@@ -3,39 +3,12 @@ Require Import Coq.Classes.Equivalence.
 Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
+Require Export FreeSpec.Interface.
 Require Import FreeSpec.Equiv.
 
 Local Open Scope eq_scope.
 
-(** * [Interface] Interpretation
-
-    We consider an [Interface] as a set of _Instructions_. An
-    Instruction may take one or more arguments and is associated and,
-    once “executed”, returns an element of a given type.
-
-    An [Interface] can easily be defined using a coq inductive
-    type. You can have a look at [FreeSpec.Examples] if you want to
-    see some simple or more complex examples.
-
- *)
-
-Definition Interface := Type -> Type.
-
-(** That is, if [I] is an interface, [i : I A] is an instruction which
-    returns an element of [A] once interpreted. We define an helper
-    function, [typeret], to help Coq in case it struggles with the
-    return types. It has been useful for instance to deal with the
-    [Contract]s definition.
-
- *)
-
-Definition typeret
-           {I: Interface}
-           {A: Type}
-           (i: I A)
-  : Type := A.
-
-(** ** [Interp]reter
+(** * [Interp]reter
 
     In a nutshell, an Interpreter is function which takes an
     instruction of a given [Interface] and returns both a result and a
@@ -233,6 +206,17 @@ Add Parametric Relation
     transitivity proved by (run_interp_eq_trans)
       as run_interp_equiv.
 
+Instance eq_run_interp
+         {I: Interface}
+         {A: Type}
+  : Eq (A * Interp I) :=
+  {| equiv := run_interp_eq |}.
+
+(** We then provide the required morphisms for one to be able to
+    rewrite terms using the [run_interp_eq] equivalence relation.
+
+ *)
+
 Add Parametric Morphism
     (I: Interface)
     (A: Type)
@@ -254,12 +238,6 @@ Proof.
   intros o o' [_H H].
   exact H.
 Qed.
-
-Instance eq_run_interp
-         {I: Interface}
-         {A: Type}
-  : Eq (A * Interp I) :=
-  {| equiv := run_interp_eq |}.
 
 Add Parametric Morphism
     (I: Interface)
@@ -336,7 +314,7 @@ Proof.
 Qed.
 (* end hide *)
 
-(** ** Stateful Interpreter
+(** * Stateful Interpreter
 
     The function [mkInterp] is here to ease the definition of new
     so-called stateful interpreters. More precisely, it turns a
