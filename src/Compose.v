@@ -2,9 +2,10 @@
 Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
+Require Import FreeSpec.Equiv.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Equiv.
+Require Import FreeSpec.Contract.
 
 Local Open Scope eq_scope.
 
@@ -17,12 +18,11 @@ Local Open Scope eq_scope.
  *)
 Inductive IntCompose
           (I I': Interface)
-  : Interface :=
-| ileft (A: Type)
-        (i: I A)
+          (A: Type)
+  : Type :=
+| ileft (i: I A)
   : IntCompose I I' A
-| iright (A: Type)
-         (i: I' A)
+| iright (i: I' A)
   : IntCompose I I' A.
 
 Arguments ileft [I I' A] (i).
@@ -175,3 +175,68 @@ Proof.
       ]; cbn;
         apply mk_comp_interp_equivalence.
 Qed.
+
+(** * Contract Composition
+
+ *)
+
+Let compose_step
+    {S S': Type}
+    {I I': Interface}
+    (step: forall {A: Type}, I A -> S -> S)
+    (step': forall {A: Type}, I' A -> S' -> S')
+    (A: Type)
+    (i: (I <+> I') A)
+    (x: S * S')
+  : S * S' :=
+  match x, i with
+  | (s, s'), ileft i =>
+    (step i s, s')
+  | (s, s'), iright i =>
+    (s, step' i s')
+  end.
+
+Let compose_requirements
+    {S S': Type}
+    {I I': Interface}
+    (req: forall {A: Type}, I A -> S -> Prop)
+    (req': forall {A: Type}, I' A -> S' -> Prop)
+    (A: Type)
+    (i: (I <+> I') A)
+    (x: S * S')
+  : Prop :=
+  match x, i with
+  | (s, s'), ileft i =>
+    req i s
+  | (s, s'), iright i =>
+    req' i s'
+  end.
+
+Let compose_promises
+    {S S': Type}
+    {I I': Interface}
+    (prom: forall {A: Type} (i: I A), A -> S -> Prop)
+    (prom': forall {A: Type} (i: I' A), A -> S' -> Prop)
+    (A: Type)
+    (i: (I <+> I') A)
+    (ret: A)
+    (x: S * S')
+  : Prop :=
+  match x, i with
+  | (s, s'), ileft i =>
+    prom i ret s
+  | (s, s'), iright i =>
+    prom' i ret s'
+  end.
+
+Definition composeContract
+           {S S': Type}
+           {I I': Interface}
+           (c: Contract S I)
+           (c': Contract S' I')
+  : Contract (S * S') (I <+> I') :=
+  {| abstract := (abstract c, abstract c')
+   ; abstract_step := compose_step (abstract_step c) (abstract_step c')
+   ; requirements := compose_requirements (requirements c) (requirements c')
+   ; promises := compose_promises (promises c) (promises c')
+   |}.

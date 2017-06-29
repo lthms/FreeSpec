@@ -14,7 +14,7 @@ Definition temporal_contract
            (tl: Formula (ISet I))
            (promises: forall (R: Type)
                              (i: I R),
-               typeret i -> Formula (ISet I) -> Prop)
+               R -> Formula (ISet I) -> Prop)
   : Contract (Formula (ISet I)) I :=
   {| abstract := tl
    ; abstract_step := temporal_step I
@@ -58,7 +58,7 @@ Definition temporal_requirements_enforces_promises
            (inv: Formula (ISet I) -> State -> Prop)
            (promises: forall (R: Type)
                              (i: I R),
-               typeret i -> Formula (ISet I) -> Prop)
+               R -> Formula (ISet I) -> Prop)
   := forall {A: Type}
             (i: I A)
             (s: State)
@@ -74,7 +74,7 @@ Lemma temporal_contract_enforces_promises
       (inv: Formula (ISet I) -> State -> Prop)
       (promises: forall (R: Type)
                         (i: I R),
-          typeret i -> Formula (ISet I) -> Prop)
+          R -> Formula (ISet I) -> Prop)
   : temporal_requirements_enforces_promises step inv promises
     -> contract_enforces_promises (temporal_requirements I)
                                   promises
@@ -94,7 +94,7 @@ Lemma temporal_contract_enforcement
       (inv: Formula (ISet I) -> State -> Prop)
       (promises: forall (R: Type)
                         (i: I R),
-          typeret i -> Formula (ISet I) -> Prop)
+          R -> Formula (ISet I) -> Prop)
       (tl: Formula (ISet I))
       (Hpres: temporal_requirements_preserves_inv step inv)
       (Henf: temporal_requirements_enforces_promises step inv promises)

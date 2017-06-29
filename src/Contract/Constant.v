@@ -12,7 +12,7 @@ Definition const_contract_promises
            {I: Interface}
            (promises: forall (A: Type)
                              (i: I A),
-               typeret i -> Prop)
+               A -> Prop)
   := fun (A: Type) (i: I A) (a: A) (_: unit) => promises A i a.
 
 Definition constant_contract
@@ -20,7 +20,7 @@ Definition constant_contract
            (requirements: forall (A: Type), I A -> Prop)
            (promises: forall (A: Type)
                              (i: I A),
-               typeret i -> Prop)
+               A -> Prop)
   : Contract unit I :=
   {| abstract := tt
    ; abstract_step := fun (A: Type) (_: I A) (x: unit) => x

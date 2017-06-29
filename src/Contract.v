@@ -19,8 +19,7 @@ Record Contract
     ; requirements (A: Type)
       : I A -> S -> Prop
     ; promises (A: Type)
-               (i: I A)
-      : typeret i -> S -> Prop
+      : I A -> A -> S -> Prop
     }.
 
 Arguments abstract [_ _] (_).
