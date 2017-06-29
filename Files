@@ -16,3 +16,4 @@ src/Refine.v
 src/Utils.v
 
 examples/Map.v
+examples/Smram.v

@@ -1,20 +1,21 @@
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Interp.
 
-Section REFINEMENT.
-  Parameters (Ii: Type -> Type)
-             (Io: Type -> Type)
-             (S:  Type).
-
-  Definition StatefulRefinement
-    := forall {A: Type},
+Definition StatefulRefinement
+           (Ii: Type -> Type)
+           (Io: Type -> Type)
+           (S:  Type) :=
+  forall {A: Type},
     Ii A -> S -> Program Io (A * S).
 
-  Definition StatefulInterpret
-             (sr: StatefulRefinement)
-             (s: S)
-             (int: Interp Io)
-    : Interp Ii :=
+Definition StatefulInterpret
+           {Ii: Type -> Type}
+           {Io: Type -> Type}
+           {S:  Type}
+           (sr: StatefulRefinement Ii Io S)
+           (s: S)
+           (int: Interp Io)
+  : Interp Ii :=
     mkInterp (fun {A: Type}
                   (st: (S * Interp Io))
                   (i: Ii A)
@@ -23,9 +24,8 @@ Section REFINEMENT.
                    (execProgram (snd st) (sr A i (fst st))))))
              (s, int).
 
-  Definition PureRefinement
-             (Ii: Type -> Type)
-             (Io: Type -> Type)
-    := forall (A: Type),
-      Ii A -> Program Io A.
-End REFINEMENT.
+Definition PureRefinement
+           (Ii: Type -> Type)
+           (Io: Type -> Type)
+  := forall {A: Type},
+    Ii A -> Program Io A.

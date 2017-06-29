@@ -34,19 +34,19 @@ Section MAP.
             (value_eq: Eq Value)
             (value_eqdec: EqDec Value).
 
-  Inductive Instruction: Type -> Type :=
+  Inductive IMap: Type -> Type :=
   | Read (k: Key)
-    : Instruction Value
+    : IMap Value
   | Write (k: Key)
           (v: Value)
-    : Instruction unit.
+    : IMap unit.
 
   Definition State := Key -> Value.
 
   Definition map_program_step
              (A: Type)
              (map: State)
-             (i: Instruction A)
+             (i: IMap A)
     : (A * State) :=
     match i with
     | Read k => (map k, map)
@@ -60,7 +60,7 @@ Section MAP.
              (s: State)
     := mkInterp map_program_step s.
 
-  Definition MapProgram := Program Instruction.
+  Definition MapProgram := Program IMap.
 
   Definition read_then_write
              (k: Key)
@@ -105,7 +105,7 @@ Section MAP.
 
     Definition never_read_x_requirements
                (A: Type)
-               (i: Instruction A) :=
+               (i: IMap A) :=
       match i with
       | Read k => True
       | Write k v => v /= x
@@ -113,7 +113,7 @@ Section MAP.
 
     Definition never_read_x_promises
                (A: Type)
-               (i: Instruction A)
+               (i: IMap A)
       : typeret i -> Prop :=
       match i with
       | Read k => fun v => v /= x
@@ -200,7 +200,7 @@ Section MAP.
     Qed.
 
     Definition write_k_x
-               (i: ISet Instruction)
+               (i: ISet IMap)
       : Prop :=
       match i with
       | instruction (Write k' v')
@@ -210,7 +210,7 @@ Section MAP.
       end.
 
     Definition write_k_x_dec
-               (i: ISet Instruction)
+               (i: ISet IMap)
       : {write_k_x i}+{~write_k_x i}.
       induction i.
       refine (
@@ -226,13 +226,13 @@ Section MAP.
     Defined.
 
     Definition write_k_x_inst
-      : Dec (ISet Instruction) :=
+      : Dec (ISet IMap) :=
       {| prop := write_k_x
        ; prop_dec := write_k_x_dec
       |}.
 
     Definition not_read_k
-               (i: ISet Instruction)
+               (i: ISet IMap)
       : Prop :=
       match i with
       | instruction (Read k')
@@ -242,7 +242,7 @@ Section MAP.
       end.
 
     Definition not_read_k_dec
-               (i: ISet Instruction)
+               (i: ISet IMap)
       : {not_read_k i}+{~not_read_k i}.
       induction i.
       refine (
@@ -258,13 +258,13 @@ Section MAP.
     Defined.
 
     Definition not_read_k_inst
-      : Dec (ISet Instruction) :=
+      : Dec (ISet IMap) :=
       {| prop := not_read_k
        ; prop_dec := not_read_k_dec
       |}.
 
     Definition policy_step
-      : Formula (ISet Instruction) :=
+      : Formula (ISet IMap) :=
       (⟙) ⊢ write_k_x_inst ⟶ (⬜ not_read_k_inst).
 
     Definition write_read_write
@@ -275,7 +275,7 @@ Section MAP.
       _ <- [Read k'];
       [Write k v'].
 
-    Variables (int: Interp Instruction).
+    Variables (int: Interp IMap).
 
     Lemma enforces_policy
           (s: State)
@@ -295,7 +295,7 @@ Section MAP.
 
     Inductive invar
               (s: State)
-      : Formula (ISet Instruction) -> Prop :=
+      : Formula (ISet IMap) -> Prop :=
     | invar_1 (H: s k /= x)
       : invar s policy_step
     | invar_2
@@ -309,7 +309,7 @@ Section MAP.
 
     Lemma enforcing_policy_step_invar
           {A: Type}
-          (i: Instruction A)
+          (i: IMap A)
           (s: State)
       : invar s policy_step
         -> instruction_satisfies (instruction i) policy_step

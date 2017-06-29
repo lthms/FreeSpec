@@ -411,7 +411,7 @@ Definition contract_enforces_promises
            {I: Type -> Type}
            {State: Type}
            (requirements: forall (R: Type), I R -> S -> Prop)
-           (promises: forall {R: Type} (i: I R), typeret i -> S -> Prop)
+           (promises: forall {R: Type} (i: I R), R -> S -> Prop)
            (abs_step: forall (R: Type), I R -> S -> S)
            (inv: S -> State -> Prop)
            (step: @PS I State)
