@@ -1,5 +1,6 @@
 src/Interface.v
 src/Interp.v
+src/Compose.v
 src/Program.v
 src/Abstract.v
 src/Contract.v
