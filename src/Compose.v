@@ -9,11 +9,14 @@ Require Import FreeSpec.Contract.
 
 Local Open Scope eq_scope.
 
-(** * [Interface] Composition
+(** Often, one [Program] will rely on more than one [Interface]. As a
+    consequence, we need to compose together the main components of
+    the FreeSpec Formalism. This library provides several operators to
+    do so.
 
-    A given Component may rely on more than one [Interface]. We
-    therefore propose the [IntCompose] structure to compose
-    [Interface]s together.
+ *)
+
+(** * [Interface] Composition
 
  *)
 Inductive IntCompose
@@ -33,7 +36,10 @@ Arguments iright [I I' A] (i).
 
  *)
 
-Notation "a '<+>' b" := (IntCompose a b) (at level 20, left associativity).
+Infix "<+>" := (IntCompose) (at level 20, left associativity)
+  : free_scope.
+
+Open Local Scope free_scope.
 
 (** * Interpretation
 
@@ -60,7 +66,9 @@ CoFixpoint mkCompInterp
                             )
              end).
 
-(** We define three morphisms. Just in case.
+(** We define three morphisms. Just in case. By doing so, we will be
+    able to use the [rewrite] tactic to replace one interpreter with
+    an equivalent one.
 
  *)
 
@@ -70,7 +78,6 @@ Add Parametric Morphism
     with signature (interp_eq) ==> (interp_eq) ==> (interp_eq)
       as mk_comp_interp_complete_morphism.
 Proof.
-  (* program_eq is a co-inductive property *)
   cofix.
   intros int1 int2 Heq int1' int2' Heq'.
   constructor.
@@ -104,6 +111,7 @@ Proof.
                                                       H).
 Qed.
 
+(* TODO: are these two morphisms really needed? *)
 Add Parametric Morphism
     (I I': Interface)
   : (@mkCompInterp I I')
@@ -126,7 +134,8 @@ Proof.
   reflexivity.
 Qed.
 
-Infix "|+|" := (mkCompInterp) (at level 42).
+Infix "|+|" := (mkCompInterp) (at level 42)
+  : free_scope.
 
 (** ** Effective Interpretation
 
@@ -148,6 +157,11 @@ CoFixpoint mkCompInterp'
              | iright i' => let (a, int2') := interpret int' i'
                             in (a, mkCompInterp' int int2')
              end).
+
+(** It can be shown that these two interpreter compositions are
+    equivalent.
+
+ *)
 
 Fact mk_comp_interp_equivalence
      {I I': Interface}
@@ -177,6 +191,9 @@ Proof.
 Qed.
 
 (** * Contract Composition
+
+    Because Interfaces can be composed together, contracts need their
+    composition operator too.
 
  *)
 
@@ -240,3 +257,6 @@ Definition composeContract
    ; requirements := compose_requirements (requirements c) (requirements c')
    ; promises := compose_promises (promises c) (promises c')
    |}.
+
+Infix ":+:" := (composeContract) (at level 20, left associativity)
+  : free_scope.

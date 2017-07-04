@@ -1,4 +1,6 @@
+(* begin hide *)
 Require Import Coq.Bool.Sumbool.
+(* end hide *)
 
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Compose.
@@ -6,6 +8,11 @@ Require Import FreeSpec.Refine.
 Require Import FreeSpec.Program.
 
 Require Import FreeSpec.Examples.Map.
+
+(** This Example is here to show how to create a Component which
+    relies on two separated interfaces.
+
+ *)
 
 Section SMRAM_EXAMPLE.
   Variables (Addr: Type)
