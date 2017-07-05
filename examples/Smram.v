@@ -247,4 +247,88 @@ Section SMRAM_EXAMPLE.
      ; promises := Smram_promises
      |}.
 
+  (** ** Contract Enforcement
+
+      *** State Invariant
+
+      We claim our Memory Controller specification enforces the
+      [smram_contract] whenever the [smram_lock] register is set.
+ *)
+
+  Definition smram_state_requirements
+             (s: MCH)
+    : Prop :=
+    smram_lock s = true.
+
+  (** *** Sub-Contracts
+
+      We also acknowledge that, in order for our Memory Controler to
+      enforce the [smram_contract], the DRAM controller needs to work
+      in a correct manner. To specify this correct manner, we need a
+      sub-contract, which will basically describe who it is supposed
+      to work.
+
+   *)
+
+  Definition DRAMState
+    := Addr -> Value.
+
+  Definition DRAM_step
+             (A: Type)
+             (i: IDRAM A)
+             (s: DRAMState)
+    : DRAMState :=
+    match i with
+    | Write a v (* Write Access *)
+      => fun (a': Addr)
+         => if addr_eq a a'
+            then v
+            else s a'
+    | _ (* Nothing to do with Read Access *)
+      => s
+    end.
+
+  (** We do not need any requirements on the DRAM Interface...
+
+   *)
+
+  Definition DRAM_requirements
+             (A: Type)
+             (i: IDRAM A)
+             (s: DRAMState)
+    : Prop :=
+    True.
+
+  (** But we need the result of the Read primitive to stay
+  synchronized with the abstract step.
+
+   *)
+
+  Definition DRAM_promises
+             (A: Type)
+             (i: IDRAM A)
+             (ret: A)
+             (s: DRAMState)
+    : Prop :=
+    match i with
+    | Read a (* Read Access *)
+      => ret ~= s a
+    | _
+      => True
+    end.
+
+  Definition dram_contract
+             (s: DRAMState)
+    : Contract DRAMState IDRAM :=
+    {| abstract := s
+     ; abstract_step := DRAM_step
+     ; requirements := DRAM_requirements
+     ; promises := DRAM_promises
+     |}.
+
+  Definition smram_subcontract
+             (s: DRAMState)
+    : Contract DRAMState (IDRAM <+> IVGA) :=
+    expand_contract_left (dram_contract s) IVGA.
+
 End SMRAM_EXAMPLE.

@@ -260,3 +260,125 @@ Definition composeContract
 
 Infix ":+:" := (composeContract) (at level 20, left associativity)
   : free_scope.
+
+Definition expand_step_left
+           {S: Type}
+           {I: Interface}
+           (step: forall {A: Type} (i: I A), S -> S)
+           (I': Interface)
+           (A: Type)
+           (i: (I <+> I') A)
+           (s: S)
+  : S :=
+  match i with
+  | ileft i
+    => step i s
+  | _
+    => s
+  end.
+
+Definition expand_req_left
+           {S: Type}
+           {I: Interface}
+           (req: forall {A: Type}, I A -> S -> Prop)
+           (I': Interface)
+           (A: Type)
+           (i: (I <+> I') A)
+           (s: S)
+  : Prop :=
+  match i with
+  | ileft i
+    => req i s
+  | _
+    => True
+  end.
+
+Definition expand_prom_left
+           {S: Type}
+           {I: Interface}
+           (prom: forall {A: Type} (i: I A), A -> S -> Prop)
+           (I': Interface)
+           (A: Type)
+           (i: (I <+> I') A)
+           (a: A)
+           (s: S)
+  : Prop :=
+  match i with
+  | ileft i
+    => prom i a s
+  | _
+    => True
+  end.
+
+Definition expand_contract_left
+           {S: Type}
+           {I: Interface}
+           (c: Contract S I)
+           (I': Interface)
+  : Contract S (I <+> I') :=
+  {| abstract := abstract c
+   ; abstract_step := expand_step_left (abstract_step c) I'
+   ; requirements := expand_req_left (requirements c) I'
+   ; promises := expand_prom_left (promises c) I'
+   |}.
+
+Definition expand_step_right
+           {S: Type}
+           {I: Interface}
+           (step: forall {A: Type} (i: I A), S -> S)
+           (I': Interface)
+           (A: Type)
+           (i: (I' <+> I) A)
+           (s: S)
+  : S :=
+  match i with
+  | iright i
+    => step i s
+  | _
+    => s
+  end.
+
+Definition expand_req_right
+           {S: Type}
+           {I: Interface}
+           (req: forall {A: Type}, I A -> S -> Prop)
+           (I': Interface)
+           (A: Type)
+           (i: (I' <+> I) A)
+           (s: S)
+  : Prop :=
+  match i with
+  | iright i
+    => req i s
+  | _
+    => True
+  end.
+
+Definition expand_prom_right
+           {S: Type}
+           {I: Interface}
+           (prom: forall {A: Type} (i: I A), A -> S -> Prop)
+           (I': Interface)
+           (A: Type)
+           (i: (I' <+> I) A)
+           (a: A)
+           (s: S)
+  : Prop :=
+  match i with
+  | iright i
+    => prom i a s
+  | _
+    => True
+  end.
+
+Definition expand_contract_right
+           {S: Type}
+           {I: Interface}
+           (c: Contract S I)
+           (I': Interface)
+  : Contract S (I' <+> I) :=
+  {| abstract := abstract c
+   ; abstract_step := expand_step_right (abstract_step c) I'
+   ; requirements := expand_req_right (requirements c) I'
+   ; promises := expand_prom_right (promises c) I'
+   |}.
