@@ -325,3 +325,6 @@ Section MAP.
      *)
   End CONTRACT.
 End MAP.
+
+Arguments Write [Key Value].
+Arguments Read [Key Value].
