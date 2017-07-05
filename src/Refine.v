@@ -5,7 +5,7 @@ Definition StatefulRefinement
            (Ii: Type -> Type)
            (Io: Type -> Type)
            (S:  Type) :=
-  forall {A: Type},
+  forall (A: Type),
     Ii A -> S -> Program Io (A * S).
 
 Definition StatefulInterpret
@@ -27,5 +27,5 @@ Definition StatefulInterpret
 Definition PureRefinement
            (Ii: Type -> Type)
            (Io: Type -> Type)
-  := forall {A: Type},
+  := forall (A: Type),
     Ii A -> Program Io A.

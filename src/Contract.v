@@ -163,15 +163,6 @@ Proof.
     exact Hp.
 Qed.
 
-Conjecture contractfull_program_bind_ret'
-  : forall {S: Type}
-           {I: Type -> Type}
-           {A B: Type}
-           (a: A)
-           (f: A -> Program I B)
-           (c: Contract S I),
-    contractfull_program c (bind (ret a) f) -> contractfull_program c (f a).
-
 Lemma enforcer_instruction_contractfull_enforcer
       {S: Type}
       {I: Type -> Type}
@@ -378,7 +369,7 @@ Definition contract_preserves_inv
            (abs_step: forall (R: Type), I R -> S -> S)
            (inv: S -> State -> Prop)
            (step: @PS I State)
-  := forall {A: Type}
+  := forall (A: Type)
             (i: I A)
             (abs: S)
             (s: State),
@@ -415,7 +406,7 @@ Definition contract_enforces_promises
            (abs_step: forall (R: Type), I R -> S -> S)
            (inv: S -> State -> Prop)
            (step: @PS I State)
-  := forall {A: Type}
+  := forall (A: Type)
             (i: I A)
             (s: State)
             (abs: S),

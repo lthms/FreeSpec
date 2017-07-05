@@ -39,7 +39,7 @@ Arguments iright [I I' A] (i).
 Infix "<+>" := (IntCompose) (at level 20, left associativity)
   : free_scope.
 
-Open Local Scope free_scope.
+Local Open Scope free_scope.
 
 (** * Interpretation
 
@@ -197,14 +197,14 @@ Qed.
 
  *)
 
-Let compose_step
-    {S S': Type}
-    {I I': Interface}
-    (step: forall {A: Type}, I A -> S -> S)
-    (step': forall {A: Type}, I' A -> S' -> S')
-    (A: Type)
-    (i: (I <+> I') A)
-    (x: S * S')
+Definition compose_step
+           {S S': Type}
+           {I I': Interface}
+           (step: forall {A: Type}, I A -> S -> S)
+           (step': forall {A: Type}, I' A -> S' -> S')
+           (A: Type)
+           (i: (I <+> I') A)
+           (x: S * S')
   : S * S' :=
   match x, i with
   | (s, s'), ileft i =>
@@ -213,14 +213,14 @@ Let compose_step
     (s, step' i s')
   end.
 
-Let compose_requirements
-    {S S': Type}
-    {I I': Interface}
-    (req: forall {A: Type}, I A -> S -> Prop)
-    (req': forall {A: Type}, I' A -> S' -> Prop)
-    (A: Type)
-    (i: (I <+> I') A)
-    (x: S * S')
+Definition compose_requirements
+           {S S': Type}
+           {I I': Interface}
+           (req: forall {A: Type}, I A -> S -> Prop)
+           (req': forall {A: Type}, I' A -> S' -> Prop)
+           (A: Type)
+           (i: (I <+> I') A)
+           (x: S * S')
   : Prop :=
   match x, i with
   | (s, s'), ileft i =>
@@ -229,15 +229,15 @@ Let compose_requirements
     req' i s'
   end.
 
-Let compose_promises
-    {S S': Type}
-    {I I': Interface}
-    (prom: forall {A: Type} (i: I A), A -> S -> Prop)
-    (prom': forall {A: Type} (i: I' A), A -> S' -> Prop)
-    (A: Type)
-    (i: (I <+> I') A)
-    (ret: A)
-    (x: S * S')
+Definition compose_promises
+           {S S': Type}
+           {I I': Interface}
+           (prom: forall {A: Type} (i: I A), A -> S -> Prop)
+           (prom': forall {A: Type} (i: I' A), A -> S' -> Prop)
+           (A: Type)
+           (i: (I <+> I') A)
+           (ret: A)
+           (x: S * S')
   : Prop :=
   match x, i with
   | (s, s'), ileft i =>

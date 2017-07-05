@@ -327,7 +327,7 @@ Qed.
 Definition PS
            {I: Interface}
            (State: Type)
-  := forall {A: Type}, State -> I A -> (A * State).
+  := forall (A: Type), State -> I A -> (A * State).
 
 CoFixpoint mkInterp
            {I: Interface}

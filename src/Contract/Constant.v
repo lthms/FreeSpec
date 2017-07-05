@@ -34,7 +34,7 @@ Definition requirements_preserves_inv
            (requirements: forall (A: Type), I A -> Prop)
            (step: @PS I State)
            (inv: State -> Prop)
-  := forall {A: Type}
+  := forall (A: Type)
             (i: I A)
             (s: State),
     inv s
@@ -66,7 +66,7 @@ Definition requirements_brings_promises
            (promises: forall (A: Type), I A -> A -> Prop)
            (step: @PS I State)
            (inv: State -> Prop)
-  := forall {A: Type}
+  := forall (A: Type)
             (i: I A)
             (s: State),
     inv s

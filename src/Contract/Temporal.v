@@ -27,7 +27,7 @@ Definition temporal_requirements_preserves_inv
            {State: Type}
            (step: @PS I State)
            (inv: Formula (ISet I) -> State -> Prop)
-  := forall {A: Type}
+  := forall (A: Type)
             (i: I A)
             (s: State)
             (tl: Formula (ISet I)),
@@ -59,7 +59,7 @@ Definition temporal_requirements_enforces_promises
            (promises: forall (R: Type)
                              (i: I R),
                R -> Formula (ISet I) -> Prop)
-  := forall {A: Type}
+  := forall (A: Type)
             (i: I A)
             (s: State)
             (tl: Formula (ISet I)),
