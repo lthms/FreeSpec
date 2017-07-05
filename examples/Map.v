@@ -11,6 +11,7 @@ Require Import Sumbool.
 
 Local Open Scope formula_scope.
 Local Open Scope eq_scope.
+Local Open Scope prog_scope.
 
 Lemma neq_sym
       {T: Type}
@@ -25,8 +26,6 @@ Proof.
 Qed.
 
 Section MAP.
-  Local Open Scope prog_scope.
-
   Variables (Key: Type)
             (key_eq: Eq Key)
             (key_eqdec: EqDec Key)

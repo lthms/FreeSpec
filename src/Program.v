@@ -321,12 +321,13 @@ Qed.
 
  *)
 
+
 Notation "p >>= f" := (bind p f) (at level 50) : prog_scope.
 Notation "a <- p ; q" :=
-  (bind p (fun a => q)) (at level 60, right associativity, p at next level)
+  (bind p (fun a => q)) (at level 99, right associativity, p at next level)
   : prog_scope.
 Notation "p ;; q" :=
-  (bind p (fun _ => q)) (at level 60, right associativity)
+  (bind p (fun _ => q)) (at level 99, right associativity)
   : prog_scope.
 Notation "[ i ]" := (instr i) (at level 50) : prog_scope.
 Notation "· a" := (ret a) (at level 50) : prog_scope.
