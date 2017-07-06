@@ -22,7 +22,7 @@ Definition constant_contract
                              (i: I A),
                A -> Prop)
   : Contract unit I :=
-  {| abstract_step := fun (A: Type) (_: I A) (x: unit) => x
+  {| abstract_step := fun (A: Type) (_: I A) (_: A) (_: unit) => tt
    ; requirements := @const_contract_requirements I requirements
    ; promises := @const_contract_promises I promises
    |}.
@@ -44,11 +44,11 @@ Lemma const_contract_preserves_inv
       {I: Interface}
       {State: Type}
       (requirements: forall (A: Type), I A -> Prop)
+      (promises: forall (A: Type), I A -> A -> Prop)
       (step: @PS I State)
       (inv: State -> Prop)
   : requirements_preserves_inv requirements step inv
-    -> contract_preserves_inv (@const_contract_requirements I requirements)
-                              (fun _ _ _ => tt)
+    -> contract_preserves_inv (constant_contract requirements promises)
                               (fun _ s => inv s)
                               step.
 Proof.
@@ -80,9 +80,7 @@ Lemma const_contract_enforces_promises
       (step: @PS I State)
       (inv: State -> Prop)
   : requirements_brings_promises requirements promises step inv
-    -> contract_enforces_promises (@const_contract_requirements I requirements)
-                                  (@const_contract_promises I promises)
-                                  (fun _ _ _ => tt)
+    -> contract_enforces_promises (constant_contract requirements promises)
                                   (fun _ s => inv s)
                                   step.
 Proof.

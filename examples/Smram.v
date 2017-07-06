@@ -187,6 +187,7 @@ Section SMRAM_EXAMPLE.
   Definition Smram_step
              (A: Type)
              (i: IMCH A)
+             (_: A)
              (s: SmramState)
     : SmramState :=
     match i with
@@ -274,6 +275,7 @@ Section SMRAM_EXAMPLE.
   Definition DRAM_step
              (A: Type)
              (i: IDRAM A)
+             (_: A)
              (s: DRAMState)
     : DRAMState :=
     match i with

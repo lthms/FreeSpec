@@ -13,6 +13,7 @@ Record Contract
   :=
     { abstract_step (A: Type)
                     (i: I A)
+                    (a: A)
       : S -> S
     ; requirements (A: Type)
       : I A -> S -> Prop
@@ -20,7 +21,7 @@ Record Contract
       : I A -> A -> S -> Prop
     }.
 
-Arguments abstract_step [_ _] (_) [_].
+Arguments abstract_step [_ _] (_) [_] (_ _ _).
 Arguments requirements [_ _] (_) [_] (_ _).
 Arguments promises [_ _] (_) [_] (_ _).
 
@@ -56,7 +57,7 @@ Lemma contract_derives_contract_step
       (int: Interp I)
       (c: Contract S I)
       (s: S)
-  : contract_derive (instr i) int c s = abstract_step c i s.
+  : contract_derive (instr i) int c s = abstract_step c i (evalInstruction int i) s.
 Proof.
   reflexivity.
 Qed.
@@ -75,7 +76,7 @@ CoInductive Enforcer
            (Henf:  forall {A: Type}
                           (i: I A),
                requirements c i s
-               -> Enforcer (execInstruction int i) c (abstract_step c i s))
+               -> Enforcer (execInstruction int i) c (abstract_step c i (evalInstruction int i) s))
   : Enforcer int c s.
 
 Lemma enforcer_enforces_promises
@@ -345,8 +346,7 @@ Definition contract_preserves_inv
            {S: Type}
            {I: Type -> Type}
            {State: Type}
-           (requirements: forall (R: Type), I R -> S -> Prop)
-           (abs_step: forall (R: Type), I R -> S -> S)
+           (c: Contract S I)
            (inv: S -> State -> Prop)
            (step: @PS I State)
   := forall (A: Type)
@@ -354,16 +354,14 @@ Definition contract_preserves_inv
             (abs: S)
             (s: State),
     inv abs s
-    -> requirements A i abs
-    -> inv (abs_step A i abs) (snd (step A s i)).
+    -> requirements c i abs
+    -> inv (abstract_step c i (fst (step A s i)) abs) (snd (step A s i)).
 
 Definition contract_enforces_promises
            {S: Type}
            {I: Type -> Type}
            {State: Type}
-           (requirements: forall (R: Type), I R -> S -> Prop)
-           (promises: forall {R: Type} (i: I R), R -> S -> Prop)
-           (abs_step: forall (R: Type), I R -> S -> S)
+           (c: Contract S I)
            (inv: S -> State -> Prop)
            (step: @PS I State)
   := forall (A: Type)
@@ -371,8 +369,8 @@ Definition contract_enforces_promises
             (s: State)
             (abs: S),
     inv abs s
-    -> requirements A i abs
-    -> promises i (fst (step A s i)) abs.
+    -> requirements c i abs
+    -> promises c i (fst (step A s i)) abs.
 
 Fact _stateful_contract_enforcement
      {S: Type}
@@ -382,8 +380,8 @@ Fact _stateful_contract_enforcement
      (inv: S -> State -> Prop)
      (step: @PS I State)
   : forall (abs: S)
-           (Hpres: contract_preserves_inv (requirements c) (abstract_step c) inv step)
-           (Henf: contract_enforces_promises (requirements c) (promises c) (abstract_step c) inv step)
+           (Hpres: contract_preserves_inv c inv step)
+           (Henf: contract_enforces_promises c inv step)
            (s: State),
     inv abs s
     -> Enforcer (mkInterp step s) c abs.
@@ -411,8 +409,8 @@ Lemma stateful_contract_enforcement
       (abs: S)
       (inv: S -> State -> Prop)
       (step: @PS I State)
-      (Hpres: contract_preserves_inv (requirements c) (abstract_step c) inv step)
-      (Henf: contract_enforces_promises (requirements c) (promises c) (abstract_step c) inv step)
+      (Hpres: contract_preserves_inv c inv step)
+      (Henf: contract_enforces_promises c inv step)
   : forall (s: State),
     inv abs s
     -> Enforcer (mkInterp step s) c abs.

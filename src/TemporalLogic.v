@@ -371,7 +371,7 @@ Definition deriveFormula
            (int: Interp I)
            (p: Program I A)
            (tl: Formula (ISet I)) :=
-    deriveAbstraction tl (fun (R: Type) (i: I R) => tl_step (instruction i)) int p.
+    deriveAbstraction tl (fun (R: Type) (i: I R) (_: R) => tl_step (instruction i)) int p.
 
 Definition runFormula
            {I: Interface}
@@ -379,7 +379,7 @@ Definition runFormula
            (int: Interp I)
            (p: Program I A)
            (tl: Formula (ISet I)) :=
-    abstractRun tl (fun (R: Type) (i: I R) => tl_step (instruction i)) int p.
+    abstractRun tl (fun (R: Type) (i: I R) (_: R) => tl_step (instruction i)) int p.
 
 Lemma Formula_run_is_runFormula
   : forall {I: Type -> Type}

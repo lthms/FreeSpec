@@ -200,17 +200,18 @@ Qed.
 Definition compose_step
            {S S': Type}
            {I I': Interface}
-           (step: forall {A: Type}, I A -> S -> S)
-           (step': forall {A: Type}, I' A -> S' -> S')
+           (step: forall {A: Type}, I A -> A -> S -> S)
+           (step': forall {A: Type}, I' A -> A -> S' -> S')
            (A: Type)
            (i: (I <+> I') A)
+           (a: A)
            (x: S * S')
   : S * S' :=
   match x, i with
   | (s, s'), ileft i =>
-    (step i s, s')
+    (step i a s, s')
   | (s, s'), iright i =>
-    (s, step' i s')
+    (s, step' i a s')
   end.
 
 Definition compose_requirements
@@ -263,15 +264,16 @@ Infix ":+:" := (composeContract) (at level 20, left associativity)
 Definition expand_step_left
            {S: Type}
            {I: Interface}
-           (step: forall {A: Type} (i: I A), S -> S)
+           (step: forall {A: Type} (i: I A), A -> S -> S)
            (I': Interface)
            (A: Type)
            (i: (I <+> I') A)
+           (a: A)
            (s: S)
   : S :=
   match i with
   | ileft i
-    => step i s
+    => step i a s
   | _
     => s
   end.
@@ -323,15 +325,16 @@ Definition expand_contract_left
 Definition expand_step_right
            {S: Type}
            {I: Interface}
-           (step: forall {A: Type} (i: I A), S -> S)
+           (step: forall {A: Type} (i: I A), A -> S -> S)
            (I': Interface)
            (A: Type)
            (i: (I' <+> I) A)
+           (a: A)
            (s: S)
   : S :=
   match i with
   | iright i
-    => step i s
+    => step i a s
   | _
     => s
   end.
