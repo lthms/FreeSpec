@@ -239,10 +239,8 @@ Section SMRAM_EXAMPLE.
    *)
 
   Definition smram_contract
-             (s: SmramState)
     : Contract SmramState IMCH :=
-    {| abstract := s
-     ; abstract_step := Smram_step
+    {|  abstract_step := Smram_step
      ; requirements := Smram_requirements
      ; promises := Smram_promises
      |}.
@@ -320,8 +318,7 @@ Section SMRAM_EXAMPLE.
   Definition dram_contract
              (s: DRAMState)
     : Contract DRAMState IDRAM :=
-    {| abstract := s
-     ; abstract_step := DRAM_step
+    {| abstract_step := DRAM_step
      ; requirements := DRAM_requirements
      ; promises := DRAM_promises
      |}.

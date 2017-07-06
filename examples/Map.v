@@ -159,7 +159,7 @@ Section MAP.
     Corollary MapInterp_enforce_contract
               (s:    State)
               (Hinv: x_free_map s)
-      : Enforcer (MapInterp s) never_read_x_contract.
+      : Enforcer (MapInterp s) never_read_x_contract tt.
     Proof.
       apply (const_contract_enforcement never_read_x_requirements
                                         never_read_x_promises
@@ -178,7 +178,7 @@ Section MAP.
       [Write k' v].
 
     Lemma read_write_contractful
-      : contractfull_program never_read_x_contract read_write.
+      : contractfull_program never_read_x_contract tt read_write.
     Proof.
       unfold read_write.
       constructor.
@@ -186,11 +186,11 @@ Section MAP.
         cbn.
         trivial.
       + intros int Henf.
-        assert (contract_derive ([Read k]) int never_read_x_contract = never_read_x_contract).
-        reflexivity.
-        repeat rewrite H.
+        rewrite (tt_singleton
+                   (contract_derive ([Read k]) int never_read_x_contract tt)
+                   tt).
         unfold never_read_x_contract in Henf.
-        inversion Henf as [c Hprom Hreq].
+        inversion Henf as [Hprom Hreq].
         assert (never_read_x_promises Value (Read k) (evalInstruction int (Read k)))
           as Hnext
             by (apply Hprom; cbn; trivial).

@@ -22,8 +22,7 @@ Definition constant_contract
                              (i: I A),
                A -> Prop)
   : Contract unit I :=
-  {| abstract := tt
-   ; abstract_step := fun (A: Type) (_: I A) (x: unit) => x
+  {| abstract_step := fun (A: Type) (_: I A) (x: unit) => x
    ; requirements := @const_contract_requirements I requirements
    ; promises := @const_contract_promises I promises
    |}.
@@ -104,10 +103,11 @@ Lemma const_contract_enforcement
       (Henf: requirements_brings_promises requirements promises step inv)
   : forall (s: State),
     inv s
-    -> Enforcer (mkInterp step s) (constant_contract requirements promises).
+    -> Enforcer (mkInterp step s) (constant_contract requirements promises) tt.
 Proof.
   intros s Hinv.
   apply (stateful_contract_enforcement (constant_contract requirements promises)
+                                       tt
                                        (fun _ s => inv s)
                                        step).
   + apply const_contract_preserves_inv.
@@ -124,39 +124,20 @@ Proof.
   induction x; induction y; reflexivity.
 Qed.
 
-Lemma constant_contract_derive
-      {I: Interface}
-      {A: Type}
-      (p: Program I A)
-      (c: Contract unit I)
-      (int: Interp I)
-  : contract_derive p int c = c.
-Proof.
-  induction p;
-    unfold contract_derive;
-    induction c;
-    cbn;
-    try reflexivity.
-  + rewrite <- (tt_singleton abstract (abstract_step A i abstract)).
-    reflexivity.
-  + rewrite <- (tt_singleton abstract (deriveAbstraction abstract abstract_step int (bind p f))).
-    reflexivity.
-Qed.
-
 Lemma contractfull_program_enforcer_enforcer_exec
       {I: Interface}
       {A: Type}
       (p: Program I A)
       (c: Contract unit I)
       (int: Interp I)
-  : contractfull_program c p
-    -> Enforcer int c
-    -> Enforcer (execProgram int p) c.
+  : contractfull_program c tt p
+    -> Enforcer int c tt
+    -> Enforcer (execProgram int p) c tt.
 Proof.
   intros Hc Henf.
-  apply (enforcer_contractfull_enforcer p c int) in Henf.
+  apply (enforcer_contractfull_enforcer p c tt int) in Henf.
   ++ rewrite abstract_exec_exec_program_same in Henf.
-     rewrite <- (constant_contract_derive p c int).
+     rewrite (tt_singleton (contract_derive p int c tt) tt) in Henf.
      exact Henf.
   ++ exact Hc.
 Qed.
@@ -166,8 +147,8 @@ Lemma const_contractfull_is_strongly_compliant
       {A: Type}
       (p: Program I A)
       (c: Contract unit I)
-  : contractfull_program c p
-    -> strongly_compliant_program c p.
+  : contractfull_program c tt p
+    -> strongly_compliant_program c tt p.
 Proof.
   intro Hp.
   split.

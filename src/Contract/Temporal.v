@@ -11,13 +11,11 @@ Definition temporal_requirements (I: Interface) :=
 
 Definition temporal_contract
            {I: Interface}
-           (tl: Formula (ISet I))
            (promises: forall (R: Type)
                              (i: I R),
                R -> Formula (ISet I) -> Prop)
   : Contract (Formula (ISet I)) I :=
-  {| abstract := tl
-   ; abstract_step := temporal_step I
+  {| abstract_step := temporal_step I
    ; requirements := temporal_requirements I
    ; promises := fun (R: Type) => @promises R
    |}.
@@ -100,10 +98,11 @@ Lemma temporal_contract_enforcement
       (Henf: temporal_requirements_enforces_promises step inv promises)
   : forall (s: State),
     inv tl s
-    -> Enforcer (mkInterp step s) (temporal_contract tl promises).
+    -> Enforcer (mkInterp step s) (temporal_contract promises) tl.
 Proof.
   intros s Hinv.
-  apply (stateful_contract_enforcement (temporal_contract tl promises)
+  apply (stateful_contract_enforcement (temporal_contract promises)
+                                       tl
                                        inv
                                        step).
   + apply temporal_contract_preserves_inv.

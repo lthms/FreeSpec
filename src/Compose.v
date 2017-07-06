@@ -252,8 +252,7 @@ Definition composeContract
            (c: Contract S I)
            (c': Contract S' I')
   : Contract (S * S') (I <+> I') :=
-  {| abstract := (abstract c, abstract c')
-   ; abstract_step := compose_step (abstract_step c) (abstract_step c')
+  {| abstract_step := compose_step (abstract_step c) (abstract_step c')
    ; requirements := compose_requirements (requirements c) (requirements c')
    ; promises := compose_promises (promises c) (promises c')
    |}.
@@ -316,8 +315,7 @@ Definition expand_contract_left
            (c: Contract S I)
            (I': Interface)
   : Contract S (I <+> I') :=
-  {| abstract := abstract c
-   ; abstract_step := expand_step_left (abstract_step c) I'
+  {| abstract_step := expand_step_left (abstract_step c) I'
    ; requirements := expand_req_left (requirements c) I'
    ; promises := expand_prom_left (promises c) I'
    |}.
@@ -377,8 +375,7 @@ Definition expand_contract_right
            (c: Contract S I)
            (I': Interface)
   : Contract S (I' <+> I) :=
-  {| abstract := abstract c
-   ; abstract_step := expand_step_right (abstract_step c) I'
+  {| abstract_step := expand_step_right (abstract_step c) I'
    ; requirements := expand_req_right (requirements c) I'
    ; promises := expand_prom_right (promises c) I'
    |}.
