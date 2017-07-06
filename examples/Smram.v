@@ -1,7 +1,7 @@
 (* begin hide *)
 Require Import Coq.Bool.Sumbool.
+Require Import Coq.Bool.Bool.
 Require Import Coq.Program.Equality.
-
 (* end hide *)
 
 Require Import FreeSpec.Interp.
@@ -20,7 +20,10 @@ Local Open Scope prog_scope.
 
  *)
 
+(* begin hide *)
 Section SMRAM_EXAMPLE.
+(* end hide *)
+
   (** * Hypotheses
 
       This is an example, not a real proof of concept. Therefore, we
@@ -153,14 +156,14 @@ Section SMRAM_EXAMPLE.
       (* ---------------------------------------------------------- *)
       end.
 
-  (** ** Contract
+  (** * Contract
 
       Now here comes the section where FreeSpec is supposed to shine.
       We want to define a Contract which basically says: “Privileged
       read accesses only fetch value written by privileged write
       accesses.”
 
-      *** Abstract State
+      ** Abstract State
 
       To express that, we first define a very simple abstract state
       which is basically a map from SMRAM addresses to value written
@@ -199,7 +202,7 @@ Section SMRAM_EXAMPLE.
       => s
     end.
 
-  (** *** Requirements
+  (** ** Requirements
 
       Because we do not allow anyone to modify the [smram_lock]
       register, we do not have any requirement the Memory Controller
@@ -214,7 +217,7 @@ Section SMRAM_EXAMPLE.
     : Prop :=
     True.
 
-  (** *** Promises
+  (** ** Promises
 
       An Enforcer Component needs to stay syncronize with the abstract
       state of the Smram, that is deliver the value written by a
@@ -230,38 +233,27 @@ Section SMRAM_EXAMPLE.
     : Prop :=
     match i with
     | ReadMem a true (* Privileged Reads match the shadow Smram *)
-      => ret ~= (s a)
+      => Smram a -> ret ~= (s a)
     | _ (* No Guarantee otherwise *)
       => True
     end.
 
-  (** *** Definition
+  (** ** Definition
 
    *)
 
   Definition smram_contract
     : Contract SmramState IMCH :=
-    {|  abstract_step := Smram_step
+    {| abstract_step := Smram_step
      ; requirements := Smram_requirements
      ; promises := Smram_promises
      |}.
 
-  (** ** Contract Enforcement
+  (** * Contract Enforcement
 
-      *** State Invariant
+      ** Sub-Contracts
 
-      We claim our Memory Controller specification enforces the
-      [smram_contract] whenever the [smram_lock] register is set.
- *)
-
-  Definition smram_state_requirements
-             (s: MCH)
-    : Prop :=
-    smram_lock s = true.
-
-  (** *** Sub-Contracts
-
-      We also acknowledge that, in order for our Memory Controler to
+      We acknowledge that, in order for our Memory Controler to
       enforce the [smram_contract], the DRAM controller needs to work
       in a correct manner. To specify this correct manner, we need a
       sub-contract, which will basically describe who it is supposed
@@ -318,7 +310,6 @@ Section SMRAM_EXAMPLE.
     end.
 
   Definition dram_contract
-             (s: DRAMState)
     : Contract DRAMState IDRAM :=
     {| abstract_step := DRAM_step
      ; requirements := DRAM_requirements
@@ -326,8 +317,173 @@ Section SMRAM_EXAMPLE.
      |}.
 
   Definition smram_subcontract
-             (s: DRAMState)
     : Contract DRAMState (IDRAM <+> IVGA) :=
-    expand_contract_left (dram_contract s) IVGA.
+    expand_contract_left (dram_contract) IVGA.
 
+  (** ** Predicate of Synchronization
+
+ *)
+
+  Definition mch_dram_sync
+    : sync_pred SmramState DRAMState MCH :=
+    fun (mch: SmramState)
+        (state: MCH)
+        (dram: DRAMState)
+    => smram_lock state = true /\
+       forall (a: Addr),
+         Smram a
+         -> mch a = dram a.
+
+  Fact mch_dram_sync_smram_lock_is_true
+       (si: SmramState)
+       (state: MCH)
+       (so: DRAMState)
+    : mch_dram_sync si state so
+      -> smram_lock state = true.
+  Proof.
+    intros [H _H].
+    exact H.
+  Qed.
+
+  Lemma mch_specs_compliant_refinement
+    : compliant_refinement mch_refine
+                           smram_contract
+                           smram_subcontract
+                           mch_dram_sync.
+  Proof.
+    unfold compliant_refinement.
+    intros si s so A i Hsync Hreq.
+    induction i.
+    + induction smm.
+      ++ constructor.
+         +++ constructor.
+             trivial. (* no requirement for the subcontract *)
+         +++ constructor. (* program is only a ret, so it is trivial *)
+      ++ constructor.
+         +++ rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
+             rewrite andb_true_r.
+             destruct (Smramdec a); cbn.
+             ++++ constructor.
+                  trivial. (* read vga, no contract on vga *)
+             ++++ constructor.
+                  trivial. (* read dram, no requirement on vga *)
+         +++ constructor. (* program is only a ret *)
+    + induction smm.
+      ++ constructor.
+         +++ constructor.
+             trivial. (* no requirement for the subcontract *)
+         +++ constructor. (* program is only a ret, so it is trivial *)
+      ++ constructor.
+         +++ rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
+             rewrite andb_true_r.
+             destruct (Smramdec a); cbn.
+             ++++ constructor.
+                  trivial. (* read vga, no contract on vga *)
+             ++++ constructor.
+                  trivial. (* read dram, no requirement on vga *)
+         +++ constructor. (* program is only a ret *)
+  Qed.
+
+  Lemma mch_specs_sync_preservation
+    : sync_preservation mch_refine
+                        smram_contract
+                        smram_subcontract
+                        mch_dram_sync.
+  Proof.
+    unfold sync_preservation.
+    intros si s so int Henf A i Hsync Hreq.
+    induction i; induction smm.
+    + (* privileged read *)
+      exact Hsync.
+    + (* unprivileged read *)
+      cbn.
+      rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
+      rewrite andb_true_r.
+      destruct (Smramdec a); cbn; exact Hsync.
+    + (* privileged write *)
+      cbn.
+      split.
+      ++ apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
+      ++ intros a' Hsmram.
+         unfold update.
+         destruct (Smramdec a).
+         +++ destruct (addr_eq a a').
+             ++++ reflexivity.
+             ++++ destruct Hsync as [_H H].
+                  rewrite (H a' Hsmram).
+                  reflexivity.
+         +++ destruct (addr_eq a a').
+             ++++ subst.
+                  apply n in Hsmram.
+                  destruct Hsmram.
+             ++++ destruct Hsync as [_H H].
+                  rewrite (H a' Hsmram).
+                  reflexivity.
+    + (* unprivileged write *)
+      cbn.
+      split.
+      ++ apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
+      ++ intros a' Hsmram.
+         rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
+         rewrite andb_true_r.
+         destruct (Smramdec a); cbn.
+         +++ destruct Hsync as [_H H].
+             rewrite (H a' Hsmram).
+             reflexivity.
+         +++ destruct (addr_eq a a').
+             ++++ subst.
+                  apply n in Hsmram.
+                  destruct Hsmram.
+             ++++ destruct Hsync as [_H H].
+                  rewrite (H a' Hsmram).
+                  reflexivity.
+  Qed.
+
+
+  Lemma mch_specs_sync_promises
+    : sync_promises mch_refine
+                    smram_contract
+                    smram_subcontract
+                    mch_dram_sync.
+  Proof.
+    unfold sync_promises.
+    intros si s so int Henf A i Hsync Hreq.
+    assert (Hcp: compliant_refinement mch_refine
+                                      smram_contract
+                                      smram_subcontract
+                                      mch_dram_sync). {
+      apply mch_specs_compliant_refinement.
+    }
+    unfold compliant_refinement in Hcp.
+    assert (H: contractfull_program smram_subcontract so (mch_refine A i s))
+      by apply (Hcp si _ _ _ _ Hsync Hreq).
+    induction i; induction smm; try trivial.
+    (* privileged read *)
+    cbn; cbn in H.
+    intros Hsmram.
+    inversion H;
+      repeat simpl_existT;
+      subst.
+    inversion Hcp0;
+      repeat simpl_existT;
+      subst.
+    assert (Hprom: promises smram_subcontract
+                            (ileft (Read a))
+                            (fst (interpret int (ileft (Read a))))
+                            so). {
+      apply (enforcer_enforces_promises _ _ _ _ Henf Hreq0).
+    }
+    cbn in Hprom.
+    rewrite Hprom.
+    assert (Hproof: so a = si a). {
+      destruct Hsync as [_H Hx].
+      rewrite (Hx a Hsmram).
+      reflexivity.
+    }
+    rewrite Hproof.
+    constructor.
+  Qed.
+
+(* begin hide *)
 End SMRAM_EXAMPLE.
+(* end hide *)
