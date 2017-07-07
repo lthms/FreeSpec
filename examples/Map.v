@@ -3,19 +3,19 @@ Require Import FreeSpec.TemporalLogic.Notations.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Utils.
-Require Import FreeSpec.Equiv.
+Require Import FreeSpec.WEq.
 Require Import FreeSpec.Contract.
 Require Import FreeSpec.Contract.Constant.
 
 Require Import Sumbool.
 
 Local Open Scope formula_scope.
-Local Open Scope eq_scope.
+Local Open Scope free_weq_scope.
 Local Open Scope prog_scope.
 
 Lemma neq_sym
       {T: Type}
-     `{Eq T}
+     `{WEq T}
       (t: T)
       (Hneq_sym: t /= t)
   : False.
@@ -27,11 +27,11 @@ Qed.
 
 Section MAP.
   Variables (Key: Type)
-            (key_eq: Eq Key)
-            (key_eqdec: EqDec Key)
+            (key_eq: WEq Key)
+            (key_eqdec: WEqDec Key)
             (Value: Type)
-            (value_eq: Eq Value)
-            (value_eqdec: EqDec Value).
+            (value_eq: WEq Value)
+            (value_eqdec: WEqDec Value).
 
   Inductive IMap: Type -> Type :=
   | Read (k: Key)
@@ -75,7 +75,7 @@ Section MAP.
     : evalProgram (MapInterp s) (read_then_write k v) == v.
   Proof.
     cbn.
-    destruct (equiv_dec) as [He|Hne].
+    destruct (weq_dec) as [He|Hne].
     + reflexivity.
     + apply neq_sym in Hne.
       destruct Hne.
@@ -92,8 +92,8 @@ Section MAP.
        == evalProgram (MapInterp s) ([Read k]) .
   Proof.
     cbn.
-    destruct (equiv_dec k' k) as [He|Hne].
-    + apply eq_sym in He.
+    destruct (k' ?= k) as [He|Hne].
+    + symmetry in He.
       apply Hneq in He.
       destruct He.
     + reflexivity.
@@ -138,7 +138,7 @@ Section MAP.
         cbn in *.
         unfold x_free_map.
         intros k'.
-        destruct (equiv_dec k k').
+        destruct (k ?= k').
         ++ exact Hreq.
         ++ unfold x_free_map in Hinv.
            apply (Hinv k').

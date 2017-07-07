@@ -2,12 +2,12 @@
 Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
-Require Import FreeSpec.Equiv.
+Require Import FreeSpec.WEq.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Contract.
 
-Local Open Scope eq_scope.
+Local Open Scope free_weq_scope.
 
 (** Often, one [Program] will rely on more than one [Interface]. As a
     consequence, we need to compose together the main components of

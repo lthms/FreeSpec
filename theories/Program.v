@@ -5,9 +5,9 @@ Require Import Coq.Setoids.Setoid.
 Require Import Coq.Program.Basics.
 
 Require Import FreeSpec.Interp.
-Require Import FreeSpec.Equiv.
+Require Import FreeSpec.WEq.
 
-Local Open Scope eq_scope.
+Local Open Scope free_weq_scope.
 
 (** * The [Program] Monad
 
@@ -95,7 +95,7 @@ Definition execProgram
   : Interp I :=
   snd (runProgram int p).
 
-(** ** [Program]s Equivalence
+(** ** [Program]s WEquivalence
 
     Two [Program] are equivalent when they always gives both the exact
     same result and two equivalent interpreter (according to
@@ -227,8 +227,8 @@ Qed.
 Instance program_eq_eq
          (I: Interface)
          (A: Type)
-  : Eq (Program I A) :=
-  {| equiv := program_eq |}.
+  : WEq (Program I A) :=
+  {| weq := program_eq |}.
 
 (** ** Monad Laws
 
@@ -330,4 +330,3 @@ Notation "p ;; q" :=
   (bind p (fun _ => q)) (at level 99, right associativity)
   : prog_scope.
 Notation "[ i ]" := (instr i) (at level 50) : prog_scope.
-Notation "· a" := (ret a) (at level 50) : prog_scope.

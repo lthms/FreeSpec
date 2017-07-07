@@ -8,7 +8,7 @@ Require Import Coq.Setoids.Setoid.
 Require Import FreeSpec.Utils.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Equiv.
+Require Import FreeSpec.WEq.
 Require Import FreeSpec.Abstract.
 
 (** * Temporal Logic [Formula]
@@ -39,7 +39,7 @@ Notation "p ? a" := (prop_dec p a) (at level 51): dec_scope.
 Notation "p .? a" := (prop p a) (at level 51): dec_scope.
 
 Local Open Scope dec_scope.
-Local Open Scope eq_scope.
+Local Open Scope free_weq_scope.
 
 (** ** [Formula] Definition
 

@@ -1,9 +1,10 @@
 theories/Interface.v
 theories/Interp.v
-theories/Compose.v
 theories/Program.v
 theories/Abstract.v
 theories/Contract.v
+theories/Compose.v
+theories/Refine.v
 
 theories/Contract/Constant.v
 
@@ -11,8 +12,7 @@ theories/TemporalLogic.v
 theories/TemporalLogic/Notations.v
 theories/Contract/Temporal.v
 
-theories/Equiv.v
-theories/Refine.v
+theories/WEq.v
 theories/Utils.v
 
 examples/Map.v

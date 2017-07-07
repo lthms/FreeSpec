@@ -4,9 +4,9 @@ Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
 Require Export FreeSpec.Interface.
-Require Import FreeSpec.Equiv.
+Require Import FreeSpec.WEq.
 
-Local Open Scope eq_scope.
+Local Open Scope free_weq_scope.
 
 (** * [Interp]reter
 
@@ -146,10 +146,10 @@ Add Parametric Relation
   transitivity proved by (@interp_eq_trans I)
     as interp_rel.
 
-Instance interp_eq_eq (I: Interface): Eq (Interp I) :=
-  {| equiv := @interp_eq I |}.
+Instance interp_eq_eq (I: Interface): WEq (Interp I) :=
+  {| weq := @interp_eq I |}.
 
-(** ** Interpretation Result Equivalence
+(** ** Interpretation Result WEquivalence
 
     To help Coq when it comes to generalized rewriting, we define an
     equivalence relation for the result of an interpretation, along
@@ -209,8 +209,8 @@ Add Parametric Relation
 Instance eq_run_interp
          {I: Interface}
          {A: Type}
-  : Eq (A * Interp I) :=
-  {| equiv := run_interp_eq |}.
+  : WEq (A * Interp I) :=
+  {| weq := run_interp_eq |}.
 
 (** We then provide the required morphisms for one to be able to
     rewrite terms using the [run_interp_eq] equivalence relation.
@@ -290,7 +290,7 @@ Qed.
 Goal (forall (I: Interface)
              (int int': Interp I)
              (A: Type)
-             (eqA: Eq A)
+             (eqA: WEq A)
              (i: I A),
          int == int'
          -> evalInstruction int i == evalInstruction int' i).
@@ -303,7 +303,7 @@ Qed.
 Goal (forall (I: Interface)
              (int int': Interp I)
              (A: Type)
-             (eqA: Eq A)
+             (eqA: WEq A)
              (i: I A),
          int == int'
          -> execInstruction int i == execInstruction int' i).
