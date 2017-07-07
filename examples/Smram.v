@@ -484,6 +484,37 @@ Section SMRAM_EXAMPLE.
     constructor.
   Qed.
 
+  Lemma mch_refine_enforcer
+        {dram: Interp IDRAM}
+        {dram_ref: DRAMState}
+        (Henf: Enforcer dram dram_contract dram_ref)
+    : forall (vga: Interp IVGA)
+             (smram_ref: SmramState),
+      mch_dram_sync smram_ref {| smram_lock := true |} dram_ref
+      -> Enforcer (StatefulInterpret mch_refine
+                                     {| smram_lock := true |}
+                                     (dram |+| vga))
+                  smram_contract
+                  smram_ref.
+  Proof.
+    intros vga smram_ref Hsync.
+    assert (Enforcer (dram |+| vga) smram_subcontract dram_ref)
+      as Henf' by apply (expand_enforcer_left Henf).
+    apply (enforcer_refinement mch_refine
+                               smram_contract
+                               smram_subcontract
+                               mch_dram_sync
+                               mch_specs_sync_preservation
+                               mch_specs_sync_promises
+                               mch_specs_compliant_refinement
+                               smram_ref
+                               {| smram_lock := true |}
+                               dram_ref
+                               (dram |+| vga)
+                               Henf'
+                               Hsync).
+  Qed.
+
 (* begin hide *)
 End SMRAM_EXAMPLE.
 (* end hide *)

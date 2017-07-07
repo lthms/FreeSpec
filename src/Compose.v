@@ -261,6 +261,10 @@ Definition composeContract
 Infix ":+:" := (composeContract) (at level 20, left associativity)
   : free_scope.
 
+(** ** Left
+
+ *)
+
 Definition expand_step_left
            {S: Type}
            {I: Interface}
@@ -322,6 +326,36 @@ Definition expand_contract_left
    ; promises := expand_prom_left (promises c) I'
    |}.
 
+Lemma expand_enforcer_left
+  : forall {S: Type}
+           {I I': Interface}
+           {c: Contract S I}
+           {s: S}
+           {int: Interp I}
+           (Henf: Enforcer int c s)
+           (int': Interp I'),
+    Enforcer (int |+| int') (expand_contract_left c I') s.
+Proof.
+  cofix.
+  intros S I I' c s int Henf int'.
+  assert (Henf': Enforcer int c s) by apply Henf.
+  destruct Henf.
+  constructor.
+  + intros A i; induction i; cbn; [| trivial].
+    apply Hprom.
+  + intros A i Hreq.
+    induction i; cbn.
+    ++ apply expand_enforcer_left.
+       apply Henf.
+       exact Hreq.
+    ++ apply expand_enforcer_left.
+       exact Henf'.
+Qed.
+
+(** ** Right
+
+ *)
+
 Definition expand_step_right
            {S: Type}
            {I: Interface}
@@ -382,3 +416,29 @@ Definition expand_contract_right
    ; requirements := expand_req_right (requirements c) I'
    ; promises := expand_prom_right (promises c) I'
    |}.
+
+Lemma expand_enforcer_right
+  : forall {S: Type}
+           {I I': Interface}
+           {c: Contract S I}
+           {s: S}
+           {int: Interp I}
+           (Henf: Enforcer int c s)
+           (int': Interp I'),
+    Enforcer (int' |+| int) (expand_contract_right c I') s.
+Proof.
+  cofix.
+  intros S I I' c s int Henf int'.
+  assert (Henf': Enforcer int c s) by apply Henf.
+  destruct Henf.
+  constructor.
+  + intros A i; induction i; cbn; [trivial |].
+    apply Hprom.
+  + intros A i Hreq.
+    induction i; cbn.
+    ++ apply expand_enforcer_right.
+       exact Henf'.
+    ++ apply expand_enforcer_right.
+       apply Henf.
+       exact Hreq.
+Qed.
