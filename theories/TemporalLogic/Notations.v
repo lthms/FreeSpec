@@ -11,6 +11,6 @@ Require Import FreeSpec.TemporalLogic.
 Notation "⬜ p" := (globally p) (at level 70): formula_scope.
 Notation "◊ p" := (eventually p) (at level 70): formula_scope.
 Notation "⃝ p" := (next p) (at level 70): formula_scope.
-Notation "⟙" := (true) (at level 70): formula_scope.
-Notation "⟘" := (false) (at level 70): formula_scope.
+Notation "⟙" := (ltrue) (at level 70): formula_scope.
+Notation "⟘" := (lfalse) (at level 70): formula_scope.
 Notation "f1 ⊢ p ⟶ f2" := (switch f1 p f2) (at level 70): formula_scope.

@@ -5,11 +5,13 @@ Require Import Coq.Logic.Classical.
 Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
+Require Import FreeSpec.PropBool.
 Require Import FreeSpec.Utils.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.WEq.
 Require Import FreeSpec.Abstract.
+Require Import FreeSpec.PropBool.
 
 (** * Temporal Logic [Formula]
 
@@ -24,21 +26,47 @@ Require Import FreeSpec.Abstract.
 Record Dec
        (A: Type) :=
   { prop: A -> Prop
-  ; prop_dec: forall (a: A), {prop a}+{~prop a}
+  ; prop_bool: A -> bool
+  ; is_prop_bool:> PropBool1 prop prop_bool
   }.
 
 Arguments prop [A] (_ _).
-Arguments prop_dec [A] (_ _).
+Arguments prop_bool [A] (_ _).
+
 
 (** We define two notations, [p? a] and [p.? a] to use either the
     predicate or the decidable version of the predicate.
 
  *)
 
-Notation "p ? a" := (prop_dec p a) (at level 51): dec_scope.
+Notation "p ? a" := (prop_bool p a) (at level 51): dec_scope.
 Notation "p .? a" := (prop p a) (at level 51): dec_scope.
 
 Local Open Scope dec_scope.
+
+Lemma prop_bool_prop
+      {A: Type}
+      (p: Dec A)
+      (a: A)
+  : p? a = true <-> p.? a.
+Proof.
+  induction p.
+  cbn.
+  apply pred_bool_pred_1.
+Qed.
+
+Lemma prop_bool_false
+      {A: Type}
+      (p: Dec A)
+      (a: A)
+  : p? a = false <-> ~ p.? a.
+Proof.
+  induction p.
+  cbn.
+  apply pred_bool_false_1.
+  exact is_prop_bool0.
+Qed.
+
 Local Open Scope free_weq_scope.
 
 (** ** [Formula] Definition
@@ -48,9 +76,9 @@ Local Open Scope free_weq_scope.
 Inductive Formula
           (A: Type)
   : Type :=
-| true
+| ltrue
   : Formula A
-| false
+| lfalse
   : Formula A
 | globally (prop: Dec A)
   : Formula A
@@ -63,8 +91,8 @@ Inductive Formula
          (tl2: Formula A)
   : Formula A.
 
-Arguments true [_].
-Arguments false [_].
+Arguments ltrue [_].
+Arguments lfalse [_].
 Arguments globally [_] (_).
 Arguments eventually [_] (_).
 Arguments next [_] (_).
@@ -81,38 +109,55 @@ Fixpoint halt_satisfies
   | _ => True
   end.
 
-Fixpoint halt_satisfies_dec
+Fixpoint halt_satisfies_bool
          {A: Type}
          (tl: Formula A)
-  : {halt_satisfies tl}+{~halt_satisfies tl}.
-  refine (
-      match tl with
-      | eventually _ => false_dec
-      | next _ => false_dec
-      | switch before _ _ => decide_dec (halt_satisfies_dec A before)
-      | _ => true_dec
-      end);
-    cbn;
-    firstorder.
+  : bool :=
+  match tl with
+  | eventually _ => false
+  | next _ => false
+  | switch before _ _ => halt_satisfies_bool before
+  | _ => true
+  end.
+
+Instance halt_satisfies_PropBool
+         (A: Type)
+  : PropBool1 (@halt_satisfies A) (@halt_satisfies_bool A).
+Proof.
+  constructor.
+  intros a.
+  split.
+  + intro Heq.
+    induction a; try constructor.
+    ++ discriminate Heq.
+    ++ discriminate Heq.
+    ++ cbn in *.
+       apply (IHa1 Heq).
+  + intro Hhalt.
+    induction a; cbn; try reflexivity.
+    ++ destruct Hhalt.
+    ++ destruct Hhalt.
+    ++ cbn in *.
+       apply (IHa1 Hhalt).
 Defined.
 
 Inductive Formula_step
           {A: Type}
   : Formula A -> Formula A -> Prop :=
-| true_stays_true: Formula_step true true
-| false_stays_false: Formula_step false false
+| ltrue_stays_ltrue: Formula_step ltrue ltrue
+| lfalse_stays_lfalse: Formula_step lfalse lfalse
 | globally_stays_globally
     (prop: Dec A)
   : Formula_step (globally prop) (globally prop)
 | globally_can_fail
     (prop: Dec A)
-  : Formula_step (globally prop) false
+  : Formula_step (globally prop) lfalse
 | eventually_stays_eventually
     (prop: Dec A)
   : Formula_step (eventually prop) (eventually prop)
 | eventually_can_succeed
     (prop: Dec A)
-  : Formula_step (eventually prop) true
+  : Formula_step (eventually prop) ltrue
 | next_steps_unwrap
     (tl: Formula A)
   : Formula_step (next tl) tl
@@ -128,10 +173,10 @@ Inductive Formula_step
 | switch_can_fail
     (tl1 tl2: Formula A)
     (prop: Dec A)
-  : Formula_step (switch tl1 prop tl2) false.
+  : Formula_step (switch tl1 prop tl2) lfalse.
 
-Arguments true_stays_true [_].
-Arguments false_stays_false [_].
+Arguments ltrue_stays_ltrue [_].
+Arguments lfalse_stays_lfalse [_].
 Arguments globally_stays_globally [_] (_).
 Arguments globally_can_fail [_] (_).
 Arguments eventually_stays_eventually [_] (_).
@@ -147,8 +192,8 @@ Fixpoint instruction_satisfies
          (tl: Formula A)
   : Prop :=
   match tl with
-  | true => True
-  | false => False
+  | ltrue => True
+  | lfalse => False
   | globally prop => prop.? a
   | eventually tl => True
   | next _
@@ -159,49 +204,97 @@ Fixpoint instruction_satisfies
        /\ (~prop.? a -> instruction_satisfies a before)
   end.
 
-Fixpoint instruction_satisfies_dec
+Fixpoint instruction_satisfies_bool
          {A: Type}
          (a: A)
          (tl: Formula A)
-  : {instruction_satisfies a tl}+{~instruction_satisfies a tl}.
-  refine (
-      match tl with
-      | true
-        => true_dec
-      | false
-        => false_dec
-      | globally prop
-        => decide_dec (prop? a)
-      | eventually prop
-        => true_dec
-      | next _
-        => true_dec
-      | switch before p after
-        => if p? a
-           then decide_dec (sumbool_and _ _ _ _
-                                        (instruction_satisfies_dec A a after)
-                                        (halt_satisfies_dec before))
-           else decide_dec (instruction_satisfies_dec A a before)
-      end
-    ); cbn; trivial.
-  + intro False; destruct False.
-  + split.
-    ++ intro _H; exact a0.
-    ++ intro False; apply False in p0; destruct p0.
-  + intro False.
-    destruct False as [False _H].
-    apply False in p0.
-    apply or_not_and in o.
-    apply o in p0.
-    destruct p0.
-  + split.
-    ++ intro False; apply n in False; destruct False.
-    ++ intro _H; exact i.
-  + intro False.
-    destruct False as [_H False].
-    apply False in n.
-    apply n0 in n.
-    destruct n.
+  : bool :=
+  match tl with
+  | ltrue
+    => true
+  | lfalse
+    => false
+  | globally prop
+    => prop? a
+  | eventually prop
+    => true
+  | next _
+    => true
+  | switch before p after
+    => if p? a
+       then (andb (instruction_satisfies_bool a after)
+                  (halt_satisfies_bool before))
+       else (instruction_satisfies_bool a before)
+  end.
+
+Instance instruction_satisfies_PropBool
+         (A: Type)
+  : PropBool2 (@instruction_satisfies A) (@instruction_satisfies_bool A).
+Proof.
+  constructor.
+  intros a tl.
+  split.
+  + intro Heq.
+    induction tl.
+    ++ constructor.
+    ++ discriminate Heq.
+    ++ case_eq (prop0? a); intro Heq_a.
+       +++ apply prop_bool_prop in Heq_a.
+           cbn.
+           exact Heq_a.
+       +++ cbn in *.
+           rewrite Heq_a in Heq.
+           discriminate Heq.
+    ++ constructor.
+    ++ constructor.
+    ++ cbn in *.
+       case_eq (prop0? a); intro Heq_a.
+       +++ rewrite Heq_a in Heq.
+           split.
+           ++++ intro Heq_a'.
+                apply andb_prop in Heq.
+                destruct Heq as [H1 H2].
+                apply IHtl2 in H1.
+                apply pred_bool_pred_1 in H2.
+                split; [ exact H1 | exact H2 ].
+           ++++ intro F.
+                apply prop_bool_prop in Heq_a.
+                apply F in Heq_a.
+                destruct Heq_a.
+       +++ rewrite Heq_a in Heq.
+           split.
+           ++++ intro F.
+                apply prop_bool_false in Heq_a.
+                apply Heq_a in F.
+                destruct F.
+           ++++ apply IHtl1 in Heq.
+                intro _H.
+                exact Heq.
+  + intro Hsat.
+    induction tl.
+    ++ reflexivity.
+    ++ destruct Hsat.
+    ++ cbn in *.
+       apply prop_bool_prop.
+       exact Hsat.
+    ++ reflexivity.
+    ++ reflexivity.
+    ++ cbn in *.
+       destruct Hsat as [H H'].
+       case_eq (prop0? a); intro Heq.
+       +++ apply andb_true_intro.
+           apply prop_bool_prop in Heq.
+           apply H in Heq.
+           destruct Heq as [H1 H2].
+           split.
+           ++++ apply IHtl2.
+                exact H1.
+           ++++ apply pred_bool_pred_1.
+                exact H2.
+       +++ apply prop_bool_false in Heq.
+           apply H' in Heq.
+           apply IHtl1.
+           exact Heq.
 Defined.
 
 Fixpoint tl_step
@@ -209,7 +302,7 @@ Fixpoint tl_step
          (a: A)
          (tl: Formula A)
   : Formula A :=
-  if instruction_satisfies_dec a tl
+  if instruction_satisfies_bool a tl
   then match tl with
        | next tl
          => tl
@@ -219,12 +312,12 @@ Fixpoint tl_step
             else switch (tl_step a before) p after
        | eventually p
          => if p ? a
-            then true
+            then ltrue
             else eventually p
        | x
          => x
        end
-  else false.
+  else lfalse.
 
 Lemma Formula_step_is_tl_step
       {A: Type}
@@ -240,14 +333,14 @@ Proof.
   + cbn; constructor.
   + cbn.
     destruct (prop0 ? a).
-    ++ destruct (instruction_satisfies_dec a tl2);
-         destruct (halt_satisfies_dec tl1);
+    ++ destruct (instruction_satisfies_bool a tl2);
+         destruct (halt_satisfies_bool tl1);
          cbn.
        +++ constructor.
        +++ constructor.
        +++ constructor.
        +++ constructor.
-    ++ destruct (instruction_satisfies_dec a tl1).
+    ++ destruct (instruction_satisfies_bool a tl1).
        +++ constructor.
            exact IHtl1.
        +++ constructor.
@@ -414,22 +507,22 @@ Inductive Formula_derive
 | tl_derives_tl
     (x: Formula A)
   : Formula_derive x x
-| true_derives_true
-  : Formula_derive true true
-| false_derives_false
-  : Formula_derive false false
+| ltrue_derives_ltrue
+  : Formula_derive ltrue ltrue
+| lfalse_derives_lfalse
+  : Formula_derive lfalse lfalse
 | globally_derives_globally
     (prop: Dec A)
   : Formula_derive (globally prop) (globally prop)
 | globally_derives_fail
     (prop: Dec A)
-  : Formula_derive (globally prop) false
+  : Formula_derive (globally prop) lfalse
 | eventually_derives_eventually
     (prop: Dec A)
   : Formula_derive (eventually prop) (eventually prop)
 | eventually_derives_fail
     (prop: Dec A)
-  : Formula_derive (eventually prop) true
+  : Formula_derive (eventually prop) ltrue
 | next_derives_unwrap
     (tl tl': Formula A)
     (Hderive: Formula_derive tl tl')
@@ -447,11 +540,11 @@ Inductive Formula_derive
 | switch_derives_fail
     (before after: Formula A)
     (prop: Dec A)
-  : Formula_derive (switch before prop after) false.
+  : Formula_derive (switch before prop after) lfalse.
 
 Arguments tl_derives_tl [_].
-Arguments true_derives_true [_].
-Arguments false_derives_false [_].
+Arguments ltrue_derives_ltrue [_].
+Arguments lfalse_derives_lfalse [_].
 Arguments globally_derives_globally [_].
 Arguments globally_derives_fail [_].
 Arguments eventually_derives_eventually [_].

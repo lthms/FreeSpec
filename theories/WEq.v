@@ -2,6 +2,8 @@ Require Import Coq.Classes.Equivalence.
 Require Import Coq.Setoids.Setoid.
 Require Import Coq.Bool.Bool.
 
+Require Import FreeSpec.PropBool.
+
 (** * Weaker Equality
 
     For a number of type, the Coq equality is too strong. Therefore,
@@ -49,11 +51,29 @@ Class WEqBool
       (A: Type)
      `{WEq A} :=
   { weq_bool (a a': A): bool
-  ; weq_bool_weq (a a': A): weq a a' <-> weq_bool a a' = true
+  ; weq_bool_is_bool_prop:> PropBool2 (@weq A _) weq_bool
   }.
 
 Arguments weq_bool [A _ _] (_ _).
-Arguments weq_bool_weq [A _ _] (_ _).
+
+Lemma weq_bool_weq
+      {A: Type}
+     `{WEqBool A}
+      (a a': A)
+  : weq_bool a a' = true <-> weq a a'.
+Proof.
+  apply pred_bool_pred_2.
+Qed.
+
+Lemma weq_bool_refl
+      {A: Type}
+     `{WEqBool A}
+      (a: A)
+  : weq_bool a a = true.
+Proof.
+  apply weq_bool_weq.
+  reflexivity.
+Qed.
 
 Lemma weq_bool_false
       {A: Type}
@@ -67,12 +87,11 @@ Proof.
     rewrite Hweq in Hweq_bool.
     discriminate.
   + intros Hnweq.
-    destruct (bool_dec (weq_bool a a') false) as [G|F].
-    ++ exact G.
-    ++ apply not_false_is_true in F.
-       apply weq_bool_weq in F.
-       apply Hnweq in F.
-       destruct F.
+    case_eq (weq_bool a a'); intro Heq.
+    ++ apply weq_bool_weq in Heq.
+       apply Hnweq in Heq.
+       destruct Heq.
+    ++ reflexivity.
 Qed.
 
 Infix "?=" := weq_bool

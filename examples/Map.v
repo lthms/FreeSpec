@@ -1,3 +1,6 @@
+Require Import Coq.Bool.Bool.
+
+Require Import FreeSpec.PropBool.
 Require Import FreeSpec.TemporalLogic.
 Require Import FreeSpec.TemporalLogic.Notations.
 Require Import FreeSpec.Program.
@@ -28,10 +31,10 @@ Qed.
 Section MAP.
   Variables (Key: Type)
             (key_eq: WEq Key)
-            (key_eqdec: WEqDec Key)
+            (key_eqdec: WEqBool Key)
             (Value: Type)
             (value_eq: WEq Value)
-            (value_eqdec: WEqDec Value).
+            (value_eqdec: WEqBool Value).
 
   Inductive IMap: Type -> Type :=
   | Read (k: Key)
@@ -50,7 +53,7 @@ Section MAP.
     match i with
     | Read k => (map k, map)
     | Write k v => (tt, fun k' =>
-                          if k =? k'
+                          if k ?= k'
                           then v
                           else map k')
     end.
@@ -75,28 +78,24 @@ Section MAP.
     : evalProgram (MapInterp s) (read_then_write k v) == v.
   Proof.
     cbn.
-    destruct (weq_dec) as [He|Hne].
-    + reflexivity.
-    + apply neq_sym in Hne.
-      destruct Hne.
+    rewrite weq_bool_refl.
+    reflexivity.
   Qed.
 
   Lemma write_then_read_2
         (s: State)
         (k k': Key)
         (v: Value)
-        (Hneq: ~ (k == k'))
+        (Hneq: k' /= k)
     : evalProgram (MapInterp s)
                   (_ <- [Write k' v];
                      [Read k])
        == evalProgram (MapInterp s) ([Read k]) .
   Proof.
     cbn.
-    destruct (k' ?= k) as [He|Hne].
-    + symmetry in He.
-      apply Hneq in He.
-      destruct He.
-    + reflexivity.
+    apply weq_bool_false in Hneq.
+    rewrite Hneq.
+    reflexivity.
   Qed.
 
   Section CONTRACT.
@@ -208,26 +207,52 @@ Section MAP.
         => False
       end.
 
-    Definition write_k_x_dec
+    Definition write_k_x_bool
                (i: ISet IMap)
-      : {write_k_x i}+{~write_k_x i}.
-      induction i.
-      refine (
-          match i with
-          | (Write k' v')
-            => decide_dec (sumbool_and _ _ _ _
-                                       (k =? k')
-                                       (x =? v'))
-          | _
-            => false_dec
-          end
-        ); cbn; intuition.
+      : bool :=
+      match i with
+      | instruction (Write k' v')
+        => andb (k ?= k') (x ?= v')
+      | _
+        => false
+      end.
+
+    Instance write_k_x_PropBool
+      : PropBool1 write_k_x write_k_x_bool.
+    Proof.
+      constructor.
+      intro i.
+      split; induction i; induction i.
+      + intro Heq.
+        cbn in *.
+        discriminate Heq.
+      + intro Heq.
+        cbn in *.
+        apply andb_prop in Heq.
+        destruct Heq as [H1 H2].
+        split.
+        ++ apply weq_bool_weq in H1.
+           exact H1.
+        ++ apply weq_bool_weq in H2.
+           exact H2.
+      + intro Heq.
+        cbn in *.
+        destruct Heq.
+      + intro Heq.
+        cbn in *.
+        destruct Heq as [H1 H2].
+        apply andb_true_intro.
+        split.
+        ++ apply weq_bool_weq in H1.
+           exact H1.
+        ++ apply weq_bool_weq in H2.
+           exact H2.
     Defined.
 
     Definition write_k_x_inst
       : Dec (ISet IMap) :=
       {| prop := write_k_x
-       ; prop_dec := write_k_x_dec
+       ; prop_bool := write_k_x_bool
       |}.
 
     Definition not_read_k
@@ -240,26 +265,44 @@ Section MAP.
         => False
       end.
 
-    Definition not_read_k_dec
+    Definition not_read_k_bool
                (i: ISet IMap)
-      : {not_read_k i}+{~not_read_k i}.
-      induction i.
-      refine (
-          match i with
-          | (Read k')
-            => if k =? k'
-               then false_dec
-               else true_dec
-          | _
-            => false_dec
-          end
-        ); cbn; intuition.
+      : bool :=
+      match i with
+      | instruction (Read k')
+        => negb (k ?= k')
+      | _
+        => false
+      end.
+
+    Instance not_read_k_PropBool
+      : PropBool1 not_read_k not_read_k_bool.
+    Proof.
+      constructor.
+      intros i.
+      split.
+      + intro Heq.
+        induction i; induction i.
+        ++ cbn in *.
+           apply negb_true_iff in Heq.
+           apply weq_bool_false.
+           exact Heq.
+        ++ cbn in *.
+           discriminate Heq.
+      + intro H.
+        induction i; induction i.
+        ++ cbn in *.
+           apply negb_true_iff.
+           apply weq_bool_false in H.
+           exact H.
+        ++ cbn in *.
+           destruct H.
     Defined.
 
     Definition not_read_k_inst
       : Dec (ISet IMap) :=
       {| prop := not_read_k
-       ; prop_dec := not_read_k_dec
+       ; prop_bool := not_read_k_bool
       |}.
 
     Definition policy_step
@@ -270,8 +313,8 @@ Section MAP.
                (k': Key)
                (v': Value)
       : MapProgram unit :=
-      _ <- [Write k x];
-      _ <- [Read k'];
+      _ <- [Write k x]                                               ;
+      _ <- [Read k']                                                 ;
       [Write k v'].
 
     Variables (int: Interp IMap).
@@ -287,9 +330,9 @@ Section MAP.
     Proof.
       intros.
       cbn.
-      destruct (sumbool_and _ _ _ _ (k =? k) (x =? x)); cbn.
-      + trivial.
-      + destruct (sumbool_and _ _ _ _ (k =? k) (x =? v')); cbn; trivial.
+      repeat rewrite weq_bool_refl.
+      cbn.
+      trivial.
     Qed.
 
     Inductive invar
