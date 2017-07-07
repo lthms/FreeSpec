@@ -1,19 +1,19 @@
-src/Interface.v
-src/Interp.v
-src/Compose.v
-src/Program.v
-src/Abstract.v
-src/Contract.v
+theories/Interface.v
+theories/Interp.v
+theories/Compose.v
+theories/Program.v
+theories/Abstract.v
+theories/Contract.v
 
-src/Contract/Constant.v
+theories/Contract/Constant.v
 
-src/TemporalLogic.v
-src/TemporalLogic/Notations.v
-src/Contract/Temporal.v
+theories/TemporalLogic.v
+theories/TemporalLogic/Notations.v
+theories/Contract/Temporal.v
 
-src/Equiv.v
-src/Refine.v
-src/Utils.v
+theories/Equiv.v
+theories/Refine.v
+theories/Utils.v
 
 examples/Map.v
 examples/Smram.v

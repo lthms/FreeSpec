@@ -1,2 +1,2 @@
--R src FreeSpec
+-R theories FreeSpec
 -R examples FreeSpec.Examples
