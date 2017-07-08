@@ -303,8 +303,8 @@ Fixpoint runProgram'
   match p with
   | ret a => (a, int)
   | instr i => interpret int i
-  | bind p' f => let o := runProgram int p'
-                 in runProgram (snd o) (f (fst o))
+  | bind p' f => let o := runProgram' int p'
+                 in runProgram' (snd o) (f (fst o))
   end.
 
 Lemma run_program_equiv
