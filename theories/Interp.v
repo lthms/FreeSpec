@@ -339,3 +339,29 @@ CoFixpoint mkInterp
       fun (A: Type)
           (p: I A) =>
         (fst  (ps A s p), mkInterp ps (snd (ps A s p)))).
+
+(** * Interpreters for Labeled Instructions
+
+    We can enrich an Interpreter to interpret label Instruction. It
+    will just ignore the labels, which is basically what we
+    want. However, when we will define contracts for our Interfaces,
+    we can use the label to give a more precise definition based on
+    usage context.
+
+    *)
+
+Local Open Scope free_scope.
+
+Definition enrich_interpreter
+           {I: Interface}
+           (L: Type)
+           (int: Interp I)
+  : Interp (I <?> L) :=
+  mkInterp (fun (A: Type)
+                (int: Interp I)
+                (i: (I <?> L) A)
+            => match i with
+               | i <:> _
+                 => interpret int i
+               end)
+           int.

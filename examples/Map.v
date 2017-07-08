@@ -112,7 +112,7 @@ Section MAP.
     Definition never_read_x_promises
                (A: Type)
                (i: IMap A)
-      : typeret i -> Prop :=
+      : A -> Prop :=
       match i with
       | Read k => fun v => v /= x
       | Write k v => fun x => True
