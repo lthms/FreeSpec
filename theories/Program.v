@@ -95,11 +95,11 @@ Definition execProgram
   : Interp I :=
   snd (runProgram int p).
 
-(** ** [Program]s WEquivalence
+(** ** [Program]s Weak Equality
 
-    Two [Program] are equivalent when they always gives both the exact
-    same result and two equivalent interpreter (according to
-    [interp_eq]), no matter the input interpreter.
+    Two [Program] are equal when they always gives both the exact same
+    result and two equivalent interpreter (according to [interp_eq]),
+    no matter the input interpreter.
 
  *)
 
@@ -317,7 +317,7 @@ Proof.
   induction p; reflexivity.
 Qed.
 
-(** ** Notations
+(** * Notations
 
  *)
 
