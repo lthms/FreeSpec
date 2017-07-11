@@ -455,7 +455,7 @@ Section SMRAM_EXAMPLE.
       apply mch_specs_compliant_refinement.
     }
     unfold compliant_refinement in Hcp.
-    assert (H: contractfull_program smram_subcontract so (mch_refine A i s))
+    assert (H: compliant_program smram_subcontract so (mch_refine A i s))
       by apply (Hcp si _ _ _ _ Hsync Hreq).
     induction i; induction smm; try trivial.
     (* privileged read *)
@@ -487,18 +487,17 @@ Section SMRAM_EXAMPLE.
   Lemma mch_refine_enforcer
         {dram: Interp IDRAM}
         {dram_ref: DRAMState}
-        (Henf: Enforcer dram dram_contract dram_ref)
+        (Henf: dram :> dram_contract[dram_ref])
     : forall (vga: Interp IVGA)
              (smram_ref: SmramState),
       mch_dram_sync smram_ref {| smram_lock := true |} dram_ref
-      -> Enforcer (StatefulInterpret mch_refine
-                                     {| smram_lock := true |}
-                                     (dram |+| vga))
-                  smram_contract
-                  smram_ref.
+      -> (StatefulInterpret mch_refine
+                            {| smram_lock := true |}
+                            (dram |+| vga))
+           :> smram_contract [smram_ref].
   Proof.
     intros vga smram_ref Hsync.
-    assert (Enforcer (dram |+| vga) smram_subcontract dram_ref)
+    assert (dram |+| vga :> smram_subcontract[dram_ref])
       as Henf' by apply (expand_enforcer_left Henf).
     apply (enforcer_refinement mch_refine
                                smram_contract

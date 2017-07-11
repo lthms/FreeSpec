@@ -101,7 +101,7 @@ Lemma const_contract_enforcement
       (Henf: requirements_brings_promises requirements promises step inv)
   : forall (s: State),
     inv s
-    -> Enforcer (mkInterp step s) (constant_contract requirements promises) tt.
+    -> (mkInterp step s) :> (constant_contract requirements promises)[tt].
 Proof.
   intros s Hinv.
   apply (stateful_contract_enforcement (constant_contract requirements promises)
@@ -122,35 +122,35 @@ Proof.
   induction x; induction y; reflexivity.
 Qed.
 
-Lemma contractfull_program_enforcer_enforcer_exec
+Lemma compliant_program_enforcer_enforcer_exec
       {I: Interface}
       {A: Type}
       (p: Program I A)
       (c: Contract unit I)
       (int: Interp I)
-  : contractfull_program c tt p
-    -> Enforcer int c tt
-    -> Enforcer (execProgram int p) c tt.
+  : compliant_program c tt p
+    -> int :> c[tt]
+    -> (execProgram int p) :> c[tt].
 Proof.
   intros Hc Henf.
-  apply (enforcer_contractfull_enforcer p c tt int) in Henf.
+  apply (enforcer_compliant_enforcer p c tt int) in Henf.
   ++ rewrite abstract_exec_exec_program_same in Henf.
      rewrite (tt_singleton (contract_derive p int c tt) tt) in Henf.
      exact Henf.
   ++ exact Hc.
 Qed.
 
-Lemma const_contractfull_is_strongly_compliant
+Lemma const_compliant_is_strongly_compliant
       {I: Interface}
       {A: Type}
       (p: Program I A)
       (c: Contract unit I)
-  : contractfull_program c tt p
+  : compliant_program c tt p
     -> strongly_compliant_program c tt p.
 Proof.
   intro Hp.
   split.
   + exact Hp.
   + intros int Henf.
-    apply (contractfull_program_enforcer_enforcer_exec p c int Hp Henf).
+    apply (compliant_program_enforcer_enforcer_exec p c int Hp Henf).
 Qed.

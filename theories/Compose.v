@@ -36,7 +36,7 @@ Arguments iright [I I' A] (i).
 
  *)
 
-Infix "<+>" := (IntCompose) (at level 20, left associativity)
+Infix "<+>" := (IntCompose) (at level 50, left associativity)
   : free_scope.
 
 Local Open Scope free_scope.
@@ -134,7 +134,7 @@ Proof.
   reflexivity.
 Qed.
 
-Infix "|+|" := (mkCompInterp) (at level 42)
+Infix "|+|" := (mkCompInterp) (at level 50, left associativity)
   : free_scope.
 
 (** ** Effective Interpretation
@@ -258,7 +258,7 @@ Definition composeContract
    ; promises := compose_promises (promises c) (promises c')
    |}.
 
-Infix ":+:" := (composeContract) (at level 20, left associativity)
+Infix ":+:" := (composeContract) (at level 50, left associativity)
   : free_scope.
 
 (** ** Left
@@ -332,13 +332,13 @@ Lemma expand_enforcer_left
            {c: Contract S I}
            {s: S}
            {int: Interp I}
-           (Henf: Enforcer int c s)
+           (Henf: int :> c[s])
            (int': Interp I'),
-    Enforcer (int |+| int') (expand_contract_left c I') s.
+    (int |+| int') :> (expand_contract_left c I')[s].
 Proof.
   cofix.
   intros S I I' c s int Henf int'.
-  assert (Henf': Enforcer int c s) by apply Henf.
+  assert (Henf': int :> c[s]) by apply Henf.
   destruct Henf.
   constructor.
   + intros A i; induction i; cbn; [| trivial].
@@ -423,13 +423,13 @@ Lemma expand_enforcer_right
            {c: Contract S I}
            {s: S}
            {int: Interp I}
-           (Henf: Enforcer int c s)
+           (Henf: int :> c[s])
            (int': Interp I'),
-    Enforcer (int' |+| int) (expand_contract_right c I') s.
+    int' |+| int :> (expand_contract_right c I')[s].
 Proof.
   cofix.
   intros S I I' c s int Henf int'.
-  assert (Henf': Enforcer int c s) by apply Henf.
+  assert (Henf': int :> c[s]) by apply Henf.
   destruct Henf.
   constructor.
   + intros A i; induction i; cbn; [trivial |].

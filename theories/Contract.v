@@ -1,15 +1,33 @@
+(* begin hide *)
 Require Import Coq.Program.Basics.
 Require Import Coq.Program.Equality.
 Require Import Coq.Setoids.Setoid.
 Require Import Coq.Logic.Classical.
+(* end hide *)
 
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Abstract.
 
+(** * Contract Definition
+
+    A Contract permits to define an expected behaviour for an
+    [Interface] [Interp]reter. This behaviour is expressed with two
+    complementary predicates:
+
+    - The [requirements] an [Interface] user has to enforce
+    - The [promises] an [Interp]reter has to hold in case the
+      [requirements] are effectively met
+
+    These predicates are tied to an abstract state. This abstract
+    state is modified by the [abstract_step] function through the
+    execution (see [abstractRun] for more information about that).
+
+ *)
+
 Record Contract
        (S: Type)
-       (I: Type -> Type)
+       (I: Interface)
   :=
     { abstract_step (A: Type)
                     (i: I A)
@@ -26,48 +44,87 @@ Arguments requirements [_ _] (_) [_] (_ _).
 Arguments promises [_ _] (_) [_] (_ _).
 
 Definition contract_derive
-           {S: Type}
-           {I: Type -> Type}
-           {A: Type}
-           (p: Program I A)
+           {S:   Type}
+           {I:   Interface}
+           {A:   Type}
+           (p:   Program I A)
            (int: Interp I)
-           (c: Contract S I)
-           (s: S)
+           (c:   Contract S I)
+           (s:   S)
   : S :=
   deriveAbstraction s (abstract_step c) int p.
 
-Lemma contract_derives_ret_eq
-      {S: Type}
-      {I: Type -> Type}
-      {A: Type}
-      (a: A)
-      (int: Interp I)
-      (c: Contract S I)
-      (s: S)
+Fact contract_derives_ret_eq
+     {S:   Type}
+     {I:   Interface}
+     {A:   Type}
+     (a:   A)
+     (int: Interp I)
+     (c:   Contract S I)
+     (s:   S)
   : contract_derive (ret a) int c s = s.
 Proof.
   reflexivity.
 Qed.
 
-Lemma contract_derives_contract_step
-      {S: Type}
-      {I: Type -> Type}
-      {A: Type}
-      (i: I A)
-      (int: Interp I)
-      (c: Contract S I)
-      (s: S)
+Fact contract_derives_contract_step
+     {S:   Type}
+     {I:   Interface}
+     {A:   Type}
+     (i:   I A)
+     (int: Interp I)
+     (c:   Contract S I)
+     (s:   S)
   : contract_derive (instr i) int c s = abstract_step c i (evalInstruction int i) s.
 Proof.
   reflexivity.
 Qed.
 
-CoInductive Enforcer
-            {S: Type}
-            {I: Type -> Type}
+(** ** Contract Compliance
+
+    We unify the notion of contract compliance behind a specific
+    typeclass called and a specific notation, that is [t :> c[s]].
+
+ *)
+
+Class Compliant
+      (S: Type)
+      (I: Interface)
+      (T: Type)
+  :=
+  { compliant (c: Contract S I)
+              (s: S)
+              (t: T)
+    : Prop
+  }.
+
+Arguments compliant [_ _ _ _] (c s t).
+
+Notation "t ':>' c '[' s ']'" :=
+  (compliant c s t)
+    (at level 60, no associativity).
+
+(** * Compliant Interprerter
+
+    ** Definition
+
+    An Interpreter is an [compliant_interpreter] of a given [Contract] [c] if it
+    enforces the contract [promises] as long as its [requirements] are
+    met by the caller. The Contract Enforcement is parameterized by an
+    abstract state and, by definition, if an Interpreter enforces a
+    [Contract] [c] and executes a primitive which meets the
+    [requirements] of [c], then the resulting Interpreter will
+    enforces [c] for the new abstract state returned by the
+    [abstract_step] function.
+
+ *)
+
+CoInductive compliant_interpreter
+            {S:   Type}
+            {I:   Interface}
+            (c:   Contract S I)
+            (s:   S)
             (int: Interp I)
-            (c: Contract S I)
-            (s: S)
   : Prop :=
 | enforced (Hprom: forall {A: Type}
                           (i: I A),
@@ -76,18 +133,27 @@ CoInductive Enforcer
            (Henf:  forall {A: Type}
                           (i: I A),
                requirements c i s
-               -> Enforcer (execInstruction int i) c (abstract_step c i (evalInstruction int i) s))
-  : Enforcer int c s.
+               -> compliant_interpreter c
+                           (abstract_step c i (evalInstruction int i) s)
+                           (execInstruction int i))
+  : compliant_interpreter c s int.
 
-Lemma enforcer_enforces_promises
-      {S: Type}
-      {I: Type -> Type}
-      {A: Type}
-      (i: I A)
-      (int: Interp I)
-      (c: Contract S I)
-      (s: S)
-      (Henf: Enforcer int c s)
+Instance interp_Compliant
+         (S: Type)
+         (I: Interface)
+  : Compliant S I (Interp I) :=
+  { compliant := @compliant_interpreter S I
+  }.
+
+Corollary enforcer_enforces_promises
+      {S:    Type}
+      {I:    Interface}
+      {A:    Type}
+      (i:    I A)
+      (int:  Interp I)
+      (c:    Contract S I)
+      (s:    S)
+      (Henf: int :> c[s])
       (Hreq: requirements c i s)
   : promises c i (evalInstruction int i) s.
 Proof.
@@ -96,39 +162,148 @@ Proof.
   exact Hreq.
 Qed.
 
-Inductive contractfull_program
+(** ** Compliant Stateful Interpreter
+
+ *)
+
+Definition contract_preserves_inv
+           {S:     Type}
+           {I:     Interface}
+           {State: Type}
+           (c:     Contract S I)
+           (inv:   S -> State -> Prop)
+           (step:  @PS I State)
+  := forall (A:   Type)
+            (i:   I A)
+            (abs: S)
+            (s:   State),
+    inv abs s
+    -> requirements c i abs
+    -> inv (abstract_step c i (fst (step A s i)) abs) (snd (step A s i)).
+
+Definition contract_enforces_promises
+           {S:     Type}
+           {I:     Interface}
+           {State: Type}
+           (c:     Contract S I)
+           (inv:   S -> State -> Prop)
+           (step:  @PS I State)
+  := forall (A:   Type)
+            (i:   I A)
+            (s:   State)
+            (abs: S),
+    inv abs s
+    -> requirements c i abs
+    -> promises c i (fst (step A s i)) abs.
+
+Fact _stateful_contract_enforcement
+     {S:     Type}
+     {I:     Interface}
+     {State: Type}
+     (c:     Contract S I)
+     (inv:   S -> State -> Prop)
+     (step:  @PS I State)
+  : forall (abs:   S)
+           (Hpres: contract_preserves_inv c inv step)
+           (Henf:  contract_enforces_promises c inv step)
+           (s:     State),
+    inv abs s
+    -> (mkInterp step s) :> c[abs].
+Proof.
+  cofix.
+  intros abs Hpres Henf s Hinv .
+  constructor.
+  + intros A i Hreq.
+    unfold contract_enforces_promises in Henf.
+    cbn in *.
+    apply (Henf A i s abs Hinv Hreq).
+  + intros A i Hreq.
+    apply _stateful_contract_enforcement.
+    ++ apply  Hpres.
+    ++ apply  Henf.
+    ++ cbn in *.
+       apply (Hpres _ _ _ _ Hinv Hreq).
+Qed.
+
+Lemma stateful_contract_enforcement
+      {I:     Interface}
+      {S:     Type}
+      {State: Type}
+      (c:     Contract S I)
+      (abs:   S)
+      (inv:   S -> State -> Prop)
+      (step:  @PS I State)
+      (Hpres: contract_preserves_inv c inv step)
+      (Henf:  contract_enforces_promises c inv step)
+  : forall (s: State),
+    inv abs s
+    -> (mkInterp step s) :> c[abs].
+Proof.
+  intros s Hinv.
+  apply (_stateful_contract_enforcement c inv step abs Hpres Henf s Hinv).
+Qed.
+
+
+(** * Compliant Program
+
+    In a nutshell, a given [Program] is said compliant to a given
+    [Contract] [c] if, for any compliant interpreter of [c], the
+    called primitive always meet the [requirements] of [c].
+
+    ** Definition
+
+ *)
+
+Inductive compliant_program
           {S: Type}
-          {I: Type -> Type}
+          {I: Interface}
           (c: Contract S I)
           (s: S)
   : forall {A: Type}, Program I A -> Prop :=
-| contractfull_instr {A: Type}
-                        (i: I A)
-                        (Hreq: requirements c i s)
-  : contractfull_program c s (instr i)
-| tl_contractfull_ret {A: Type}
-                      (a: A)
-  : contractfull_program c s (ret a)
-| tl_contractfull_inv {A B: Type}
-                      (p: Program I A)
-                      (f: A -> Program I B)
-                      (Hcp: contractfull_program c s p)
-                      (Hnext: forall (int: Interp I)
-                                     (Henf: Enforcer int c s),
-                          contractfull_program c
-                                               (contract_derive p int c s)
-                                               (f (evalProgram int p)))
-  : contractfull_program c s (bind p f).
+| compliant_instr {A:    Type}
+                  (i:    I A)
+                  (Hreq: requirements c i s)
+  : compliant_program c s (instr i)
+| tl_compliant_ret {A: Type}
+                   (a: A)
+  : compliant_program c s (ret a)
+| tl_compliant_inv {A B: Type}
+                   (p:     Program I A)
+                   (f:     A -> Program I B)
+                   (Hcp:   compliant_program c s p)
+                   (Hnext: forall (int: Interp I)
+                                  (Henf: int :> c[s]),
+                       compliant_program c
+                                         (contract_derive p int c s)
+                                         (f (evalProgram int p)))
+  : compliant_program c s (bind p f).
 
-Lemma contractfull_program_bind_ret
-      {S: Type}
-      {I: Type -> Type}
-      {A B: Type}
-      (a: A)
-      (f: A -> Program I B)
-      (c: Contract S I)
-      (s: S)
-  : contractfull_program c s (f a) -> contractfull_program c s (bind (ret a) f).
+Instance program_Compliant
+         (S: Type)
+         (I: Interface)
+         (A: Type)
+  : Compliant S I (Program I A) :=
+  { compliant := fun c s p => compliant_program c s p
+  }.
+
+(** ** Enforcement Preservation
+
+    In order to prove the [enforcer_compliant_enforcer] lemmas, we
+    first highlight several convenient properties of compliant_interpreter
+    interpreters and compliant programs.
+
+ *)
+
+Fact compliant_program_bind_ret
+     {S:   Type}
+     {I:   Interface}
+     {A B: Type}
+     (a:   A)
+     (f:   A -> Program I B)
+     (c:   Contract S I)
+     (s:   S)
+  : (f a) :> c[s]
+    -> (bind (ret a) f) :> c[s].
 Proof.
   intros Hp.
   constructor.
@@ -138,17 +313,18 @@ Proof.
     exact Hp.
 Qed.
 
-Lemma enforcer_instruction_contractfull_enforcer
-      {S: Type}
-      {I: Type -> Type}
-      {A: Type}
-      (i: I A)
-      (int: Interp I)
-      (c: Contract S I)
-      (s: S)
-      (H: Enforcer int c s)
-      (Hp: contractfull_program c s (instr i))
-  : Enforcer (abstractExec s (abstract_step c) int (instr i)) c (contract_derive (instr i) int c s).
+Fact enforcer_instruction_compliant_enforcer
+     {S:   Type}
+     {I:   Interface}
+     {A:   Type}
+     (i:   I A)
+     (int: Interp I)
+     (c:   Contract S I)
+     (s:   S)
+     (H:   int :> c[s])
+     (Hp:  (instr i) :> c[s])
+  : (abstractExec s (abstract_step c) int (instr i))
+      :> c[contract_derive (instr i) int c s].
 Proof.
   cbn.
   constructor.
@@ -172,63 +348,48 @@ Proof.
     exact Hinst.
 Qed.
 
-Lemma enforcer_ret_contractfull_enforcer
-      {S: Type}
-      {I: Type -> Type}
-      {A: Type}
-      (a: A)
-      (int: Interp I)
-      (c: Contract S I)
-      (s: S)
-      (H: Enforcer int c s)
-  : Enforcer (abstractExec s (abstract_step c) int (ret a)) c (contract_derive (ret a) int c s).
+Fact enforcer_ret_compliant_enforcer
+     {S:   Type}
+     {I:   Interface}
+     {A:   Type}
+     (a:   A)
+     (int: Interp I)
+     (c:   Contract S I)
+     (s:   S)
+     (H:   int :> c[s])
+  : (abstractExec s (abstract_step c) int (ret a))
+      :> c[contract_derive (ret a) int c s].
 Proof.
   rewrite (contract_derives_ret_eq a int c).
   exact H.
 Qed.
 
-Lemma contract_derive_assoc
-      {S: Type}
-      {I: Type -> Type}
-      {A B C: Type}
-      (p: Program I A)
-      (f: A -> Program I B)
-      (f': B -> Program I C)
-      (int: Interp I)
-      (c: Contract S I)
-      (s: S)
+Fact contract_derive_assoc
+     {S:     Type}
+     {I:     Interface}
+     {A B C: Type}
+     (p:     Program I A)
+     (f:     A -> Program I B)
+     (f':    B -> Program I C)
+     (int:   Interp I)
+     (c:     Contract S I)
+     (s:     S)
   : contract_derive (bind (bind p f) f') int c s
     = contract_derive (bind p (fun x => bind (f x) f')) int c s.
 Proof.
   reflexivity.
 Qed.
 
-Lemma exec_program_assoc'
-      {S: Type}
-      {I: Type -> Type}
-      {A: Type}
-      (p: Program I A)
-  : forall {B C: Type}
-           (f: A -> Program I B)
-           (f': B -> Program I C)
-           (int: Interp I),
-    execProgram int (bind (bind p f) f')
-    = execProgram int (bind p (fun x => (bind (f x) f'))).
-Proof.
-  intros B C f f' int.
-  reflexivity.
-Qed.
-
-Lemma exec_abs_assoc
-      {S: Type}
-      {I: Type -> Type}
-      {A: Type}
-      (p: Program I A)
-  : forall {B: Type}
-           (f: A -> Program I B)
+Fact exec_abs_assoc
+     {S: Type}
+     {I: Interface}
+     {A: Type}
+     (p: Program I A)
+  : forall {B:   Type}
+           (f:   A -> Program I B)
            (int: Interp I)
-           (c: Contract S I)
-           (s: S),
+           (c:   Contract S I)
+           (s:   S),
     abstractExec s (abstract_step c) int (bind p f)
     = abstractExec (contract_derive p int c s)
                    (abstract_step c)
@@ -240,16 +401,16 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma eval_program_assoc
-      {S: Type}
-      {I: Type -> Type}
-      {A: Type}
-      (p: Program I A)
-  : forall {B: Type}
-           (f: A -> Program I B)
+Fact eval_program_assoc
+     {S: Type}
+     {I: Interface}
+     {A: Type}
+     (p: Program I A)
+  : forall {B:   Type}
+           (f:   A -> Program I B)
            (int: Interp I)
-           (c: Contract S I)
-           (s: S),
+           (c:   Contract S I)
+           (s:   S),
     evalProgram int (bind p f)
     = evalProgram (abstractExec s (abstract_step c) int p)
                   (f (evalProgram int p)).
@@ -259,16 +420,16 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma contract_derive_bind
-      {S: Type}
-      {I: Type -> Type}
-      {A: Type}
-      (p: Program I A)
-  : forall {B: Type}
-           (f: A -> Program I B)
+Fact contract_derive_bind
+     {S: Type}
+     {I: Interface}
+     {A: Type}
+     (p: Program I A)
+  : forall {B:   Type}
+           (f:   A -> Program I B)
            (int: Interp I)
-           (c: Contract S I)
-           (s: S),
+           (c:   Contract S I)
+           (s:   S),
     contract_derive (f (evalProgram int p))
                     (abstractExec s (abstract_step c) int p)
                     c
@@ -288,15 +449,15 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma abstractExec_bind
-      {S: Type}
-      {I: Type -> Type}
-      {A B: Type}
-      (p: Program I A)
-  : forall (f: A -> Program I B)
+Fact abstractExec_bind
+     {S:   Type}
+     {I:   Interface}
+     {A B: Type}
+     (p:   Program I A)
+  : forall (f:   A -> Program I B)
            (int: Interp I)
-           (c: Contract S I)
-           (s: S),
+           (c:   Contract S I)
+           (s:   S),
     abstractExec (contract_derive p int c s)
                  (abstract_step c)
                  (abstractExec s
@@ -311,23 +472,23 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma enforcer_contractfull_enforcer
+Lemma enforcer_compliant_enforcer
       {S: Type}
-      {I: Type -> Type}
+      {I: Interface}
       {A: Type}
       (p: Program I A)
-  : forall (c: Contract S I)
-           (s: S)
+  : forall (c:   Contract S I)
+           (s:   S)
            (int: Interp I)
-           (H: Enforcer int c s)
-           (Hp: contractfull_program c s p),
-    Enforcer (abstractExec s (abstract_step c) int p) c (contract_derive p int c s).
+           (H:   int :> c[s])
+           (Hp:  p :> c[s]),
+    (abstractExec s (abstract_step c) int p) :> c[contract_derive p int c s].
 Proof.
   induction p.
   + intros c s int He Hp;
-      apply (enforcer_ret_contractfull_enforcer a int c s He).
+      apply (enforcer_ret_compliant_enforcer a int c s He).
   + intros c s int He Hp;
-      apply (enforcer_instruction_contractfull_enforcer i int c s He Hp).
+      apply (enforcer_instruction_compliant_enforcer i int c s He Hp).
   + intros c s int He Hp.
     inversion Hp;
       apply inj_pair2 in H3;
@@ -342,91 +503,20 @@ Proof.
        exact He.
 Qed.
 
-Definition contract_preserves_inv
-           {S: Type}
-           {I: Type -> Type}
-           {State: Type}
-           (c: Contract S I)
-           (inv: S -> State -> Prop)
-           (step: @PS I State)
-  := forall (A: Type)
-            (i: I A)
-            (abs: S)
-            (s: State),
-    inv abs s
-    -> requirements c i abs
-    -> inv (abstract_step c i (fst (step A s i)) abs) (snd (step A s i)).
+(** * Strongly Compliant Program
 
-Definition contract_enforces_promises
-           {S: Type}
-           {I: Type -> Type}
-           {State: Type}
-           (c: Contract S I)
-           (inv: S -> State -> Prop)
-           (step: @PS I State)
-  := forall (A: Type)
-            (i: I A)
-            (s: State)
-            (abs: S),
-    inv abs s
-    -> requirements c i abs
-    -> promises c i (fst (step A s i)) abs.
+    ** Definition
 
-Fact _stateful_contract_enforcement
-     {S: Type}
-     {I: Type -> Type}
-     {State: Type}
-     (c: Contract S I)
-     (inv: S -> State -> Prop)
-     (step: @PS I State)
-  : forall (abs: S)
-           (Hpres: contract_preserves_inv c inv step)
-           (Henf: contract_enforces_promises c inv step)
-           (s: State),
-    inv abs s
-    -> Enforcer (mkInterp step s) c abs.
-Proof.
-  cofix.
-  intros abs Hpres Henf s Hinv .
-  constructor.
-  + intros A i Hreq.
-    unfold contract_enforces_promises in Henf.
-    cbn in *.
-    apply (Henf A i s abs Hinv Hreq).
-  + intros A i Hreq.
-    apply _stateful_contract_enforcement.
-    ++ apply  Hpres.
-    ++ apply  Henf.
-    ++ cbn in *.
-       apply (Hpres _ _ _ _ Hinv Hreq).
-Qed.
-
-Lemma stateful_contract_enforcement
-      {I: Interface}
-      {S: Type}
-      {State: Type}
-      (c: Contract S I)
-      (abs: S)
-      (inv: S -> State -> Prop)
-      (step: @PS I State)
-      (Hpres: contract_preserves_inv c inv step)
-      (Henf: contract_enforces_promises c inv step)
-  : forall (s: State),
-    inv abs s
-    -> Enforcer (mkInterp step s) c abs.
-Proof.
-  intros s Hinv.
-  apply (_stateful_contract_enforcement c inv step abs Hpres Henf s Hinv).
-Qed.
+ *)
 
 Definition strongly_compliant_program
-           {I: Interface}
-           {A: Type}
+           {I:  Interface}
+           {A:  Type}
            {Sa: Type}
-           (c: Contract Sa I)
-           (s: Sa)
-           (p: Program I A)
-  := contractfull_program c s p
+           (c:  Contract Sa I)
+           (s:  Sa)
+           (p:  Program I A)
+  := compliant_program c s p
      /\ (forall (int: Interp I),
-            Enforcer int c s
-            -> Enforcer (execProgram int p) c s).
+            int :> c[s]
+            -> (execProgram int p) :> c[s]).
