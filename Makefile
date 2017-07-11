@@ -1,8 +1,15 @@
-NAME    = $(shell basename `pwd`)
-PROJECT = _CoqProject
-FLIST   = Files
-SRC     = $(shell cat $(FLIST))
-SUBMAKE = Makefile.proj
+NAME        := $(shell basename `pwd`)
+PROJECT     := _CoqProject
+FLIST       := Files
+SRC         := $(shell cat $(FLIST))
+SUBMAKE     := Makefile.proj
+COQDOCFLAGS :=                                      \
+  --toc --toc-depth 2 --html --interpolate         \
+  --index indexpage --no-lib-name --parse-comments \
+  --with-header docs/assets/header.html            \
+  --with-footer docs/assets/footer.html
+
+export COQDOCFLAGS
 
 .PHONY:all clean mrproper docs html tex
 
@@ -32,9 +39,12 @@ docs: html tex
 
 html:
 	rm -rf docs/html
-	make -f $(SUBMAKE) gallinahtml
+	make -f $(SUBMAKE) html
 	mv html docs/
 	cp docs/assets/coqdoc.css docs/html
+	cp docs/assets/coqdocjs.css docs/html
+	cp docs/assets/coqdocjs.js docs/html
+	cp docs/assets/config.js docs/html
 
 tex:
 	make -f $(SUBMAKE) all-gal.pdf

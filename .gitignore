@@ -1,5 +1,5 @@
 Makefile.proj
-docs/*
+docs/html/*
 .make
 *.v.d
 *.vo.aux
