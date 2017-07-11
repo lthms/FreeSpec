@@ -1,7 +1,15 @@
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Interp.
 
-(** In this library, we provide the functions to
+(** In this library, we provide an alternative to [runProgram] we can
+    use to derive a so-called abstract state through the executed
+    primitives of the underlying [Interface]. Using this feature, we
+    can verify some properties of a given [Program] _without modifying
+    it_.
+
+ *)
+
+(** * Abstract Run
 
  *)
 
@@ -25,7 +33,9 @@ Fixpoint abstractRun
                              (f (fst (fst (abstractRun abs abs_step int p' ))))
   end.
 
-(** Similary to [FreeSpec.Program.runProgram]
+(** Similary to [FreeSpec.Program.runProgram], we define several
+    helpers functions to select one element among the three that are
+    returned by [abstractRun].
 
  *)
 
@@ -61,6 +71,15 @@ Definition deriveAbstraction
            (p: Program I A)
   : S :=
   snd (abstractRun abs abs_step int p).
+
+(** * Equality Proofs
+
+    We prove the equality between the results of [runProgram] and
+    related and [abstractRun] and related. These proofs are necessary
+    to link the properties we could confirm using [abstractRun] and a
+    “concrete [Program] execution using [runProgram].
+
+ *)
 
 Lemma abstract_run_run_program_same
       {S: Type}
