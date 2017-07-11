@@ -34,10 +34,10 @@ Section SMRAM_EXAMPLE.
       consider. However, we really want to know when one address falls
       into the SMRAM.
     *)
-  Variables (Addr: Type)
-            (addr_eq: forall (a a': Addr), {a = a'}+{a <> a'})
-            (Value: Type)
-            (Smram: Addr -> Prop)
+  Variables (Addr:     Type)
+            (addr_eq:  forall (a a': Addr), {a = a'}+{a <> a'})
+            (Value:    Type)
+            (Smram:    Addr -> Prop)
             (Smramdec: forall (a: Addr), {Smram a}+{~Smram a}).
 
   (** * Memory Controller
@@ -58,11 +58,11 @@ Section SMRAM_EXAMPLE.
 
   Inductive IMCH
     : Interface :=
-  | ReadMem (a: Addr)
+  | ReadMem (a:   Addr)
             (smm: bool)
     : IMCH Value
-  | WriteMem (a: Addr)
-             (v: Value)
+  | WriteMem (a:   Addr)
+             (v:   Value)
              (smm: bool)
     : IMCH unit.
 
@@ -130,31 +130,33 @@ Section SMRAM_EXAMPLE.
 
   Program Definition mch_refine
     : StatefulRefinement IMCH (IDRAM <+> IVGA) MCH :=
-    fun (A: Type) (i: IMCH A) (s: MCH) =>
-      match i with
-      | ReadMem a true (* ------ Privileged Read Access ----------- *)
-        => x <- read_dram a                                          ;
-           ret (x, s)
-      (* ---------------------------------------------------------- *)
-      | ReadMem a false (* ----- Unprivileged Read Access---------- *)
-        => x <- if andb (bool_of_sumbool (Smramdec a))
-                        (smram_lock s)
-                then read_vga a
-                else read_dram a                                     ;
-           ret (x, s)
-      (* ---------------------------------------------------------- *)
-      | WriteMem a v true (* --- Privileged Write Access ---------- *)
-        => write_dram a v                                           ;;
-           ret (tt, s)
-      (* ---------------------------------------------------------- *)
-      | WriteMem a v false (* -- Unprivileged Write Access -------- *)
-        => (if andb (bool_of_sumbool (Smramdec a))
-                    (smram_lock s)
-            then write_vga a v
-            else write_dram a v                                    );;
-            ret (tt, s)
-      (* ---------------------------------------------------------- *)
-      end.
+    fun (A: Type)
+        (i: IMCH A)
+        (s: MCH)
+    =>  match i with
+        | ReadMem a true (* ---- Privileged Read Access ----------- *)
+          => x <- read_dram a                                        ;
+             ret (x, s)
+        (* -------------------------------------------------------- *)
+        | ReadMem a false (* --- Unprivileged Read Access---------- *)
+          => x <- if andb (bool_of_sumbool (Smramdec a))
+                          (smram_lock s)
+                  then read_vga a
+                  else read_dram a                                   ;
+             ret (x, s)
+        (* -------------------------------------------------------- *)
+        | WriteMem a v true (* - Privileged Write Access ---------- *)
+          => write_dram a v                                         ;;
+             ret (tt, s)
+        (* -------------------------------------------------------- *)
+        | WriteMem a v false (*  Unprivileged Write Access -------- *)
+          => (if andb (bool_of_sumbool (Smramdec a))
+                      (smram_lock s)
+              then write_vga a v
+              else write_dram a v                                  );;
+              ret (tt, s)
+        (* -------------------------------------------------------- *)
+        end.
 
   (** * Contract
 
@@ -226,10 +228,10 @@ Section SMRAM_EXAMPLE.
    *)
 
   Definition Smram_promises
-             (A: Type)
-             (i: IMCH A)
+             (A:   Type)
+             (i:   IMCH A)
              (ret: A)
-             (s: SmramState)
+             (s:   SmramState)
     : Prop :=
     match i with
     | ReadMem a true (* Privileged Reads match the shadow Smram *)
@@ -245,8 +247,8 @@ Section SMRAM_EXAMPLE.
   Definition smram_contract
     : Contract SmramState IMCH :=
     {| abstract_step := Smram_step
-     ; requirements := Smram_requirements
-     ; promises := Smram_promises
+     ; requirements  := Smram_requirements
+     ; promises      := Smram_promises
      |}.
 
   (** * Contract Enforcement
@@ -297,10 +299,10 @@ Section SMRAM_EXAMPLE.
    *)
 
   Definition DRAM_promises
-             (A: Type)
-             (i: IDRAM A)
+             (A:   Type)
+             (i:   IDRAM A)
              (ret: A)
-             (s: DRAMState)
+             (s:   DRAMState)
     : Prop :=
     match i with
     | Read a (* Read Access *)
@@ -312,8 +314,8 @@ Section SMRAM_EXAMPLE.
   Definition dram_contract
     : Contract DRAMState IDRAM :=
     {| abstract_step := DRAM_step
-     ; requirements := DRAM_requirements
-     ; promises := DRAM_promises
+     ; requirements  := DRAM_requirements
+     ; promises      := DRAM_promises
      |}.
 
   Definition smram_subcontract
@@ -326,18 +328,18 @@ Section SMRAM_EXAMPLE.
 
   Definition mch_dram_sync
     : sync_pred SmramState DRAMState MCH :=
-    fun (mch: SmramState)
+    fun (mch:   SmramState)
         (state: MCH)
-        (dram: DRAMState)
+        (dram:  DRAMState)
     => smram_lock state = true /\
        forall (a: Addr),
          Smram a
          -> mch a = dram a.
 
   Fact mch_dram_sync_smram_lock_is_true
-       (si: SmramState)
+       (si:    SmramState)
        (state: MCH)
-       (so: DRAMState)
+       (so:    DRAMState)
     : mch_dram_sync si state so
       -> smram_lock state = true.
   Proof.
@@ -485,10 +487,10 @@ Section SMRAM_EXAMPLE.
   Qed.
 
   Lemma mch_refine_enforcer
-        {dram: Interp IDRAM}
+        {dram:     Interp IDRAM}
         {dram_ref: DRAMState}
-        (Henf: dram :> dram_contract[dram_ref])
-    : forall (vga: Interp IVGA)
+        (Henf:     dram :> dram_contract[dram_ref])
+    : forall (vga:       Interp IVGA)
              (smram_ref: SmramState),
       mch_dram_sync smram_ref {| smram_lock := true |} dram_ref
       -> (StatefulInterpret mch_refine

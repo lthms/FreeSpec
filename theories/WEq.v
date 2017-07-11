@@ -12,19 +12,22 @@ Require Import FreeSpec.PropBool.
 
  *)
 
-Class WEq (A: Type) :=
+Class WEq
+      (A: Type) :=
   { weq (a a': A): Prop
   ; rel:> Equivalence weq
   }.
 
 Arguments weq [A _] (_ _).
 
-Infix "==" := weq
-  (at level 70, no associativity)
+Infix "==" :=
+  weq
+    (at level 70, no associativity)
   : free_weq_scope.
 
-Notation "a /= b" := (~ weq a b)
-  (at level 70, no associativity)
+Notation "a /= b" :=
+  (~ weq a b)
+    (at level 70, no associativity)
   : free_weq_scope.
 
 (** * Weaker Decidable Equality
@@ -38,26 +41,27 @@ Notation "a /= b" := (~ weq a b)
 Class WEqDec
       (A: Type)
      `{WEq A} :=
-  { weq_dec (a a': A): {weq a a'}+{~weq a a'}
+  { weq_dec (a a': A): {weq a a'} + {~weq a a'}
   }.
 
 Arguments weq_dec [A _ _] (_ _).
 
-Infix "=?" := weq_dec
-  (at level 70, no associativity)
+Infix "=?" :=
+  weq_dec
+    (at level 70, no associativity)
   : free_weq_scope.
 
 Class WEqBool
       (A: Type)
      `{WEq A} :=
   { weq_bool (a a': A): bool
-  ; weq_bool_is_bool_prop:> PropBool2 (@weq A _) weq_bool
+  ; weq_bool_is_bool_prop :> PropBool2 (@weq A _) weq_bool
   }.
 
 Arguments weq_bool [A _ _] (_ _).
 
 Lemma weq_bool_weq
-      {A: Type}
+      {A:    Type}
      `{WEqBool A}
       (a a': A)
   : weq_bool a a' = true <-> weq a a'.
@@ -76,7 +80,7 @@ Proof.
 Qed.
 
 Lemma weq_bool_false
-      {A: Type}
+      {A:    Type}
      `{WEqBool A}
       (a a': A)
   : weq_bool a a' = false <-> ~weq a a'.
@@ -94,6 +98,7 @@ Proof.
     ++ reflexivity.
 Qed.
 
-Infix "?=" := weq_bool
-  (at level 70, no associativity)
+Infix "?=" :=
+  weq_bool
+    (at level 70, no associativity)
   : free_weq_scope.

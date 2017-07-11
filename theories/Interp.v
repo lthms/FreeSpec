@@ -36,26 +36,26 @@ CoInductive Interp
 Arguments interp [I] (f).
 
 Definition interpret
-           {I: Interface}
-           {A: Type}
+           {I:   Interface}
+           {A:   Type}
            (int: Interp I)
-           (i: I A)
+           (i:   I A)
   : (A * Interp I) :=
   match int with interp f => f A i end.
 
 Definition evalInstruction
-           {I: Interface}
-           {A: Type}
+           {I:   Interface}
+           {A:   Type}
            (int: Interp I)
-           (i: I A)
+           (i:   I A)
   : A :=
   fst (interpret int i).
 
 Definition execInstruction
-           {I: Interface}
-           {A: Type}
+           {I:   Interface}
+           {A:   Type}
            (int: Interp I)
-           (i: I A)
+           (i:   I A)
     : Interp I :=
     snd (interpret int i).
 
@@ -68,7 +68,7 @@ Definition execInstruction
  *)
 
 CoInductive interp_eq
-            {I: Interface}
+            {I:    Interface}
             (int1: Interp I)
             (int2: Interp I)
   : Prop :=
@@ -140,13 +140,15 @@ Qed.
 
 Add Parametric Relation
     (I: Interface)
-  : (Interp I) (@interp_eq I)
-  reflexivity proved by (@interp_eq_refl I)
-  symmetry proved by (@interp_eq_sym I)
-  transitivity proved by (@interp_eq_trans I)
+  : (Interp I) (interp_eq)
+  reflexivity  proved by (interp_eq_refl)
+  symmetry     proved by (interp_eq_sym)
+  transitivity proved by (interp_eq_trans)
     as interp_rel.
 
-Instance interp_eq_eq (I: Interface): WEq (Interp I) :=
+Instance interp_eq_eq
+         (I: Interface)
+  : WEq (Interp I) :=
   {| weq := @interp_eq I |}.
 
 (** ** Interpretation Result WEquivalence
@@ -157,8 +159,8 @@ Instance interp_eq_eq (I: Interface): WEq (Interp I) :=
  *)
 
 Definition run_interp_eq
-           {I: Interface}
-           {A: Type}
+           {I:    Interface}
+           {A:    Type}
            (o o': (A * Interp I))
   : Prop :=
   fst o = fst o' /\ snd o == snd o'.
@@ -173,23 +175,23 @@ Proof.
 Qed.
 
 Lemma run_interp_eq_sym
-           {I: Interface}
-           {A: Type}
-           (o o': (A * Interp I))
-  : run_interp_eq o o'
-    -> run_interp_eq o' o.
+           {I:   Interface}
+           {A:   Type}
+           (x y: (A * Interp I))
+  : run_interp_eq x y
+    -> run_interp_eq y x.
 Proof.
   intros [H H']; symmetry in H; symmetry in H'.
   constructor; [exact H|exact H'].
 Qed.
 
 Lemma run_interp_eq_trans
-           {I: Interface}
-           {A: Type}
-           (o o' o'': (A * Interp I))
-  : run_interp_eq o o'
-    -> run_interp_eq o' o''
-    -> run_interp_eq o o''.
+           {I:     Interface}
+           {A:     Type}
+           (x y z: (A * Interp I))
+  : run_interp_eq x y
+    -> run_interp_eq y z
+    -> run_interp_eq x z.
 Proof.
   intros [H H'] [G G'].
   constructor.
@@ -201,8 +203,8 @@ Add Parametric Relation
     (I: Interface)
     (A: Type)
   : (A * Interp I) (@run_interp_eq I A)
-    reflexivity proved by (run_interp_eq_refl)
-    symmetry proved by (run_interp_eq_sym)
+    reflexivity  proved by (run_interp_eq_refl)
+    symmetry     proved by (run_interp_eq_sym)
     transitivity proved by (run_interp_eq_trans)
       as run_interp_equiv.
 
@@ -210,7 +212,8 @@ Instance eq_run_interp
          {I: Interface}
          {A: Type}
   : WEq (A * Interp I) :=
-  {| weq := run_interp_eq |}.
+  { weq := run_interp_eq
+  }.
 
 (** We then provide the required morphisms for one to be able to
     rewrite terms using the [run_interp_eq] equivalence relation.
@@ -287,11 +290,11 @@ Qed.
 
 (* A list of goal to check the rewrite tactic actually works *)
 
-Goal (forall (I: Interface)
+Goal (forall (I:        Interface)
              (int int': Interp I)
-             (A: Type)
-             (eqA: WEq A)
-             (i: I A),
+             (A:        Type)
+             (eqA:      WEq A)
+             (i:        I A),
          int == int'
          -> evalInstruction int i == evalInstruction int' i).
 Proof.
@@ -300,11 +303,11 @@ Proof.
   reflexivity.
 Qed.
 
-Goal (forall (I: Interface)
+Goal (forall (I:        Interface)
              (int int': Interp I)
-             (A: Type)
-             (eqA: WEq A)
-             (i: I A),
+             (A:        Type)
+             (eqA:      WEq A)
+             (i:        I A),
          int == int'
          -> execInstruction int i == execInstruction int' i).
 Proof.
@@ -325,15 +328,15 @@ Qed.
  *)
 
 Definition PS
-           {I: Interface}
+           {I:     Interface}
            (State: Type)
   := forall (A: Type), State -> I A -> (A * State).
 
 CoFixpoint mkInterp
-           {I: Interface}
+           {I:     Interface}
            {State: Type}
-           (ps: PS State)
-           (s: State)
+           (ps:    PS State)
+           (s:     State)
   : Interp I :=
   interp (
       fun (A: Type)
@@ -353,8 +356,8 @@ CoFixpoint mkInterp
 Local Open Scope free_scope.
 
 Definition enrich_interpreter
-           {I: Interface}
-           (L: Type)
+           {I:   Interface}
+           (L:   Type)
            (int: Interp I)
   : Interp (I <?> L) :=
   mkInterp (fun (A: Type)

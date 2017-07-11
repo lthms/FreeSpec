@@ -14,7 +14,6 @@ theories/Contract/Temporal.v
 
 theories/PropBool.v
 theories/WEq.v
-theories/Utils.v
 
 examples/Map.v
 examples/Smram.v

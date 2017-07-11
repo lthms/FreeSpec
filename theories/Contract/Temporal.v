@@ -3,44 +3,51 @@ Require Import FreeSpec.Contract.
 Require Import FreeSpec.TemporalLogic.
 Require Import FreeSpec.Contract.
 
-Definition temporal_step (I: Interface) :=
-  fun (R: Type) (i: I R) (_: R) => tl_step (instruction i).
+Definition temporal_step
+           (I: Interface) :=
+  fun (R: Type)
+      (i: I R)
+      (_: R)
+  => tl_step (instruction i).
 
-Definition temporal_requirements (I: Interface) :=
-  fun (R: Type) (i: I R) => instruction_satisfies (instruction i).
+Definition temporal_requirements
+           (I: Interface) :=
+  fun (R: Type)
+      (i: I R)
+  => instruction_satisfies (instruction i).
 
 Definition temporal_contract
-           {I: Interface}
+           {I:        Interface}
            (promises: forall (R: Type)
                              (i: I R),
                R -> Formula (ISet I) -> Prop)
   : Contract (Formula (ISet I)) I :=
   {| abstract_step := temporal_step I
-   ; requirements := temporal_requirements I
-   ; promises := fun (R: Type) => @promises R
+   ; requirements  := temporal_requirements I
+   ; promises      := fun (R: Type) => @promises R
    |}.
 
 Definition temporal_requirements_preserves_inv
-           {I: Interface}
+           {I:     Interface}
            {State: Type}
-           (step: @PS I State)
-           (inv: Formula (ISet I) -> State -> Prop)
-  := forall (A: Type)
-            (i: I A)
-            (s: State)
+           (step:  @PS I State)
+           (inv:   Formula (ISet I) -> State -> Prop)
+  := forall (A:  Type)
+            (i:  I A)
+            (s:  State)
             (tl: Formula (ISet I)),
     inv tl s
     -> instruction_satisfies (instruction i) tl
     -> inv (tl_step (instruction i) tl) (snd (step A s i)).
 
-Lemma temporal_contract_preserves_inv
-      {I: Interface}
-      {State: Type}
-      (promises: forall (R: Type)
-                        (i: I R),
-          R -> Formula (ISet I) -> Prop)
-      (step: @PS I State)
-      (inv: Formula (ISet I) -> State -> Prop)
+Fact temporal_contract_preserves_inv
+     {I:        Interface}
+     {State:    Type}
+     (promises: forall (R: Type)
+                       (i: I R),
+         R -> Formula (ISet I) -> Prop)
+     (step:     @PS I State)
+     (inv:      Formula (ISet I) -> State -> Prop)
   : temporal_requirements_preserves_inv step inv
     -> contract_preserves_inv (temporal_contract promises)
                               inv
@@ -52,29 +59,29 @@ Proof.
 Qed.
 
 Definition temporal_requirements_enforces_promises
-           {I: Interface}
-           {State: Type}
-           (step: @PS I State)
-           (inv: Formula (ISet I) -> State -> Prop)
+           {I:        Interface}
+           {State:    Type}
+           (step:     @PS I State)
+           (inv:      Formula (ISet I) -> State -> Prop)
            (promises: forall (R: Type)
                              (i: I R),
                R -> Formula (ISet I) -> Prop)
-  := forall (A: Type)
-            (i: I A)
-            (s: State)
+  := forall (A:  Type)
+            (i:  I A)
+            (s:  State)
             (tl: Formula (ISet I)),
     inv tl s
     -> instruction_satisfies (instruction i) tl
     -> promises A i (fst (step A s i)) tl.
 
-Lemma temporal_contract_enforces_promises
-      {I: Interface}
-      {State: Type}
-      (step: @PS I State)
-      (inv: Formula (ISet I) -> State -> Prop)
-      (promises: forall (R: Type)
-                        (i: I R),
-          R -> Formula (ISet I) -> Prop)
+Fact temporal_contract_enforces_promises
+     {I:        Interface}
+     {State:    Type}
+     (step:     @PS I State)
+     (inv:      Formula (ISet I) -> State -> Prop)
+     (promises: forall (R: Type)
+                       (i: I R),
+         R -> Formula (ISet I) -> Prop)
   : temporal_requirements_enforces_promises step inv promises
     -> contract_enforces_promises (temporal_contract promises)
                                   inv
@@ -86,16 +93,16 @@ Proof.
 Qed.
 
 Lemma temporal_contract_enforcement
-      {I: Interface}
-      {State: Type}
-      (step: @PS I State)
-      (inv: Formula (ISet I) -> State -> Prop)
+      {I:        Interface}
+      {State:    Type}
+      (step:     @PS I State)
+      (inv:      Formula (ISet I) -> State -> Prop)
       (promises: forall (R: Type)
                         (i: I R),
           R -> Formula (ISet I) -> Prop)
-      (tl: Formula (ISet I))
-      (Hpres: temporal_requirements_preserves_inv step inv)
-      (Henf: temporal_requirements_enforces_promises step inv promises)
+      (tl:       Formula (ISet I))
+      (Hpres:    temporal_requirements_preserves_inv step inv)
+      (Henf:     temporal_requirements_enforces_promises step inv promises)
   : forall (s: State),
     inv tl s
     -> (mkInterp step s) :> (temporal_contract promises)[tl].

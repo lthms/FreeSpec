@@ -21,7 +21,7 @@ Local Open Scope free_weq_scope.
  *)
 Inductive IntCompose
           (I I': Interface)
-          (A: Type)
+          (A:    Type)
   : Type :=
 | ileft (i: I A)
   : IntCompose I I' A
@@ -36,7 +36,9 @@ Arguments iright [I I' A] (i).
 
  *)
 
-Infix "<+>" := (IntCompose) (at level 50, left associativity)
+Infix "<+>" :=
+  (IntCompose)
+    (at level 50, left associativity)
   : free_scope.
 
 Local Open Scope free_scope.
@@ -52,7 +54,7 @@ Local Open Scope free_scope.
 
 CoFixpoint mkCompInterp
            {I I': Interface}
-           (int: Interp I)
+           (int:  Interp I)
            (int': Interp I')
   : Interp (I <+> I') :=
   interp (fun {A: Type}
@@ -134,7 +136,9 @@ Proof.
   reflexivity.
 Qed.
 
-Infix "|+|" := (mkCompInterp) (at level 50, left associativity)
+Infix "|+|" :=
+  (mkCompInterp)
+    (at level 50, left associativity)
   : free_scope.
 
 (** ** Effective Interpretation
@@ -146,7 +150,7 @@ Infix "|+|" := (mkCompInterp) (at level 50, left associativity)
 
 CoFixpoint mkCompInterp'
            {I I': Interface}
-           (int: Interp I)
+           (int:  Interp I)
            (int': Interp I')
   : Interp (I <+> I') :=
   interp (fun {A: Type}
@@ -165,7 +169,7 @@ CoFixpoint mkCompInterp'
 
 Fact mk_comp_interp_equivalence
      {I I': Interface}
-  : forall (int: Interp I)
+  : forall (int:  Interp I)
            (int': Interp I'),
     int |+| int' == mkCompInterp' int int'.
 Proof.
@@ -198,14 +202,14 @@ Qed.
  *)
 
 Definition compose_step
-           {S S': Type}
-           {I I': Interface}
-           (step: forall {A: Type}, I A -> A -> S -> S)
+           {S S':  Type}
+           {I I':  Interface}
+           (step:  forall {A: Type}, I A -> A -> S -> S)
            (step': forall {A: Type}, I' A -> A -> S' -> S')
-           (A: Type)
-           (i: (I <+> I') A)
-           (a: A)
-           (x: S * S')
+           (A:     Type)
+           (i:     (I <+> I') A)
+           (a:     A)
+           (x:     S * S')
   : S * S' :=
   match x, i with
   | (s, s'), ileft i =>
@@ -217,11 +221,11 @@ Definition compose_step
 Definition compose_requirements
            {S S': Type}
            {I I': Interface}
-           (req: forall {A: Type}, I A -> S -> Prop)
+           (req:  forall {A: Type}, I A -> S -> Prop)
            (req': forall {A: Type}, I' A -> S' -> Prop)
-           (A: Type)
-           (i: (I <+> I') A)
-           (x: S * S')
+           (A:    Type)
+           (i:    (I <+> I') A)
+           (x:    S * S')
   : Prop :=
   match x, i with
   | (s, s'), ileft i =>
@@ -231,34 +235,36 @@ Definition compose_requirements
   end.
 
 Definition compose_promises
-           {S S': Type}
-           {I I': Interface}
-           (prom: forall {A: Type} (i: I A), A -> S -> Prop)
+           {S S':  Type}
+           {I I':  Interface}
+           (prom:  forall {A: Type} (i: I A), A -> S -> Prop)
            (prom': forall {A: Type} (i: I' A), A -> S' -> Prop)
-           (A: Type)
-           (i: (I <+> I') A)
-           (ret: A)
-           (x: S * S')
+           (A:     Type)
+           (i:     (I <+> I') A)
+           (ret:   A)
+           (x:     S * S')
   : Prop :=
   match x, i with
-  | (s, s'), ileft i =>
-    prom i ret s
-  | (s, s'), iright i =>
-    prom' i ret s'
+  | (s, s'), ileft i
+    => prom i ret s
+  | (s, s'), iright i
+    => prom' i ret s'
   end.
 
 Definition composeContract
            {S S': Type}
            {I I': Interface}
-           (c: Contract S I)
-           (c': Contract S' I')
+           (c:    Contract S I)
+           (c':   Contract S' I')
   : Contract (S * S') (I <+> I') :=
   {| abstract_step := compose_step (abstract_step c) (abstract_step c')
    ; requirements := compose_requirements (requirements c) (requirements c')
    ; promises := compose_promises (promises c) (promises c')
    |}.
 
-Infix ":+:" := (composeContract) (at level 50, left associativity)
+Infix ":+:" :=
+  (composeContract)
+    (at level 50, left associativity)
   : free_scope.
 
 (** ** Left
@@ -266,14 +272,14 @@ Infix ":+:" := (composeContract) (at level 50, left associativity)
  *)
 
 Definition expand_step_left
-           {S: Type}
-           {I: Interface}
+           {S:    Type}
+           {I:    Interface}
            (step: forall {A: Type} (i: I A), A -> S -> S)
-           (I': Interface)
-           (A: Type)
-           (i: (I <+> I') A)
-           (a: A)
-           (s: S)
+           (I':   Interface)
+           (A:    Type)
+           (i:    (I <+> I') A)
+           (a:    A)
+           (s:    S)
   : S :=
   match i with
   | ileft i
@@ -283,13 +289,13 @@ Definition expand_step_left
   end.
 
 Definition expand_req_left
-           {S: Type}
-           {I: Interface}
+           {S:   Type}
+           {I:   Interface}
            (req: forall {A: Type}, I A -> S -> Prop)
-           (I': Interface)
-           (A: Type)
-           (i: (I <+> I') A)
-           (s: S)
+           (I':  Interface)
+           (A:   Type)
+           (i:   (I <+> I') A)
+           (s:   S)
   : Prop :=
   match i with
   | ileft i
@@ -299,14 +305,14 @@ Definition expand_req_left
   end.
 
 Definition expand_prom_left
-           {S: Type}
-           {I: Interface}
+           {S:    Type}
+           {I:    Interface}
            (prom: forall {A: Type} (i: I A), A -> S -> Prop)
-           (I': Interface)
-           (A: Type)
-           (i: (I <+> I') A)
-           (a: A)
-           (s: S)
+           (I':   Interface)
+           (A:    Type)
+           (i:    (I <+> I') A)
+           (a:    A)
+           (s:    S)
   : Prop :=
   match i with
   | ileft i
@@ -316,9 +322,9 @@ Definition expand_prom_left
   end.
 
 Definition expand_contract_left
-           {S: Type}
-           {I: Interface}
-           (c: Contract S I)
+           {S:  Type}
+           {I:  Interface}
+           (c:  Contract S I)
            (I': Interface)
   : Contract S (I <+> I') :=
   {| abstract_step := expand_step_left (abstract_step c) I'
@@ -327,14 +333,14 @@ Definition expand_contract_left
    |}.
 
 Lemma expand_enforcer_left
-  : forall {S: Type}
+  : forall {S:    Type}
            {I I': Interface}
-           {c: Contract S I}
-           {s: S}
-           {int: Interp I}
+           {c:    Contract S I}
+           {s:    S}
+           {int:  Interp I}
            (Henf: int :> c[s])
            (int': Interp I'),
-    (int |+| int') :> (expand_contract_left c I')[s].
+    int |+| int' :> (expand_contract_left c I')[s].
 Proof.
   cofix.
   intros S I I' c s int Henf int'.
@@ -357,14 +363,14 @@ Qed.
  *)
 
 Definition expand_step_right
-           {S: Type}
-           {I: Interface}
+           {S:    Type}
+           {I:    Interface}
            (step: forall {A: Type} (i: I A), A -> S -> S)
-           (I': Interface)
-           (A: Type)
-           (i: (I' <+> I) A)
-           (a: A)
-           (s: S)
+           (I':   Interface)
+           (A:    Type)
+           (i:    (I' <+> I) A)
+           (a:    A)
+           (s:    S)
   : S :=
   match i with
   | iright i
@@ -374,13 +380,13 @@ Definition expand_step_right
   end.
 
 Definition expand_req_right
-           {S: Type}
-           {I: Interface}
+           {S:   Type}
+           {I:   Interface}
            (req: forall {A: Type}, I A -> S -> Prop)
-           (I': Interface)
-           (A: Type)
-           (i: (I' <+> I) A)
-           (s: S)
+           (I':  Interface)
+           (A:   Type)
+           (i:   (I' <+> I) A)
+           (s:   S)
   : Prop :=
   match i with
   | iright i
@@ -390,14 +396,14 @@ Definition expand_req_right
   end.
 
 Definition expand_prom_right
-           {S: Type}
-           {I: Interface}
+           {S:    Type}
+           {I:    Interface}
            (prom: forall {A: Type} (i: I A), A -> S -> Prop)
-           (I': Interface)
-           (A: Type)
-           (i: (I' <+> I) A)
-           (a: A)
-           (s: S)
+           (I':   Interface)
+           (A:    Type)
+           (i:    (I' <+> I) A)
+           (a:    A)
+           (s:    S)
   : Prop :=
   match i with
   | iright i
@@ -407,9 +413,9 @@ Definition expand_prom_right
   end.
 
 Definition expand_contract_right
-           {S: Type}
-           {I: Interface}
-           (c: Contract S I)
+           {S:  Type}
+           {I:  Interface}
+           (c:  Contract S I)
            (I': Interface)
   : Contract S (I' <+> I) :=
   {| abstract_step := expand_step_right (abstract_step c) I'
@@ -418,11 +424,11 @@ Definition expand_contract_right
    |}.
 
 Lemma expand_enforcer_right
-  : forall {S: Type}
+  : forall {S:    Type}
            {I I': Interface}
-           {c: Contract S I}
-           {s: S}
-           {int: Interp I}
+           {c:    Contract S I}
+           {s:    S}
+           {int:  Interp I}
            (Henf: int :> c[s])
            (int': Interp I'),
     int' |+| int :> (expand_contract_right c I')[s].

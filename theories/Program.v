@@ -68,30 +68,33 @@ Arguments bind [I A B] (p f).
  *)
 
 Fixpoint runProgram
-         {I: Interface}
-         {A: Type}
+         {I:   Interface}
+         {A:   Type}
          (int: Interp I)
-         (p: Program I A)
+         (p:   Program I A)
   : (A * Interp I) :=
   match p with
-  | ret a => (a, int)
-  | instr i => interpret int i
-  | bind p' f => runProgram (snd (runProgram int p')) (f (fst (runProgram int p')))
+  | ret a
+    => (a, int)
+  | instr i
+    => interpret int i
+  | bind p' f
+    => runProgram (snd (runProgram int p')) (f (fst (runProgram int p')))
   end.
 
 Definition evalProgram
-           {I: Interface}
-           {A: Type}
+           {I:   Interface}
+           {A:   Type}
            (int: Interp I)
-           (p: Program I A)
+           (p:   Program I A)
   : A :=
   fst (runProgram int p).
 
 Definition execProgram
-           {I: Interface}
-           {A: Type}
+           {I:   Interface}
+           {A:   Type}
            (int: Interp I)
-           (p: Program I A)
+           (p:   Program I A)
   : Interp I :=
   snd (runProgram int p).
 
@@ -104,9 +107,9 @@ Definition execProgram
  *)
 
 CoInductive program_eq
-            {I: Interface}
-            {A: Type}
-            (p: Program I A)
+            {I:  Interface}
+            {A:  Type}
+            (p:  Program I A)
             (p': Program I A) :=
 | program_is_eq (Hres: forall (int: Interp I),
                     evalProgram int p = evalProgram int p')
@@ -134,8 +137,8 @@ Proof.
 Qed.
 
 Lemma program_eq_sym
-      {I: Interface}
-      {A: Type}
+      {I:    Interface}
+      {A:    Type}
       (p p': Program I A)
   : program_eq p p'
     -> program_eq p' p.
@@ -152,8 +155,8 @@ Proof.
 Qed.
 
 Lemma program_eq_trans
-      {I: Interface}
-      {A: Type}
+      {I:        Interface}
+      {A:        Type}
       (p p' p'': Program I A)
   : program_eq p p'
     -> program_eq p' p''
@@ -173,8 +176,8 @@ Add Parametric Relation
     (I: Interface)
     (A: Type)
   : (Program I A) (program_eq)
-    reflexivity proved by (program_eq_refl)
-    symmetry proved by (program_eq_sym)
+    reflexivity  proved by (program_eq_refl)
+    symmetry     proved by (program_eq_sym)
     transitivity proved by (program_eq_trans)
       as program_equiv.
 
@@ -228,7 +231,8 @@ Instance program_eq_eq
          (I: Interface)
          (A: Type)
   : WEq (Program I A) :=
-  {| weq := program_eq |}.
+  { weq := program_eq
+  }.
 
 (** ** Monad Laws
 
@@ -246,11 +250,11 @@ Instance program_eq_eq
  *)
 
 Fact program_left_identity
-     {I: Interface}
+     {I:   Interface}
      {A B: Type}
-     (a: A)
-     (f: A -> Program I B)
-  : program_eq (bind (ret a) f) (f a).
+     (a:   A)
+     (f:   A -> Program I B)
+  : bind (ret a) f == f a.
 Proof.
   constructor.
   + reflexivity.
@@ -261,7 +265,7 @@ Fact program_right_identity
      {I: Interface}
      {A: Type}
      (p: Program I A)
-  : program_eq (bind p (@ret I A)) p.
+  : bind p (@ret I A) == p.
 Proof.
   constructor.
   + reflexivity.
@@ -269,12 +273,12 @@ Proof.
 Qed.
 
 Fact program_associativity
-     {I: Interface}
+     {I:     Interface}
      {A B C: Type}
-     (p: Program I A)
-     (f: A -> Program I B)
-     (g: B -> Program I C)
-  : program_eq (bind (bind p f) g) (bind p (fun x => bind (f x) g)).
+     (p:     Program I A)
+     (f:     A -> Program I B)
+     (g:     B -> Program I C)
+  : bind (bind p f) g == bind p (fun x => bind (f x) g).
 Proof.
   constructor.
   + reflexivity.
@@ -295,23 +299,26 @@ Qed.
 
  *)
 Fixpoint runProgram'
-         {I: Interface}
-         {A: Type}
+         {I:   Interface}
+         {A:   Type}
          (int: Interp I)
-         (p: Program I A)
+         (p:   Program I A)
   : (A * Interp I) :=
   match p with
-  | ret a => (a, int)
-  | instr i => interpret int i
-  | bind p' f => let o := runProgram' int p'
-                 in runProgram' (snd o) (f (fst o))
+  | ret a
+    => (a, int)
+  | instr i
+    => interpret int i
+  | bind p' f
+    => let o := runProgram' int p'
+       in runProgram' (snd o) (f (fst o))
   end.
 
 Lemma run_program_equiv
-      {I: Interface}
-      {A: Type}
+      {I:   Interface}
+      {A:   Type}
       (int: Interp I)
-      (p: Program I A)
+      (p:   Program I A)
   : runProgram int p = runProgram' int p.
 Proof.
   induction p; reflexivity.

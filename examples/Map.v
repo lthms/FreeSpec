@@ -17,9 +17,9 @@ Local Open Scope free_weq_scope.
 Local Open Scope prog_scope.
 
 Lemma neq_sym
-      {T: Type}
+      {T:        Type}
      `{WEq T}
-      (t: T)
+      (t:        T)
       (Hneq_sym: t /= t)
   : False.
 Proof.
@@ -29,14 +29,15 @@ Proof.
 Qed.
 
 Section MAP.
-  Variables (Key: Type)
-            (key_eq: WEq Key)
-            (key_eqdec: WEqBool Key)
-            (Value: Type)
-            (value_eq: WEq Value)
+  Variables (Key:         Type)
+            (key_eq:      WEq Key)
+            (key_eqdec:   WEqBool Key)
+            (Value:       Type)
+            (value_eq:    WEq Value)
             (value_eqdec: WEqBool Value).
 
-  Inductive IMap: Type -> Type :=
+  Inductive IMap
+    : Interface :=
   | Read (k: Key)
     : IMap Value
   | Write (k: Key)
@@ -46,20 +47,23 @@ Section MAP.
   Definition State := Key -> Value.
 
   Definition map_program_step
-             (A: Type)
+             (A:   Type)
              (map: State)
-             (i: IMap A)
+             (i:   IMap A)
     : (A * State) :=
     match i with
-    | Read k => (map k, map)
-    | Write k v => (tt, fun k' =>
-                          if k ?= k'
-                          then v
-                          else map k')
+    | Read k
+      => (map k, map)
+    | Write k v
+      => (tt, fun k'
+              => if k ?= k'
+                 then v
+                 else map k')
     end.
 
   Definition MapInterp
              (s: State)
+    : Interp IMap
     := mkInterp map_program_step s.
 
   Definition MapProgram := Program IMap.
@@ -83,9 +87,9 @@ Section MAP.
   Qed.
 
   Lemma write_then_read_2
-        (s: State)
+        (s:    State)
         (k k': Key)
-        (v: Value)
+        (v:    Value)
         (Hneq: k' /= k)
     : evalProgram (MapInterp s)
                   (_ <- [Write k' v];
@@ -114,12 +118,15 @@ Section MAP.
                (i: IMap A)
       : A -> Prop :=
       match i with
-      | Read k => fun v => v /= x
-      | Write k v => fun x => True
+      | Read k
+        => fun v => v /= x
+      | Write k v
+        => fun x => True
       end.
 
-    Definition never_read_x_contract := constant_contract never_read_x_requirements
-                                                          never_read_x_promises.
+    Definition never_read_x_contract :=
+      constant_contract never_read_x_requirements
+                        never_read_x_promises.
 
     Definition x_free_map
                (s: State)
@@ -127,7 +134,9 @@ Section MAP.
       forall k, (s k) /= x.
 
     Lemma map_interp_preserves_inv
-      : requirements_preserves_inv never_read_x_requirements map_program_step x_free_map.
+      : requirements_preserves_inv never_read_x_requirements
+                                   map_program_step
+                                   x_free_map.
     Proof.
       unfold requirements_preserves_inv.
       induction i.
@@ -144,7 +153,9 @@ Section MAP.
     Qed.
 
     Lemma map_interp_enforces_promises
-      : requirements_brings_promises never_read_x_requirements never_read_x_promises map_program_step x_free_map.
+      : requirements_brings_promises never_read_x_requirements
+                                     never_read_x_promises
+                                     map_program_step x_free_map.
     Proof.
       unfold requirements_brings_promises.
       induction i.
@@ -158,7 +169,7 @@ Section MAP.
     Corollary MapInterp_enforce_contract
               (s:    State)
               (Hinv: x_free_map s)
-      : (MapInterp s) :> never_read_x_contract[tt].
+      : MapInterp s :> never_read_x_contract[tt].
     Proof.
       apply (const_contract_enforcement never_read_x_requirements
                                         never_read_x_promises
@@ -251,9 +262,9 @@ Section MAP.
 
     Definition write_k_x_inst
       : Dec (ISet IMap) :=
-      {| prop := write_k_x
+      {| prop      := write_k_x
        ; prop_bool := write_k_x_bool
-      |}.
+       |}.
 
     Definition not_read_k
                (i: ISet IMap)
@@ -301,9 +312,9 @@ Section MAP.
 
     Definition not_read_k_inst
       : Dec (ISet IMap) :=
-      {| prop := not_read_k
+      {| prop      := not_read_k
        ; prop_bool := not_read_k_bool
-      |}.
+       |}.
 
     Definition policy_step
       : Formula (ISet IMap) :=

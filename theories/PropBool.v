@@ -1,16 +1,16 @@
 Class PropBool1
-      {A: Type}
-      (pred: A -> Prop)
+      {A:         Type}
+      (pred:      A -> Prop)
       (pred_bool: A -> bool) :=
   { pred_bool_pred_1 (a: A): pred_bool a = true <-> pred a
   }.
 
 Lemma pred_bool_false_1
-      {A: Type}
-      (pred: A -> Prop)
+      {A:         Type}
+      (pred:      A -> Prop)
       (pred_bool: A -> bool)
      `{PropBool1 A pred pred_bool}
-      (a: A)
+      (a:         A)
   : pred_bool a = false <-> ~pred a.
 Proof.
   split.
@@ -27,9 +27,9 @@ Proof.
 Qed.
 
 Class PropBool2
-      {A: Type}
-      {B: Type}
-      (pred: A -> B -> Prop)
+      {A:         Type}
+      {B:         Type}
+      (pred:      A -> B -> Prop)
       (pred_bool: A -> B -> bool) :=
   { pred_bool_pred_2 (a: A)
                      (b: B)
@@ -37,13 +37,13 @@ Class PropBool2
   }.
 
 Lemma pred_bool_false_2
-      {A: Type}
-      {B: Type}
-      (pred: A -> B -> Prop)
+      {A:         Type}
+      {B:         Type}
+      (pred:      A -> B -> Prop)
       (pred_bool: A -> B -> bool)
      `{PropBool2 A B pred pred_bool}
-      (a: A)
-      (b: B)
+      (a:         A)
+      (b:         B)
   : pred_bool a b = false <-> ~pred a b.
 Proof.
   split.
@@ -60,10 +60,10 @@ Proof.
 Qed.
 
 Class PropBool3
-      {A: Type}
-      {B: Type}
-      {C: Type}
-      (pred: A -> B -> C -> Prop)
+      {A:         Type}
+      {B:         Type}
+      {C:         Type}
+      (pred:      A -> B -> C -> Prop)
       (pred_bool: A -> B -> C -> bool) :=
   { pred_bool_pred_3 (a: A)
                      (b: B)
@@ -72,15 +72,15 @@ Class PropBool3
   }.
 
 Lemma pred_bool_false_3
-      {A: Type}
-      {B: Type}
-      {C: Type}
-      (pred: A -> B -> C -> Prop)
+      {A:         Type}
+      {B:         Type}
+      {C:         Type}
+      (pred:      A -> B -> C -> Prop)
       (pred_bool: A -> B -> C -> bool)
      `{PropBool3 A B C pred pred_bool}
-      (a: A)
-      (b: B)
-      (c: C)
+      (a:         A)
+      (b:         B)
+      (c:         C)
   : pred_bool a b c = false <-> ~pred a b c.
 Proof.
   split.

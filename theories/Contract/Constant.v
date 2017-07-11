@@ -4,35 +4,42 @@ Require Import FreeSpec.Program.
 Require Import FreeSpec.Abstract.
 
 Definition const_contract_requirements
-           {I: Interface}
+           {I:            Interface}
            (requirements: forall (A: Type), I A -> Prop)
-  := fun (A: Type) (i: I A) (_: unit) => requirements A i.
+  := fun (A: Type)
+         (i: I A)
+         (_: unit)
+     => requirements A i.
 
 Definition const_contract_promises
-           {I: Interface}
+           {I:        Interface}
            (promises: forall (A: Type)
                              (i: I A),
                A -> Prop)
-  := fun (A: Type) (i: I A) (a: A) (_: unit) => promises A i a.
+  := fun (A: Type)
+         (i: I A)
+         (a: A)
+         (_: unit)
+     => promises A i a.
 
 Definition constant_contract
-           {I: Interface}
+           {I:            Interface}
            (requirements: forall (A: Type), I A -> Prop)
-           (promises: forall (A: Type)
-                             (i: I A),
+           (promises:     forall (A: Type)
+                                 (i: I A),
                A -> Prop)
   : Contract unit I :=
   {| abstract_step := fun (A: Type) (_: I A) (_: A) (_: unit) => tt
-   ; requirements := @const_contract_requirements I requirements
-   ; promises := @const_contract_promises I promises
+   ; requirements  := @const_contract_requirements I requirements
+   ; promises      := @const_contract_promises I promises
    |}.
 
 Definition requirements_preserves_inv
-           {I: Interface}
-           {State: Type}
+           {I:            Interface}
+           {State:        Type}
            (requirements: forall (A: Type), I A -> Prop)
-           (step: @PS I State)
-           (inv: State -> Prop)
+           (step:         @PS I State)
+           (inv:          State -> Prop)
   := forall (A: Type)
             (i: I A)
             (s: State),
@@ -41,12 +48,12 @@ Definition requirements_preserves_inv
     -> inv (snd (step A s i)).
 
 Lemma const_contract_preserves_inv
-      {I: Interface}
-      {State: Type}
+      {I:            Interface}
+      {State:        Type}
       (requirements: forall (A: Type), I A -> Prop)
-      (promises: forall (A: Type), I A -> A -> Prop)
-      (step: @PS I State)
-      (inv: State -> Prop)
+      (promises:     forall (A: Type), I A -> A -> Prop)
+      (step:         @PS I State)
+      (inv:          State -> Prop)
   : requirements_preserves_inv requirements step inv
     -> contract_preserves_inv (constant_contract requirements promises)
                               (fun _ s => inv s)
@@ -59,12 +66,12 @@ Proof.
 Qed.
 
 Definition requirements_brings_promises
-           {I: Interface}
-           {State: Type}
+           {I:            Interface}
+           {State:        Type}
            (requirements: forall (A: Type), I A -> Prop)
-           (promises: forall (A: Type), I A -> A -> Prop)
-           (step: @PS I State)
-           (inv: State -> Prop)
+           (promises:     forall (A: Type), I A -> A -> Prop)
+           (step:         @PS I State)
+           (inv:          State -> Prop)
   := forall (A: Type)
             (i: I A)
             (s: State),
@@ -73,12 +80,12 @@ Definition requirements_brings_promises
     -> promises A i (fst (step A s i)).
 
 Lemma const_contract_enforces_promises
-      {I: Interface}
-      {State: Type}
+      {I:            Interface}
+      {State:        Type}
       (requirements: forall (A: Type), I A -> Prop)
-      (promises: forall (A: Type), I A -> A -> Prop)
-      (step: @PS I State)
-      (inv: State -> Prop)
+      (promises:     forall (A: Type), I A -> A -> Prop)
+      (step:         @PS I State)
+      (inv:          State -> Prop)
   : requirements_brings_promises requirements promises step inv
     -> contract_enforces_promises (constant_contract requirements promises)
                                   (fun _ s => inv s)
@@ -91,14 +98,14 @@ Proof.
 Qed.
 
 Lemma const_contract_enforcement
-      {I: Interface}
-      {State: Type}
+      {I:            Interface}
+      {State:        Type}
       (requirements: forall (A: Type), I A -> Prop)
-      (promises: forall (A: Type), I A -> A -> Prop)
-      (step: @PS I State)
-      (inv: State -> Prop)
-      (Hpres: requirements_preserves_inv requirements step inv)
-      (Henf: requirements_brings_promises requirements promises step inv)
+      (promises:     forall (A: Type), I A -> A -> Prop)
+      (step:         @PS I State)
+      (inv:          State -> Prop)
+      (Hpres:        requirements_preserves_inv requirements step inv)
+      (Henf:         requirements_brings_promises requirements promises step inv)
   : forall (s: State),
     inv s
     -> (mkInterp step s) :> (constant_contract requirements promises)[tt].
@@ -115,20 +122,20 @@ Proof.
   + exact Hinv.
 Qed.
 
-Lemma tt_singleton
-      (x y: unit)
+Fact tt_singleton
+     (x y: unit)
   : x = y.
 Proof.
   induction x; induction y; reflexivity.
 Qed.
 
 Lemma compliant_program_enforcer_enforcer_exec
-      {I: Interface}
-      {A: Type}
-      (p: Program I A)
-      (c: Contract unit I)
+      {I:   Interface}
+      {A:   Type}
+      (p:   Program I A)
+      (c:   Contract unit I)
       (int: Interp I)
-  : compliant_program c tt p
+  : p :> c[tt]
     -> int :> c[tt]
     -> (execProgram int p) :> c[tt].
 Proof.
@@ -145,7 +152,7 @@ Lemma const_compliant_is_strongly_compliant
       {A: Type}
       (p: Program I A)
       (c: Contract unit I)
-  : compliant_program c tt p
+  : p :> c[tt]
     -> strongly_compliant_program c tt p.
 Proof.
   intro Hp.
