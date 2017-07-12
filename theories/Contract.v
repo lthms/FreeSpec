@@ -276,7 +276,7 @@ Inductive compliant_program
                        compliant_program c
                                          (contract_derive p int c s)
                                          (f (evalProgram int p)))
-  : compliant_program c s (bind p f).
+  : compliant_program c s (pbind p f).
 
 Instance program_Compliant
          (S: Type)
@@ -294,7 +294,7 @@ Instance program_Compliant
 
  *)
 
-Fact compliant_program_bind_ret
+Fact compliant_program_pbind_ret
      {S:   Type}
      {I:   Interface}
      {A B: Type}
@@ -303,7 +303,7 @@ Fact compliant_program_bind_ret
      (c:   Contract S I)
      (s:   S)
   : (f a) :> c[s]
-    -> (bind (ret a) f) :> c[s].
+    -> (pbind (ret a) f) :> c[s].
 Proof.
   intros Hp.
   constructor.
@@ -374,8 +374,8 @@ Fact contract_derive_assoc
      (int:   Interp I)
      (c:     Contract S I)
      (s:     S)
-  : contract_derive (bind (bind p f) f') int c s
-    = contract_derive (bind p (fun x => bind (f x) f')) int c s.
+  : contract_derive (pbind (pbind p f) f') int c s
+    = contract_derive (pbind p (fun x => pbind (f x) f')) int c s.
 Proof.
   reflexivity.
 Qed.
@@ -390,7 +390,7 @@ Fact exec_abs_assoc
            (int: Interp I)
            (c:   Contract S I)
            (s:   S),
-    abstractExec s (abstract_step c) int (bind p f)
+    abstractExec s (abstract_step c) int (pbind p f)
     = abstractExec (contract_derive p int c s)
                    (abstract_step c)
                    (abstractExec s (abstract_step c) int p)
@@ -411,7 +411,7 @@ Fact eval_program_assoc
            (int: Interp I)
            (c:   Contract S I)
            (s:   S),
-    evalProgram int (bind p f)
+    evalProgram int (pbind p f)
     = evalProgram (abstractExec s (abstract_step c) int p)
                   (f (evalProgram int p)).
 Proof.
@@ -420,7 +420,7 @@ Proof.
   reflexivity.
 Qed.
 
-Fact contract_derive_bind
+Fact contract_derive_pbind
      {S: Type}
      {I: Interface}
      {A: Type}
@@ -434,7 +434,7 @@ Fact contract_derive_bind
                     (abstractExec s (abstract_step c) int p)
                     c
                     (contract_derive p int c s)
-    = contract_derive (bind p f) int c s.
+    = contract_derive (pbind p f) int c s.
 Proof.
   induction p.
   + reflexivity.
@@ -449,7 +449,7 @@ Proof.
     reflexivity.
 Qed.
 
-Fact abstractExec_bind
+Fact abstractExec_pbind
      {S:   Type}
      {I:   Interface}
      {A B: Type}
@@ -465,7 +465,7 @@ Fact abstractExec_bind
                                int
                                p)
                  (f (evalProgram int p))
-    = abstractExec s (abstract_step c) int (bind p f).
+    = abstractExec s (abstract_step c) int (pbind p f).
 Proof.
   intros f int c s.
   repeat rewrite abstract_exec_exec_program_same.
@@ -495,8 +495,8 @@ Proof.
       repeat apply inj_pair2 in H4;
       subst.
     apply (IHp c s int He) in Hcp.
-    rewrite <- abstractExec_bind.
-    rewrite <- contract_derive_bind.
+    rewrite <- abstractExec_pbind.
+    rewrite <- contract_derive_pbind.
     apply H.
     ++ exact Hcp.
     ++ apply Hnext.

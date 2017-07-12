@@ -38,7 +38,7 @@ Local Open Scope free_weq_scope.
     - [ret a], a pure value
     - [instr i], a call to the underlying interface through the
       instruction [i]
-    - [bind p f], a first computation whose result determines the
+    - [pbind p f], a first computation whose result determines the
       following computation to execute
 
  *)
@@ -50,14 +50,14 @@ Inductive Program
   : Program I A
 | instr (i: I A)
   : Program I A
-| bind {B: Type}
-       (p: Program I B)
-       (f: B -> Program I A)
+| pbind {B: Type}
+        (p: Program I B)
+        (f: B -> Program I A)
   : Program I A.
 
 Arguments ret [I A] (a).
 Arguments instr [I A] (i).
-Arguments bind [I A B] (p f).
+Arguments pbind [I A B] (p f).
 
 (** ** Execution
 
@@ -78,7 +78,7 @@ Fixpoint runProgram
     => (a, int)
   | instr i
     => interpret int i
-  | bind p' f
+  | pbind p' f
     => runProgram (snd (runProgram int p')) (f (fst (runProgram int p')))
   end.
 
@@ -254,7 +254,7 @@ Fact program_left_identity
      {A B: Type}
      (a:   A)
      (f:   A -> Program I B)
-  : bind (ret a) f == f a.
+  : pbind (ret a) f == f a.
 Proof.
   constructor.
   + reflexivity.
@@ -265,7 +265,7 @@ Fact program_right_identity
      {I: Interface}
      {A: Type}
      (p: Program I A)
-  : bind p (@ret I A) == p.
+  : pbind p (@ret I A) == p.
 Proof.
   constructor.
   + reflexivity.
@@ -278,7 +278,7 @@ Fact program_associativity
      (p:     Program I A)
      (f:     A -> Program I B)
      (g:     B -> Program I C)
-  : bind (bind p f) g == bind p (fun x => bind (f x) g).
+  : pbind (pbind p f) g == pbind p (fun x => pbind (f x) g).
 Proof.
   constructor.
   + reflexivity.
@@ -309,7 +309,7 @@ Fixpoint runProgram'
     => (a, int)
   | instr i
     => interpret int i
-  | bind p' f
+  | pbind p' f
     => let o := runProgram' int p'
        in runProgram' (snd o) (f (fst o))
   end.
@@ -329,11 +329,11 @@ Qed.
  *)
 
 
-Notation "p >>= f" := (bind p f) (at level 50) : prog_scope.
+Notation "p >>= f" := (pbind p f) (at level 50) : prog_scope.
 Notation "a <- p ; q" :=
-  (bind p (fun a => q)) (at level 99, right associativity, p at next level)
+  (pbind p (fun a => q)) (at level 99, right associativity, p at next level)
   : prog_scope.
 Notation "p ;; q" :=
-  (bind p (fun _ => q)) (at level 99, right associativity)
+  (pbind p (fun _ => q)) (at level 99, right associativity)
   : prog_scope.
 Notation "[ i ]" := (instr i) (at level 50) : prog_scope.

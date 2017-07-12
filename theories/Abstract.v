@@ -29,7 +29,7 @@ Fixpoint abstractRun
     => (evalInstruction int i,
         execInstruction int i,
         abs_step _ i (evalInstruction int i) abs)
-  | bind p' f
+  | pbind p' f
     => abstractRun (snd (abstractRun abs abs_step int p'))
                    abs_step
                    (snd (fst (abstractRun abs abs_step int p')))
