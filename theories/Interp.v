@@ -151,7 +151,7 @@ Instance interp_eq_eq
   : WEq (Interp I) :=
   {| weq := @interp_eq I |}.
 
-(** ** Interpretation Result WEquivalence
+(** ** Interpretation Result Weak Equality
 
     To help Coq when it comes to generalized rewriting, we define an
     equivalence relation for the result of an interpretation, along
