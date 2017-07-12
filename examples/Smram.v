@@ -1,5 +1,4 @@
 (* begin hide *)
-Require Import Coq.Bool.Sumbool.
 Require Import Coq.Bool.Bool.
 Require Import Coq.Program.Equality.
 (* end hide *)
@@ -9,6 +8,7 @@ Require Import FreeSpec.Compose.
 Require Import FreeSpec.Refine.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Contract.
+Require Import FreeSpec.PropBool.
 
 Require Import FreeSpec.Examples.Map.
 
@@ -34,11 +34,13 @@ Section SMRAM_EXAMPLE.
       consider. However, we really want to know when one address falls
       into the SMRAM.
     *)
-  Variables (Addr:     Type)
-            (addr_eq:  forall (a a': Addr), {a = a'}+{a <> a'})
-            (Value:    Type)
-            (Smram:    Addr -> Prop)
-            (Smramdec: forall (a: Addr), {Smram a}+{~Smram a}).
+  Variables (Addr:             Type)
+            (addr_eq_bool:     Addr -> Addr -> bool)
+            (addr_eq_PropBool: PropBool2 (@eq Addr) addr_eq_bool)
+            (Value:            Type)
+            (Smram:            Addr -> Prop)
+            (Smram_bool:       Addr -> bool)
+            (smram_PropBool:   PropBool1 Smram Smram_bool).
 
   (** * Memory Controller
 
@@ -139,7 +141,7 @@ Section SMRAM_EXAMPLE.
              ret (x, s)
         (* -------------------------------------------------------- *)
         | ReadMem a false (* --- Unprivileged Read Access---------- *)
-          => x <- if andb (bool_of_sumbool (Smramdec a))
+          => x <- if andb (Smram_bool a)
                           (smram_lock s)
                   then read_vga a
                   else read_dram a                                   ;
@@ -150,7 +152,7 @@ Section SMRAM_EXAMPLE.
              ret (tt, s)
         (* -------------------------------------------------------- *)
         | WriteMem a v false (*  Unprivileged Write Access -------- *)
-          => (if andb (bool_of_sumbool (Smramdec a))
+          => (if andb (Smram_bool a)
                       (smram_lock s)
               then write_vga a v
               else write_dram a v                                  );;
@@ -185,7 +187,7 @@ Section SMRAM_EXAMPLE.
              (s: SmramState)
     : SmramState :=
     fun (a': Addr)
-    => if addr_eq a a'
+    => if addr_eq_bool a a'
        then v
        else s a'.
 
@@ -197,7 +199,7 @@ Section SMRAM_EXAMPLE.
     : SmramState :=
     match i with
     | WriteMem a v true (* Privileged Write Access within the SMRAM *)
-      => if Smramdec a
+      => if Smram_bool a
          then update a v s
          else s
     | _ (* Any other primitives should not trigger a SMRAM change --*)
@@ -275,7 +277,7 @@ Section SMRAM_EXAMPLE.
     match i with
     | Write a v (* Write Access *)
       => fun (a': Addr)
-         => if addr_eq a a'
+         => if addr_eq_bool a a'
             then v
             else s a'
     | _ (* Nothing to do with Read Access *)
@@ -364,7 +366,7 @@ Section SMRAM_EXAMPLE.
       ++ constructor.
          +++ rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
              rewrite andb_true_r.
-             destruct (Smramdec a); cbn.
+             destruct (Smram_bool a); cbn.
              ++++ constructor.
                   trivial. (* read vga, no contract on vga *)
              ++++ constructor.
@@ -378,7 +380,7 @@ Section SMRAM_EXAMPLE.
       ++ constructor.
          +++ rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
              rewrite andb_true_r.
-             destruct (Smramdec a); cbn.
+             destruct (Smram_bool a); cbn.
              ++++ constructor.
                   trivial. (* read vga, no contract on vga *)
              ++++ constructor.
@@ -401,22 +403,24 @@ Section SMRAM_EXAMPLE.
       cbn.
       rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
       rewrite andb_true_r.
-      destruct (Smramdec a); cbn; exact Hsync.
+      destruct (Smram_bool a); cbn; exact Hsync.
     + (* privileged write *)
       cbn.
       split.
       ++ apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
       ++ intros a' Hsmram.
          unfold update.
-         destruct (Smramdec a).
-         +++ destruct (addr_eq a a').
+         case_eq (Smram_bool a); intro Hsmram'.
+         +++ destruct (addr_eq_bool a a').
              ++++ reflexivity.
              ++++ destruct Hsync as [_H H].
                   rewrite (H a' Hsmram).
                   reflexivity.
-         +++ destruct (addr_eq a a').
-             ++++ subst.
-                  apply n in Hsmram.
+         +++ case_eq (addr_eq_bool a a'); intro Heq.
+             ++++ apply pred_bool_pred_2 in Heq.
+                  rewrite Heq in Hsmram'.
+                  apply (pred_bool_false_1 Smram Smram_bool a') in Hsmram'.
+                  apply Hsmram' in Hsmram.
                   destruct Hsmram.
              ++++ destruct Hsync as [_H H].
                   rewrite (H a' Hsmram).
@@ -428,13 +432,15 @@ Section SMRAM_EXAMPLE.
       ++ intros a' Hsmram.
          rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
          rewrite andb_true_r.
-         destruct (Smramdec a); cbn.
+         case_eq (Smram_bool a); intro Hsmram'; cbn.
          +++ destruct Hsync as [_H H].
              rewrite (H a' Hsmram).
              reflexivity.
-         +++ destruct (addr_eq a a').
-             ++++ subst.
-                  apply n in Hsmram.
+         +++ case_eq (addr_eq_bool a a'); intro Heq.
+             ++++ apply pred_bool_pred_2 in Heq.
+                  rewrite Heq in Hsmram'.
+                  apply (pred_bool_false_1 Smram Smram_bool a') in Hsmram'.
+                  apply Hsmram' in Hsmram.
                   destruct Hsmram.
              ++++ destruct Hsync as [_H H].
                   rewrite (H a' Hsmram).
