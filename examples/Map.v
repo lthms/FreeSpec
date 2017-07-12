@@ -5,7 +5,6 @@ Require Import FreeSpec.TemporalLogic.
 Require Import FreeSpec.TemporalLogic.Notations.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Interp.
-Require Import FreeSpec.Utils.
 Require Import FreeSpec.WEq.
 Require Import FreeSpec.Contract.
 Require Import FreeSpec.Contract.Constant.

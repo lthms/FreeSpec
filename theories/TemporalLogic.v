@@ -6,7 +6,6 @@ Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
 Require Import FreeSpec.PropBool.
-Require Import FreeSpec.Utils.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.WEq.
