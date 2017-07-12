@@ -41,7 +41,7 @@ Definition StatefulInterpret
 Definition sync_pred
            (Si So: Type)
            (S: Type)
-  := Si -> S -> So -> Type.
+  := Si -> S -> So -> Prop.
 
 Definition compliant_refinement
            {Si So:  Type}
