@@ -229,18 +229,26 @@ Section SMRAM_EXAMPLE.
 
    *)
 
+  Notation "H :- a == b" :=
+    (eq_rect _ id a _ H = b)
+      (at level 40, no associativity).
+
   Definition Smram_promises
              (A:   Type)
              (i:   IMCH A)
              (ret: A)
              (s:   SmramState)
     : Prop :=
-    match i with
+    match i
+          in IMCH A'
+          return A = A' -> Prop
+    with
     | ReadMem a true (* Privileged Reads match the shadow Smram *)
-      => Smram a -> ret ~= (s a)
+      => fun (H: A = Value)
+         => Smram a -> H :- ret == s a
     | _ (* No Guarantee otherwise *)
-      => True
-    end.
+      => fun _ => True
+    end (eq_refl A).
 
   (** ** Definition
 
@@ -306,12 +314,16 @@ Section SMRAM_EXAMPLE.
              (ret: A)
              (s:   DRAMState)
     : Prop :=
-    match i with
+    match i
+          in IMap _ _ A' (* we cannot use the alias IDRAM here *)
+          return A = A' -> Prop
+    with
     | Read a (* Read Access *)
-      => ret ~= s a
+      => fun (H: A = Value)
+         => H :- ret == s a
     | _
-      => True
-    end.
+      => fun _ => True
+    end (eq_refl A).
 
   Definition dram_contract
     : Contract DRAMState IDRAM :=
