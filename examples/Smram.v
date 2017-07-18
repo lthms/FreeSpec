@@ -9,11 +9,13 @@ Require Import FreeSpec.Refine.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Contract.
 Require Import FreeSpec.PropBool.
+Require Import FreeSpec.Control.
 
 Require Import FreeSpec.Examples.Map.
 
 Local Open Scope free_scope.
-Local Open Scope prog_scope.
+Local Open Scope free_prog_scope.
+Local Open Scope free_control_scope.
 
 (** This Example is here to show how to create a Component which
     relies on two separated interfaces.

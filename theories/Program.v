@@ -6,6 +6,7 @@ Require Import Coq.Program.Basics.
 
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.WEq.
+Require Import FreeSpec.Control.
 
 Local Open Scope free_weq_scope.
 
@@ -249,6 +250,64 @@ Instance program_eq_eq
 
  *)
 
+Definition program_map
+           {I:   Interface}
+           {A B: Type}
+           (f:   A -> B)
+           (p:   Program I A)
+  : Program I B :=
+  pbind p (fun x => ret (f x)).
+
+Instance program_Functor
+         (I: Interface)
+  : Functor (Program I) :=
+  { map := @program_map I
+  }.
+
+Definition program_apply
+           {I:   Interface}
+           {A B: Type}
+           (pf:  Program I (A -> B))
+           (p:   Program I A)
+  : Program I B :=
+  pbind pf (fun f => pbind p (fun x => ret (f x))).
+
+Instance program_Apply
+         (I: Interface)
+  : Apply (Program I) :=
+  { apply := @program_apply I
+  }.
+
+Definition program_pure
+           {I: Interface}
+           {A: Type}
+  : A -> Program I A :=
+  @ret I A.
+
+Instance program_Applicative
+         (I: Interface)
+  : Applicative (Program I) :=
+  { pure := @program_pure I
+  }.
+
+Definition program_bind
+           {I:   Interface}
+           {A B: Type}
+  : Program I A -> (A -> Program I B) -> Program I B :=
+  @pbind I B A.
+
+Instance program_Bind
+         (I: Interface)
+  : Bind (Program I) :=
+  { bind := @program_bind I
+  }.
+
+Instance program_Monad
+         (I: Interface)
+  : Monad (Program I) :=
+  {
+  }.
+
 Fact program_left_identity
      {I:   Interface}
      {A B: Type}
@@ -329,11 +388,4 @@ Qed.
  *)
 
 
-Notation "p >>= f" := (pbind p f) (at level 50) : prog_scope.
-Notation "a <- p ; q" :=
-  (pbind p (fun a => q)) (at level 99, right associativity, p at next level)
-  : prog_scope.
-Notation "p ;; q" :=
-  (pbind p (fun _ => q)) (at level 99, right associativity)
-  : prog_scope.
-Notation "[ i ]" := (instr i) (at level 50) : prog_scope.
+Notation "[ i ]" := (instr i) (at level 50) : free_prog_scope.

@@ -8,12 +8,14 @@ Require Import FreeSpec.Interp.
 Require Import FreeSpec.WEq.
 Require Import FreeSpec.Contract.
 Require Import FreeSpec.Contract.Constant.
+Require Import FreeSpec.Control.
 
 Require Import Sumbool.
 
 Local Open Scope formula_scope.
 Local Open Scope free_weq_scope.
-Local Open Scope prog_scope.
+Local Open Scope free_control_scope.
+Local Open Scope free_prog_scope.
 
 Lemma neq_sym
       {T:        Type}

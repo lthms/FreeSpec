@@ -12,6 +12,7 @@ theories/TemporalLogic.v
 theories/TemporalLogic/Notations.v
 theories/Contract/Temporal.v
 
+theories/Control.v
 theories/PropBool.v
 theories/WEq.v
 
