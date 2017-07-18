@@ -263,6 +263,12 @@ Instance program_Functor
   : Functor (Program I) :=
   { map := @program_map I
   }.
+Proof.
+  + intros A x.
+    constructor; reflexivity.
+  + intros A B C f g p.
+    constructor; reflexivity.
+Defined.
 
 Definition program_apply
            {I:   Interface}
@@ -301,48 +307,19 @@ Instance program_Bind
   : Bind (Program I) :=
   { bind := @program_bind I
   }.
+Proof.
+  + constructor; reflexivity.
+Defined.
 
 Instance program_Monad
          (I: Interface)
   : Monad (Program I) :=
   {
   }.
-
-Fact program_left_identity
-     {I:   Interface}
-     {A B: Type}
-     (a:   A)
-     (f:   A -> Program I B)
-  : pbind (ret a) f == f a.
 Proof.
-  constructor.
-  + reflexivity.
-  + reflexivity.
-Qed.
-
-Fact program_right_identity
-     {I: Interface}
-     {A: Type}
-     (p: Program I A)
-  : pbind p (@ret I A) == p.
-Proof.
-  constructor.
-  + reflexivity.
-  + reflexivity.
-Qed.
-
-Fact program_associativity
-     {I:     Interface}
-     {A B C: Type}
-     (p:     Program I A)
-     (f:     A -> Program I B)
-     (g:     B -> Program I C)
-  : pbind (pbind p f) g == pbind p (fun x => pbind (f x) g).
-Proof.
-  constructor.
-  + reflexivity.
-  + reflexivity.
-Qed.
+  + constructor; reflexivity.
+  + constructor; reflexivity.
+Defined.
 
 (** ** Alternative [Program] Execution
 

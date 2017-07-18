@@ -1,8 +1,19 @@
 Require Import FreeSpec.Control.
+Require Import FreeSpec.WEq.
 
 Definition Identity
            (a: Type)
   := a.
+
+Instance identity_WEq
+         (a: Type)
+  : WEq (Identity a) :=
+  { weq := eq
+  }.
+
+(** * Functor
+
+ *)
 
 Definition identity_map
            (a b: Type)
@@ -15,6 +26,10 @@ Instance identity_Functor
   : Functor Identity :=
   { map := identity_map
   }.
+Proof.
+  + reflexivity.
+  + reflexivity.
+Defined.
 
 Definition identity_apply
            (a b: Type)
@@ -50,8 +65,15 @@ Instance identity_Bind
   : Bind Identity :=
   { bind := identity_bind
   }.
+Proof.
+  + reflexivity.
+Defined.
 
 Instance identity_Monad
   : Monad Identity :=
   {
   }.
+Proof.
+  + reflexivity.
+  + reflexivity.
+Defined.

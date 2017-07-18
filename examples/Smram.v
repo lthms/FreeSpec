@@ -427,24 +427,10 @@ Section SMRAM_EXAMPLE.
     + (* unprivileged write *)
       cbn.
       split.
-      ++ assert (Heq: (snd
-                         (fst
-                            (runProgram int
-                                        ((if Smram_bool a && smram_lock s
-                                          then
-                                            state_lift MCH (Program (IDRAM <+> IVGA)) unit
-                                                       ([iright (Write a v)])
-                                          else
-                                            state_lift MCH (Program (IDRAM <+> IVGA)) unit ([ileft (Write a v)]))
-                                           s))))
-                = s). {
-           case_eq (Smram_bool a); intro Hsmram.
-           + rewrite (mch_dram_sync_smram_lock_is_true si _ so Hsync).
-             reflexivity.
-           + reflexivity.
-         }
-         rewrite Heq.
-         apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
+      ++ case_eq (Smram_bool a); intro Hsmram.
+         +++ rewrite (mch_dram_sync_smram_lock_is_true si _ so Hsync); cbn.
+             apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
+         +++ apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
       ++ intros a' Hsmram.
          rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
          rewrite andb_true_r.

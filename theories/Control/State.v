@@ -9,6 +9,7 @@ Require Import FreeSpec.WEq.
 
 Local Close Scope nat_scope.
 Local Open Scope free_control_scope.
+Local Open Scope free_weq_scope.
 
 Definition StateT
            (s: Type)
@@ -33,6 +34,28 @@ Definition state_map
   => o <- fs s                                                      ;
      pure (f (fst o), (snd o)).
 
+Lemma state_functor_identity
+      (m: Type -> Type)
+     `{Monad m}
+      {s: Type}
+      {a: Type}
+      (ps: StateT s m a)
+  : state_map _ _ id ps == id ps.
+Proof.
+Admitted.
+
+Lemma state_functor_composition_identity
+      (m: Type -> Type)
+     `{Monad m}
+      {s: Type}
+      {a b c: Type}
+      (u: a -> b)
+      (v: b -> c)
+      (ps: StateT s m a)
+  : state_map _ _ (u <<< v) ps == ((state_map _ _ u) <<< (state_map _ _ v)) ps.
+Proof.
+Admitted.
+
 Instance state_Functor
          (m: Type -> Type)
         `{Monad m}
@@ -40,6 +63,10 @@ Instance state_Functor
   : Functor (StateT s m) :=
   { map := state_map
   }.
+Proof.
+  + apply state_functor_identity.
+  + apply state_functor_composition_identity.
+Defined.
 
 Definition state_apply
            {m: Type -> Type}
@@ -74,6 +101,19 @@ Definition state_bind
   => u <- fs x                                                       ;
      pure (f (fst u)) (snd u).
 
+Lemma state_bind_associativity
+      (m: Type -> Type)
+     `{Monad m}
+      {s: Type}
+      (a b c : Type)
+      (f : StateT s m a)
+      (g : a -> StateT s m b)
+      (h : b -> StateT s m c)
+  : state_bind b c (state_bind a b f g) h
+    == state_bind a c f (fun x : a => state_bind b c (g x) h).
+Proof.
+Admitted.
+
 Instance state_Bind
          (m: Type -> Type)
         `{Monad m}
@@ -81,6 +121,9 @@ Instance state_Bind
   : Bind (StateT s m) :=
   { bind := state_bind
   }.
+Proof.
+  + apply state_bind_associativity.
+Defined.
 
 Definition state_pure
            {m: Type -> Type}
@@ -99,6 +142,27 @@ Instance state_Applicative
   { pure := state_pure
   }.
 
+Lemma state_monad_left_identity
+      (m: Type -> Type)
+     `{Monad m}
+      {s: Type}
+      (a b : Type)
+      (x : a)
+      (f : a -> StateT s m b)
+  : (a <- pure x; f a) == f x.
+Proof.
+Admitted.
+
+Lemma state_monad_right_identity
+      (m: Type -> Type)
+     `{Monad m}
+      {s: Type}
+      (a : Type)
+      (x : StateT s m a)
+  : (y <- x; pure y) == x.
+Proof.
+Admitted.
+
 Instance state_Monad
          (m: Type -> Type)
         `{Monad m}
@@ -106,6 +170,10 @@ Instance state_Monad
   : Monad (StateT s m) :=
   {
   }.
+Proof.
+  + apply state_monad_left_identity.
+  + apply state_monad_right_identity.
+Defined.
 
 Definition state_lift
            (s: Type)
