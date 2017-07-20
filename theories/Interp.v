@@ -30,7 +30,7 @@ Local Open Scope free_weq_scope.
 CoInductive Interp
             (I: Interface)
   : Type :=
-| interp (f: forall {A: Type}, I A -> (A * Interp I))
+| interp (f: forall {A: Type}, I A -> A * Interp I)
   : Interp I.
 
 Arguments interp [I] (f).
