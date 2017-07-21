@@ -267,6 +267,46 @@ Infix ":+:" :=
     (at level 50, left associativity)
   : free_scope.
 
+Lemma compliant_interpreters_compose_compliant_interpreter
+      {S S': Type}
+      {I I': Interface}
+  : forall (int:  Interp I)
+           (int': Interp I')
+           (c:    Contract S I)
+           (c':   Contract S' I')
+           (s:    S)
+           (s':   S'),
+    int :> c[s]
+    -> int' :> c'[s']
+    -> int |+| int' :> (c :+: c')[(s, s')].
+Proof.
+  cofix.
+  intros int int' c c' s s' Hint Hint'.
+  constructor.
+  + intros A i Hreq.
+    induction i; cbn; cbn in Hreq.
+    ++ apply enforcer_enforces_promises; [ exact Hint
+                                         | exact Hreq
+                                         ].
+    ++ apply enforcer_enforces_promises; [ exact Hint'
+                                         | exact Hreq
+                                         ].
+  + intros A i Hreq.
+    induction i; cbn; cbn in *.
+    ++ apply compliant_interpreters_compose_compliant_interpreter.
+       +++ apply enforcer_instruction_compliant_enforcer.
+           ++++ exact Hint.
+           ++++ constructor.
+                exact Hreq.
+       +++ exact Hint'.
+    ++ apply compliant_interpreters_compose_compliant_interpreter.
+       +++ exact Hint.
+       +++ apply enforcer_instruction_compliant_enforcer.
+           ++++ exact Hint'.
+           ++++ constructor.
+                exact Hreq.
+Qed.
+
 (** ** Left
 
  *)
