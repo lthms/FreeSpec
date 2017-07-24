@@ -1,3 +1,5 @@
+Set Universe Polymorphism.
+
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Program.Basics.
 
@@ -106,7 +108,7 @@ Instance state_Monad
   }.
 
 Definition state_lift
-           {s: Type}
+           (s: Type)
            (m: Type -> Type)
           `{Monad m}
            (a: Type)
@@ -119,7 +121,7 @@ Definition state_lift
 Instance state_MonadTrans
          (s: Type)
   : MonadTrans (StateT s) :=
-  { lift := state_lift
+  { lift := state_lift s
   }.
 
 Definition runState
@@ -141,8 +143,27 @@ Definition evalState
   fst <$> runState ps x.
 
 Definition execState
+           {m: Type -> Type}
+          `{Monad m}
            {s a: Type}
-           (ps:  State s a)
+           (ps:  StateT s m a)
            (x:   s)
-  : s :=
+  : m s :=
   snd <$> runState ps x.
+
+Definition get
+           {m: Type -> Type}
+          `{Monad m}
+           {s: Type}
+  : StateT s m s :=
+  fun x
+  => pure (x, x).
+
+Definition put
+           {m: Type -> Type}
+          `{Monad m}
+           {s: Type}
+           (x: s)
+  : StateT s m unit :=
+  fun _
+  => pure (tt, x).

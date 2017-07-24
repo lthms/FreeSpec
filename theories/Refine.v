@@ -2,6 +2,8 @@ Require Import FreeSpec.Program.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Contract.
 Require Import FreeSpec.Abstract.
+Require Import FreeSpec.Control.
+Require Import FreeSpec.Control.State.
 
 (** * Stateful Refinement
 
@@ -13,7 +15,7 @@ Definition StatefulRefinement
            (Io: Type -> Type)
            (S:  Type) :=
   forall (A: Type),
-    Ii A -> S -> Program Io (A * S).
+    Ii A -> StateT S (Program Io) A.
 
 Definition StatefulInterpret
            {Ii:  Type -> Type}

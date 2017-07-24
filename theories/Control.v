@@ -1,3 +1,5 @@
+Set Universe Polymorphism.
+
 Require Import Coq.Program.Basics.
 Require Import Coq.Classes.Equivalence.
 
@@ -104,6 +106,8 @@ Class MonadTrans
   := { monad_trans_is_monad (m: Type -> Type) `{Monad m} :> Monad (t m)
      ; lift (m: Type -> Type) `{Monad m} (a: Type): m a -> t m a
      }.
+
+Arguments lift [t _ m _ a] (_).
 
 Notation "a <- p ; q" :=
   (bind p (fun a => q)) (at level 99, right associativity, p at next level)

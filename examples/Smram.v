@@ -10,6 +10,7 @@ Require Import FreeSpec.Program.
 Require Import FreeSpec.Contract.
 Require Import FreeSpec.PropBool.
 Require Import FreeSpec.Control.
+Require Import FreeSpec.Control.State.
 
 Require Import FreeSpec.Examples.Map.
 
@@ -107,25 +108,25 @@ Section SMRAM_EXAMPLE.
 
   Definition read_dram
              (a: Addr)
-    : Program (IDRAM <+> IVGA) Value :=
-    [ileft (Read a)].
+    : StateT MCH (Program (IDRAM <+> IVGA)) Value :=
+    lift (instr (ileft (Read a))).
 
   Definition read_vga
              (a: Addr)
-    : Program (IDRAM <+> IVGA) Value :=
-    [iright (Read a)].
+    : StateT MCH (Program (IDRAM <+> IVGA)) Value :=
+    lift (instr (iright (Read a))).
 
   Definition write_dram
              (a: Addr)
              (v: Value)
-    : Program (IDRAM <+> IVGA) unit :=
-    [ileft (Write a v)].
+    : StateT MCH (Program (IDRAM <+> IVGA)) unit :=
+    lift (instr (ileft (Write a v))).
 
   Definition write_vga
              (a: Addr)
              (v: Value)
-    : Program (IDRAM <+> IVGA) unit :=
-    [iright (Write a v)].
+    : StateT MCH (Program (IDRAM <+> IVGA)) unit :=
+    lift (instr (iright (Write a v))).
 
   (** Then, we define a [StatefulRefinement] from [IMCH] to [IDRAM <+>
       IVGA].
@@ -136,29 +137,29 @@ Section SMRAM_EXAMPLE.
     : StatefulRefinement IMCH (IDRAM <+> IVGA) MCH :=
     fun (A: Type)
         (i: IMCH A)
-        (s: MCH)
     =>  match i with
         | ReadMem a true (* ---- Privileged Read Access ----------- *)
-          => x <- read_dram a                                        ;
-             ret (x, s)
+          => read_dram a
         (* -------------------------------------------------------- *)
         | ReadMem a false (* --- Unprivileged Read Access---------- *)
-          => x <- if andb (Smram_bool a)
+          => s <- get                                                ;
+             x <- if andb (Smram_bool a)
                           (smram_lock s)
                   then read_vga a
                   else read_dram a                                   ;
-             ret (x, s)
+             pure x
         (* -------------------------------------------------------- *)
         | WriteMem a v true (* - Privileged Write Access ---------- *)
           => write_dram a v                                         ;;
-             ret (tt, s)
+             pure tt
         (* -------------------------------------------------------- *)
         | WriteMem a v false (*  Unprivileged Write Access -------- *)
-          => (if andb (Smram_bool a)
+          => s <- get                                               ;(
+             if andb (Smram_bool a)
                       (smram_lock s)
-              then write_vga a v
-              else write_dram a v                                  );;
-              ret (tt, s)
+             then write_vga a v
+             else write_dram a v                                   );;
+             pure tt
         (* -------------------------------------------------------- *)
         end.
 
@@ -363,6 +364,8 @@ Section SMRAM_EXAMPLE.
     exact H.
   Qed.
 
+  Ltac next := repeat (try constructor; cbn; trivial).
+
   Lemma mch_specs_compliant_refinement
     : compliant_refinement mch_refine
                            smram_contract
@@ -371,35 +374,17 @@ Section SMRAM_EXAMPLE.
   Proof.
     unfold compliant_refinement.
     intros si s so A i Hsync Hreq.
-    induction i.
-    + induction smm.
-      ++ constructor.
-         +++ constructor.
-             trivial. (* no requirement for the subcontract *)
-         +++ constructor. (* program is only a ret, so it is trivial *)
-      ++ constructor.
-         +++ rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
-             rewrite andb_true_r.
-             destruct (Smram_bool a); cbn.
-             ++++ constructor.
-                  trivial. (* read vga, no contract on vga *)
-             ++++ constructor.
-                  trivial. (* read dram, no requirement on vga *)
-         +++ constructor. (* program is only a ret *)
-    + induction smm.
-      ++ constructor.
-         +++ constructor.
-             trivial. (* no requirement for the subcontract *)
-         +++ constructor. (* program is only a ret, so it is trivial *)
-      ++ constructor.
-         +++ rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
-             rewrite andb_true_r.
-             destruct (Smram_bool a); cbn.
-             ++++ constructor.
-                  trivial. (* read vga, no contract on vga *)
-             ++++ constructor.
-                  trivial. (* read dram, no requirement on vga *)
-         +++ constructor. (* program is only a ret *)
+    induction i; induction smm.
+    + next.
+    + next.
+      rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
+      rewrite andb_true_r.
+      destruct (Smram_bool a); next.
+    + next.
+    + next.
+      rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
+      rewrite andb_true_r.
+      destruct (Smram_bool a); next.
   Qed.
 
   Lemma mch_specs_sync_preservation
@@ -442,7 +427,24 @@ Section SMRAM_EXAMPLE.
     + (* unprivileged write *)
       cbn.
       split.
-      ++ apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
+      ++ assert (Heq: (snd
+                         (fst
+                            (runProgram int
+                                        ((if Smram_bool a && smram_lock s
+                                          then
+                                            state_lift MCH (Program (IDRAM <+> IVGA)) unit
+                                                       ([iright (Write a v)])
+                                          else
+                                            state_lift MCH (Program (IDRAM <+> IVGA)) unit ([ileft (Write a v)]))
+                                           s))))
+                = s). {
+           case_eq (Smram_bool a); intro Hsmram.
+           + rewrite (mch_dram_sync_smram_lock_is_true si _ so Hsync).
+             reflexivity.
+           + reflexivity.
+         }
+         rewrite Heq.
+         apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
       ++ intros a' Hsmram.
          rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
          rewrite andb_true_r.
@@ -460,7 +462,6 @@ Section SMRAM_EXAMPLE.
                   rewrite (H a' Hsmram).
                   reflexivity.
   Qed.
-
 
   Lemma mch_specs_sync_promises
     : sync_promises mch_refine
