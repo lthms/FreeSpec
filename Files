@@ -14,7 +14,8 @@ theories/Contract/Temporal.v
 
 theories/Control.v
 theories/MonadInterp.v
-theories/State.v
+theories/Control/State.v
+theories/Control/Identity.v
 theories/PropBool.v
 theories/WEq.v
 

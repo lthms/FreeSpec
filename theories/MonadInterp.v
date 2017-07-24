@@ -1,7 +1,7 @@
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Interp.
-Require Import FreeSpec.State.
+Require Import FreeSpec.Control.State.
 
 Class MonadInterp
       (I: Interface)
