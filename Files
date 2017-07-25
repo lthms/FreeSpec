@@ -1,5 +1,6 @@
 theories/Interface.v
 theories/Interp.v
+theories/MonadInterp.v
 theories/Program.v
 theories/Abstract.v
 theories/Contract.v
@@ -13,7 +14,6 @@ theories/TemporalLogic/Notations.v
 theories/Contract/Temporal.v
 
 theories/Control.v
-theories/MonadInterp.v
 theories/Control/State.v
 theories/Control/Identity.v
 theories/PropBool.v

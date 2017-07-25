@@ -3,6 +3,19 @@ Require Import FreeSpec.Interface.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Control.State.
 
+(** * The Interpreter Monad
+
+  We define a monadic interface for Interpreter. The long term goal is
+  to deprecate [Interp] in favor of [MonadInterp]. In case of success,
+  it would be a lot more easy to use FreeSpec along with Haskell, as
+  an interpreter could be implemented thanks to the IO monad.
+
+  Currently, the main challenge which prevents use to use
+  [MonadInterp] is the notion of interpreter equivalence (see
+  [interp_eq]).
+
+ *)
+
 Class MonadInterp
       (I: Interface)
       (M: Type -> Type) :=
@@ -12,7 +25,15 @@ Class MonadInterp
 
 Arguments interpret [I M _ A] (_).
 
-CoFixpoint monad_state_interp
+(** * Another Stateful Interpreter
+
+    Until we find a way to deprecate [Interp] in favor of
+    [MonadInterp], we can use the State monad to build stateful
+    interpreters quite easily.
+
+ *)
+
+Definition monad_state_interp
            {I: Interface}
            {S: Type}
           `{MonadInterp I (State S)}
