@@ -11,6 +11,7 @@ Require Import FreeSpec.Contract.
 Require Import FreeSpec.PropBool.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.State.
+Require Import FreeSpec.WEq.
 
 Require Import FreeSpec.Examples.Map.
 
@@ -105,6 +106,11 @@ Section SMRAM_EXAMPLE.
       so, we first define several helper programs.
 
    *)
+
+  Instance mch_WEq
+    : WEq (MCH) :=
+    { weq := eq
+    }.
 
   Definition read_dram
              (a: Addr)
@@ -232,10 +238,6 @@ Section SMRAM_EXAMPLE.
 
    *)
 
-  Notation "H :- a == b" :=
-    (eq_rect _ id a _ H = b)
-      (at level 40, no associativity).
-
   Definition Smram_promises
              (A:   Type)
              (i:   IMCH A)
@@ -248,7 +250,7 @@ Section SMRAM_EXAMPLE.
     with
     | ReadMem a true (* Privileged Reads match the shadow Smram *)
       => fun (H: A = Value)
-         => Smram a -> H :- ret == s a
+         => Smram a -> eq_rect _ id ret _ H = s a
     | _ (* No Guarantee otherwise *)
       => fun _ => True
     end (eq_refl A).
@@ -323,7 +325,7 @@ Section SMRAM_EXAMPLE.
     with
     | Read a (* Read Access *)
       => fun (H: A = Value)
-         => H :- ret == s a
+         => eq_rect _ id ret _ H = s a
     | _
       => fun _ => True
     end (eq_refl A).

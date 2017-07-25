@@ -2,6 +2,8 @@ Require Import FreeSpec.Control.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Control.State.
+Require Import FreeSpec.WEq.
+Require Import FreeSpec.Control.Identity.
 
 (** * The Interpreter Monad
 
@@ -36,11 +38,12 @@ Arguments interpret [I M _ A] (_).
 Definition monad_state_interp
            {I: Interface}
            {S: Type}
+          `{WEq S}
           `{MonadInterp I (State S)}
            (init: S)
   : Interp I :=
   mkInterp (fun (A: Type)
                 (s: S)
                 (i: I A)
-            => runState (interpret i) s)
+            => unwrap (runStateT (m:=Identity) (interpret i) s))
            init.
