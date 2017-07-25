@@ -1,9 +1,22 @@
 Set Universe Polymorphism.
 
-Require Import Coq.Program.Basics.
 Require Import Coq.Classes.Equivalence.
 
 Require Import FreeSpec.WEq.
+
+Polymorphic Definition compose
+            {a b c: Type}
+            (g: b -> c)
+            (f: a -> b)
+  : a -> c :=
+  fun (x: a)
+  => g (f x).
+
+Polymorphic Definition id
+            {a: Type}
+            (x: a)
+  : a :=
+  x.
 
 Notation "f <<< g" := (compose g f) (at level 50).
 Notation "f >>> g" := (compose f g) (at level 50).
@@ -59,9 +72,15 @@ Class Apply
          -> f a
          -> f b
        where "f <*> g" := (apply f g)
+     ; apply_associative_composition: forall {a b c: Type}
+                                             (u: f (b -> c))
+                                             (v: f (a -> b))
+                                             (w:   f a),
+         compose <$> u <*> v <*> w == u <*> (v <*> w)
      }.
 
 Arguments apply [f _ a b].
+Arguments apply_associative_composition [f _ a b c] (u v w).
 
 Notation "f <*> g" :=
   (apply f g)
@@ -76,9 +95,29 @@ Class Applicative
   := { applicative_is_apply :> Apply f
      ; pure: forall {a: Type},
          a -> f a
+     ; applicative_identity: forall {a: Type}
+                                    (v: f a),
+         pure id <*> v == v
+     ; applicative_composition: forall {a b c: Type}
+                                       (u:     f (b -> c))
+                                       (v:     f (a -> b))
+                                       (w:     f a),
+         pure compose <*> u <*> v <*> w == u <*> (v <*> w)
+     ; applicative_homomorphism: forall {a b: Type}
+                                        (v:   a -> b)
+                                        (x:   a),
+         (pure v) <*> (pure x) == pure (v x)
+     ; applicative_interchange: forall {a b: Type}
+                                       (u: f (a -> b))
+                                       (y: a),
+         u <*> (pure y) == (pure (fun z => z y)) <*> u
      }.
 
 Arguments pure [f _ a] (x).
+Arguments applicative_identity [f _ a] (v).
+Arguments applicative_composition [f _ a b c] (u v w).
+Arguments applicative_homomorphism [f _ a b] (v x).
+Arguments applicative_interchange [f _ a b] (u y).
 
 (** * Bind
 

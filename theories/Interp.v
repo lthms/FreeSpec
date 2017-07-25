@@ -80,7 +80,7 @@ CoInductive interp_eq
                    interp_eq (execInstruction int1 i) (execInstruction int2 i))
   : interp_eq int1 int2.
 
-(** It is possible to prove [interp_eq] is effectively an equivalence.
+(** It is possible to prove [interp_eq] is indeed an equivalence.
 
  *)
 

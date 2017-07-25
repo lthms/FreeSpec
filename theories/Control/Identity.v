@@ -42,6 +42,9 @@ Instance identity_Apply
   : Apply Identity :=
   { apply := identity_apply
   }.
+Proof.
+  + reflexivity.
+Defined.
 
 Definition identity_pure
            (a: Type)
@@ -53,6 +56,12 @@ Instance identity_Applicative
   : Applicative Identity :=
   { pure := identity_pure
   }.
+Proof.
+  + reflexivity.
+  + reflexivity.
+  + reflexivity.
+  + reflexivity.
+Defined.
 
 Definition identity_bind
            (a b: Type)

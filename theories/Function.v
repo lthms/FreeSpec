@@ -37,6 +37,9 @@ Instance func_Apply
   : Apply (func a) :=
   { apply := @func_apply a
   }.
+Proof.
+  reflexivity.
+Defined.
 
 Definition func_pure
            {a b: Type}
@@ -50,6 +53,12 @@ Instance func_Applicative
   : Applicative (func a) :=
   { pure := @func_pure a
   }.
+Proof.
+  + reflexivity.
+  + reflexivity.
+  + reflexivity.
+  + reflexivity.
+Defined.
 
 Definition func_bind
            {a b c: Type}

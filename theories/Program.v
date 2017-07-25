@@ -283,6 +283,9 @@ Instance program_Apply
   : Apply (Program I) :=
   { apply := @program_apply I
   }.
+Proof.
+  constructor; reflexivity.
+Defined.
 
 Definition program_pure
            {I: Interface}
@@ -295,6 +298,16 @@ Instance program_Applicative
   : Applicative (Program I) :=
   { pure := @program_pure I
   }.
+Proof.
+  + intros A p.
+    constructor; reflexivity.
+  + intros A B C u v p.
+    constructor; reflexivity.
+  + intros A B v x.
+    constructor; reflexivity.
+  + intros A B u y.
+    constructor; reflexivity.
+Defined.
 
 Definition program_bind
            {I:   Interface}

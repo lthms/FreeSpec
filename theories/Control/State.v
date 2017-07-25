@@ -81,6 +81,19 @@ Definition state_apply
      v <- fs (snd u)                                                ;
      pure ((fst u) (fst v), snd v).
 
+Lemma state_apply_composition
+      (m: Type -> Type)
+     `{Monad m}
+      {s: Type}
+      (a b c : Type)
+      (u: StateT s m (b -> c))
+      (v: StateT s m (a -> b))
+      (w : StateT s m a):
+  state_apply _ _ (state_apply _ _ (compose <$> u) v) w
+  == state_apply _ _ u (state_apply _ _ v w).
+Proof.
+Admitted.
+
 Instance state_Apply
          (m: Type -> Type)
         `{Monad m}
@@ -88,6 +101,9 @@ Instance state_Apply
   : Apply (StateT s m) :=
   { apply := state_apply
   }.
+Proof.
+  + apply state_apply_composition.
+Defined.
 
 Definition state_bind
            {m: Type -> Type}
@@ -134,6 +150,52 @@ Definition state_pure
   : StateT s m a :=
   fun t => pure (x, t).
 
+Lemma state_applicative_identity
+      (m: Type -> Type)
+     `{Monad m}
+      {s: Type}
+      {a : Type}
+      (v : StateT s m a):
+  state_pure (a -> a) id <*> v == v.
+Proof.
+Admitted.
+
+Lemma state_applicative_composition
+      (m: Type -> Type)
+     `{Monad m}
+      {s: Type}
+      {a b c : Type}
+      (u : StateT s m (b -> c))
+      (v : StateT s m (a -> b))
+      (w : StateT s m a)
+  : state_pure ((b -> c) -> (a -> b) -> a -> c) compose <*> u <*> v <*> w
+    == u <*> (v <*> w).
+Proof.
+Admitted.
+
+Lemma state_applicative_homomorphism
+      (m: Type -> Type)
+     `{Monad m}
+      {s: Type}
+      {a b: Type}
+      (v : a -> b)
+      (x : a)
+  : state_pure (s:=s) (a -> b) v <*> state_pure a x == state_pure b (v x).
+Proof.
+Admitted.
+
+Lemma state_applicative_interchange
+      (m: Type -> Type)
+     `{Monad m}
+      {s: Type}
+      (a b : Type)
+      (u : StateT s m (a -> b))
+      (y : a)
+  : u <*> state_pure a y
+    == state_pure ((a -> b) -> b) (fun z : a -> b => z y) <*> u.
+Proof.
+Admitted.
+
 Instance state_Applicative
          (m: Type -> Type)
         `{Monad m}
@@ -141,6 +203,12 @@ Instance state_Applicative
   : Applicative (StateT s m) :=
   { pure := state_pure
   }.
+Proof.
+  + apply state_applicative_identity.
+  + apply state_applicative_composition.
+  + apply state_applicative_homomorphism.
+  + apply state_applicative_interchange.
+Defined.
 
 Lemma state_monad_left_identity
       (m: Type -> Type)
