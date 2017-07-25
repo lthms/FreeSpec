@@ -109,24 +109,24 @@ Section SMRAM_EXAMPLE.
   Definition read_dram
              (a: Addr)
     : StateT MCH (Program (IDRAM <+> IVGA)) Value :=
-    lift (instr (ileft (Read a))).
+    '[ileft (Read a)].
 
   Definition read_vga
              (a: Addr)
     : StateT MCH (Program (IDRAM <+> IVGA)) Value :=
-    lift (instr (iright (Read a))).
+    '[iright (Read a)].
 
   Definition write_dram
              (a: Addr)
              (v: Value)
     : StateT MCH (Program (IDRAM <+> IVGA)) unit :=
-    lift (instr (ileft (Write a v))).
+    '[ileft (Write a v)].
 
   Definition write_vga
              (a: Addr)
              (v: Value)
     : StateT MCH (Program (IDRAM <+> IVGA)) unit :=
-    lift (instr (iright (Write a v))).
+    '[iright (Write a v)].
 
   (** Then, we define a [StatefulRefinement] from [IMCH] to [IDRAM <+>
       IVGA].

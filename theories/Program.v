@@ -388,4 +388,5 @@ Qed.
  *)
 
 
-Notation "[ i ]" := (instr i) (at level 50) : free_prog_scope.
+Notation  "[ i ]" := (instr i) (at level 50) : free_prog_scope.
+Notation "'[ i ]" := (lift (instr i)) (at level 50) : free_prog_scope.
