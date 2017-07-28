@@ -10,6 +10,7 @@ Require Import FreeSpec.Program.
 Require Import FreeSpec.Contract.
 Require Import FreeSpec.PropBool.
 Require Import FreeSpec.Control.
+Require Import FreeSpec.Control.Classes.
 Require Import FreeSpec.Control.State.
 Require Import FreeSpec.WEq.
 
@@ -139,7 +140,12 @@ Section SMRAM_EXAMPLE.
 
    *)
 
-  Program Definition mch_refine
+  (* this work *)
+  Definition get_smram_lock
+    : StateT MCH (Program (IDRAM <+> IVGA)) bool :=
+    smram_lock <$> get.
+
+  Definition mch_refine
     : StatefulRefinement IMCH (IDRAM <+> IVGA) MCH :=
     fun (A: Type)
         (i: IMCH A)
@@ -148,9 +154,8 @@ Section SMRAM_EXAMPLE.
           => read_dram a
         (* -------------------------------------------------------- *)
         | ReadMem a false (* --- Unprivileged Read Access---------- *)
-          => s <- get                                                ;
-             x <- if andb (Smram_bool a)
-                          (smram_lock s)
+          => s <- get_smram_lock                                     ;
+             x <- if andb (Smram_bool a) s
                   then read_vga a
                   else read_dram a                                   ;
              pure x
@@ -160,11 +165,10 @@ Section SMRAM_EXAMPLE.
              pure tt
         (* -------------------------------------------------------- *)
         | WriteMem a v false (*  Unprivileged Write Access -------- *)
-          => s <- get                                               ;(
-             if andb (Smram_bool a)
-                      (smram_lock s)
-             then write_vga a v
-             else write_dram a v                                   );;
+          => s <- get_smram_lock                                     ;
+             x <- if andb (Smram_bool a) s
+                  then write_vga a v
+                  else write_dram a v                                ;
              pure tt
         (* -------------------------------------------------------- *)
         end.

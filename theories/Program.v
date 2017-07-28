@@ -7,6 +7,7 @@ Require Import Coq.Program.Basics.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.WEq.
 Require Import FreeSpec.Control.
+Require Import FreeSpec.Control.Classes.
 
 Local Open Scope free_weq_scope.
 
@@ -307,7 +308,7 @@ Definition program_bind
   : Program I A -> (A -> Program I B) -> Program I B :=
   @pbind I B A.
 
-Instance program_Bind
+Instance program_Monad
          (I: Interface)
   : Monad (Program I) :=
   { bind := @program_bind I

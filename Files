@@ -14,7 +14,8 @@ theories/TemporalLogic/Notations.v
 theories/Contract/Temporal.v
 
 theories/Control.v
-theories/Function.v
+theories/Control/Classes.v
+theories/Control/Function.v
 theories/Control/State.v
 theories/Control/Identity.v
 theories/PropBool.v

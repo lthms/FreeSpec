@@ -4,6 +4,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Program.Basics.
 
 Require Import FreeSpec.Control.
+Require Import FreeSpec.Control.Classes.
 Require Import FreeSpec.Control.Identity.
 Require Import FreeSpec.WEq.
 
@@ -49,27 +50,6 @@ Definition execStateT
            (x:   s)
   : m s :=
   snd <$> runStateT ps x.
-
-(** * Monadic Interface
-
- *)
-
-Definition get
-           {m: Type -> Type}
-          `{Monad m}
-           {s: Type}
-  : StateT s m s :=
-  fun x
-  => pure (x, x).
-
-Definition put
-           {m: Type -> Type}
-          `{Monad m}
-           {s: Type}
-           (x: s)
-  : StateT s m unit :=
-  fun _
-  => pure (tt, x).
 
 (** * State Monad
 
@@ -411,6 +391,10 @@ Proof.
     reflexivity.
 Defined.
 
+(** * Transformer Instance
+
+ *)
+
 Definition state_lift
            (s: Type)
            (m: Type -> Type)
@@ -427,6 +411,37 @@ Instance state_MonadTrans
         `{WEq s}
   : MonadTrans (StateT s) :=
   { lift := state_lift s
+  }.
+
+(** * State Instance
+
+ *)
+
+Definition state_get
+           (m: Type -> Type)
+          `{Monad m}
+           (s: Type)
+  : StateT s m s :=
+  fun x
+  => pure (x, x).
+
+Definition state_put
+           (m: Type -> Type)
+          `{Monad m}
+           (s: Type)
+           (x: s)
+  : StateT s m unit :=
+  fun _
+  => pure (tt, x).
+
+Instance state_StateMonad
+         (m: Type -> Type)
+        `{Monad m}
+         (s: Type)
+        `{WEq s}
+  : MonadState (StateT s m) s :=
+  { get := state_get m s
+  ; put := state_put m s
   }.
 
 (** * Pure Monad State
