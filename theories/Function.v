@@ -2,6 +2,7 @@ Require Import Coq.Program.Basics.
 Require Import Coq.Logic.FunctionalExtensionality.
 
 Require Import FreeSpec.Control.
+Require Import FreeSpec.WEq.
 
 Definition func (a b: Type) := a -> b.
 
@@ -32,15 +33,6 @@ Definition func_apply
   fun (x: a)
   => f x (g x).
 
-Instance func_Apply
-         (a: Type)
-  : Apply (func a) :=
-  { apply := @func_apply a
-  }.
-Proof.
-  reflexivity.
-Defined.
-
 Definition func_pure
            {a b: Type}
            (x:   b)
@@ -52,6 +44,7 @@ Instance func_Applicative
          (a: Type)
   : Applicative (func a) :=
   { pure := @func_pure a
+  ; apply := @func_apply a
   }.
 Proof.
   + reflexivity.
@@ -68,19 +61,18 @@ Definition func_bind
   fun (x: a)
   => g (f x) x.
 
-Instance func_Bind
+Instance func_Monad
          (a: Type)
-  : Bind (func a) :=
+  : Monad (func a) :=
   { bind := @func_bind a
   }.
 Proof.
   + reflexivity.
-Defined.
-
-Instance func_Monad
-         (a: Type)
-  : Monad (func a) := {}.
-Proof.
   + reflexivity.
   + reflexivity.
+  + intros b c H f g g' Heq.
+    cbn.
+    unfold function_weq, func_bind.
+    intros x.
+    apply Heq.
 Defined.

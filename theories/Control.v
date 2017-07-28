@@ -1,6 +1,7 @@
 Set Universe Polymorphism.
 
 Require Import Coq.Classes.Equivalence.
+Require Import Coq.Setoids.Setoid.
 
 Require Import FreeSpec.WEq.
 
@@ -22,67 +23,6 @@ Polymorphic Definition id
 
 Notation "f <<< g" := (compose g f) (at level 50).
 Notation "f >>> g" := (compose f g) (at level 50).
-
-Definition function_weq
-           {a b: Type}
-          `{WEq b}
-           (f g: a -> b)
-  : Prop :=
-  forall (x: a), f x == g x.
-
-Lemma function_weq_refl
-      {a b: Type}
-     `{WEq b}
-      (f: a -> b)
-  : function_weq f f.
-Proof.
-  intro x.
-  reflexivity.
-Qed.
-
-Lemma function_weq_sym
-      {a b: Type}
-     `{WEq b}
-      (f g: a -> b)
-  : function_weq f g
-    -> function_weq g f.
-Proof.
-  unfold function_weq.
-  intros H' x.
-  rewrite H'.
-  reflexivity.
-Qed.
-
-Lemma function_weq_trans
-      {a b: Type}
-     `{WEq b}
-      (f g h: a -> b)
-  : function_weq f g
-    -> function_weq g h
-    -> function_weq f h.
-Proof.
-  unfold function_weq.
-  intros F G x.
-  rewrite <- (G x).
-  exact (F x).
-Qed.
-
-Add Parametric Relation
-    (a b: Type)
-   `{WEq b}
-  : (a -> b) (function_weq)
-    reflexivity  proved by function_weq_refl
-    symmetry     proved by function_weq_sym
-    transitivity proved by function_weq_trans
-      as function_web_equiv.
-
-Instance function_WEq
-         (a b: Type)
-        `{WEq b}
-  : WEq (a -> b) :=
-  { weq := function_weq
-  }.
-
 (** * Functor
 
  *)
@@ -116,44 +56,22 @@ Notation "f <$> g" :=
   (map f g)
     (at level 27, left associativity).
 
-(** * Apply
+(** * Applicative
 
  *)
 
 Reserved Notation "f <*> g" (at level 28, left associativity).
 
-Class Apply
+Class Applicative
       (f: Type -> Type)
-  := { apply_is_functor :> Functor f
+  := { applicative_is_functor :> Functor f
+     ; pure: forall {a: Type},
+         a -> f a
      ; apply: forall {a b: Type},
          f (a -> b)
          -> f a
          -> f b
        where "f <*> g" := (apply f g)
-     ; apply_associative_composition: forall {a b c: Type}
-                                            `{WEq c}
-                                             (u: f (b -> c))
-                                             (v: f (a -> b))
-                                             (w:   f a),
-         compose <$> u <*> v <*> w == u <*> (v <*> w)
-     }.
-
-Arguments apply [f _ a b] (_ _).
-Arguments apply_associative_composition [f _ a b c _] (u v w).
-
-Notation "f <*> g" :=
-  (apply f g)
-    (at level 28, left associativity).
-
-(** * Applicative
-
- *)
-
-Class Applicative
-      (f: Type -> Type)
-  := { applicative_is_apply :> Apply f
-     ; pure: forall {a: Type},
-         a -> f a
      ; applicative_identity: forall {a: Type}
                                    `{WEq a}
                                     (v: f a),
@@ -176,55 +94,31 @@ Class Applicative
          u <*> (pure y) == (pure (fun z => z y)) <*> u
      }.
 
+Notation "f <*> g" :=
+  (apply f g)
+    (at level 28, left associativity).
+
 Arguments pure [f _ a] (x).
+Arguments apply [f _ a b] (_ _).
 Arguments applicative_identity [f _ a _] (v).
 Arguments applicative_composition [f _ a b c _] (u v w).
 Arguments applicative_homomorphism [f _ a b _] (v x).
 Arguments applicative_interchange [f _ a b _] (u y).
 
-(** * Bind
+(** * Monad
 
  *)
 
 Reserved Notation "f >>= g" (at level 28, left associativity).
 
-Class Bind
+Class Monad
       (m: Type -> Type)
-  := { bind_is_apply :> Apply m
+  := { monad_is_apply :> Applicative m
      ; bind: forall {a b: Type},
          m a
          -> (a -> m b)
          -> m b
        where "f >>= g" := (bind f g)
-     ; bind_associativity: forall {a b c: Type}
-                                 `{WEq c}
-                                  (f:     m a)
-                                  (g:     a -> m b)
-                                  (h:     b -> m c),
-         (f >>= g) >>= h == f >>= (fun x => (g x) >>= h)
-     }.
-
-Arguments bind [m _ a b] (f g).
-Arguments bind_associativity [m _ a b c _] (f g h).
-
-Notation "f >>= g" := (bind f g) (at level 28, left associativity).
-
-Definition join
-           {m: Type -> Type}
-          `{Bind m}
-           {a: Type}
-           (x: m (m a))
-  : m a :=
-  x >>= id.
-
-(** * Monad
-
- *)
-
-Class Monad
-      (m: Type -> Type)
-  := { monad_is_applicative :> Applicative m
-     ; monad_is_bind :> Bind m
      ; monad_left_identity: forall {a b: Type}
                                   `{WEq b}
                                    (x:   a)
@@ -234,10 +128,50 @@ Class Monad
                                    `{WEq a}
                                     (x: m a),
          x >>= (fun y => pure y) == x
+     ; monad_bind_associativity: forall {a b c: Type}
+                                       `{WEq c}
+                                        (f:     m a)
+                                        (g:     a -> m b)
+                                        (h:     b -> m c),
+         (f >>= g) >>= h == f >>= (fun x => (g x) >>= h)
+     ; monad_bind_morphism {a b: Type}
+                          `{WEq b}
+                           (x: m a)
+                           (f f': a -> m b)
+       : f == f' -> bind x f == bind x f'
      }.
 
+Arguments bind [m _ a b] (f g).
 Arguments monad_left_identity [m _ a b _] (x f).
 Arguments monad_right_identity [m _ a _] (x).
+Arguments monad_bind_associativity [m _ a b c _] (f g h).
+Arguments monad_bind_morphism [m _ a b _] (x f f').
+
+Add Parametric Morphism
+    (m: Type -> Type)
+   `{M: Monad m}
+    (a b: Type)
+   `{WEq a}
+   `{B: WEq b}
+  : (@bind m M a b)
+    with signature (@eq (m a))
+                   ==> (@weq (a -> m b) _)
+                   ==> (@weq (m b) functor_has_eq)
+      as bind_morphism_decl.
+Proof.
+  intros x f f' Heq.
+  apply (monad_bind_morphism x f f' Heq).
+Qed.
+
+Notation "f >>= g" := (bind f g) (at level 28, left associativity).
+
+Definition join
+           {m: Type -> Type}
+          `{Monad m}
+           {a: Type}
+           (x: m (m a))
+  : m a :=
+  x >>= id.
 
 (** * Monad Transformer
 

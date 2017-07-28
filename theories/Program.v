@@ -278,15 +278,6 @@ Definition program_apply
   : Program I B :=
   pbind pf (fun f => pbind p (fun x => ret (f x))).
 
-Instance program_Apply
-         (I: Interface)
-  : Apply (Program I) :=
-  { apply := @program_apply I
-  }.
-Proof.
-  constructor; reflexivity.
-Defined.
-
 Definition program_pure
            {I: Interface}
            {A: Type}
@@ -297,6 +288,7 @@ Instance program_Applicative
          (I: Interface)
   : Applicative (Program I) :=
   { pure := @program_pure I
+  ; apply := @program_apply I
   }.
 Proof.
   + intros A p.
@@ -317,21 +309,45 @@ Definition program_bind
 
 Instance program_Bind
          (I: Interface)
-  : Bind (Program I) :=
+  : Monad (Program I) :=
   { bind := @program_bind I
   }.
 Proof.
   + constructor; reflexivity.
-Defined.
-
-Instance program_Monad
-         (I: Interface)
-  : Monad (Program I) :=
-  {
-  }.
-Proof.
   + constructor; reflexivity.
   + constructor; reflexivity.
+  + intros A B HB p f f' Heq.
+    unfold program_bind.
+    constructor.
+    ++ intros int.
+       unfold program_bind.
+       assert (R1: forall (int: Interp I)
+                          (f: A -> Program I B),
+                  evalProgram int (pbind p f)
+                  = evalProgram (execProgram int p) (f (evalProgram int p))). {
+         reflexivity.
+       }
+       rewrite R1.
+       rewrite R1.
+       assert (R2: f (evalProgram int p) == f' (evalProgram int p)). {
+         apply Heq.
+       }
+       rewrite R2.
+       reflexivity.
+    ++ intros int.
+       assert (R1: forall (int: Interp I)
+                          (f: A -> Program I B),
+                  execProgram int (pbind p f)
+                  == execProgram (execProgram int p) (f (evalProgram int p))). {
+         reflexivity.
+       }
+       rewrite R1.
+       rewrite R1.
+       assert (R2: f (evalProgram int p) == f' (evalProgram int p)). {
+         apply Heq.
+       }
+       rewrite R2.
+       reflexivity.
 Defined.
 
 (** ** Alternative [Program] Execution

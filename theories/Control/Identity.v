@@ -109,6 +109,17 @@ Proof.
     exact Heq.
 Qed.
 
+Lemma unwrap_identity_weq
+      {a: Type}
+     `{WEq a}
+     (x y: Identity a)
+  : !x == !y <-> x == y.
+Proof.
+  destruct x; destruct y.
+  cbn.
+  exact (wrap_identity_weq x x0).
+Qed.
+
 (** * Functor
 
  *)
@@ -140,16 +151,6 @@ Definition identity_apply
   : Identity b :=
   identity ((!f) (!x)).
 
-Instance identity_Apply
-  : Apply Identity :=
-  { apply := identity_apply
-  }.
-Proof.
-  + intros a b c HWEq u v w.
-    apply wrap_identity_weq.
-    reflexivity.
-Defined.
-
 Definition identity_pure
            (a: Type)
            (x: a)
@@ -159,6 +160,7 @@ Definition identity_pure
 Instance identity_Applicative
   : Applicative Identity :=
   { pure := identity_pure
+  ; apply := identity_apply
   }.
 Proof.
   + intros; apply <- wrap_identity_weq; reflexivity.
@@ -174,19 +176,22 @@ Definition identity_bind
   : Identity b :=
   f (!x).
 
-Instance identity_Bind
-  : Bind Identity :=
+Instance identity_Monad
+  : Monad Identity :=
   { bind := identity_bind
   }.
 Proof.
   + intros; apply wrap_identity_weq; reflexivity.
-Defined.
-
-Instance identity_Monad
-  : Monad Identity :=
-  {
-  }.
-Proof.
-  + intros; apply wrap_identity_weq; reflexivity.
   + intros; apply <- wrap_identity_weq; reflexivity.
+  + intros a b c C f g h.
+    unfold identity_bind.
+    reflexivity.
+  + intros a b H x f f' Heq.
+    cbn.
+    unfold identity_weq, identity_bind.
+    destruct x.
+    cbn in *.
+    unfold function_weq in Heq.
+    apply unwrap_identity_weq.
+    apply Heq.
 Defined.

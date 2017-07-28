@@ -30,6 +30,179 @@ Notation "a /= b" :=
     (at level 70, no associativity)
   : free_weq_scope.
 
+Local Open Scope free_weq_scope.
+
+(** ** Function Instances
+
+ *)
+
+Definition function_weq
+           {a b: Type}
+          `{WEq b}
+           (f g: a -> b)
+  : Prop :=
+  forall (x: a), f x == g x.
+
+Lemma function_weq_refl
+      {a b: Type}
+     `{WEq b}
+      (f: a -> b)
+  : function_weq f f.
+Proof.
+  intro x.
+  reflexivity.
+Qed.
+
+Lemma function_weq_sym
+      {a b: Type}
+     `{WEq b}
+      (f g: a -> b)
+  : function_weq f g
+    -> function_weq g f.
+Proof.
+  unfold function_weq.
+  intros H' x.
+  rewrite H'.
+  reflexivity.
+Qed.
+
+Lemma function_weq_trans
+      {a b: Type}
+     `{WEq b}
+      (f g h: a -> b)
+  : function_weq f g
+    -> function_weq g h
+    -> function_weq f h.
+Proof.
+  unfold function_weq.
+  intros F G x.
+  rewrite <- (G x).
+  exact (F x).
+Qed.
+
+Add Parametric Relation
+    (a b: Type)
+   `{WEq b}
+  : (a -> b) (function_weq)
+    reflexivity  proved by function_weq_refl
+    symmetry     proved by function_weq_sym
+    transitivity proved by function_weq_trans
+      as function_web_equiv.
+
+Instance function_WEq
+         (a b: Type)
+        `{WEq b}
+  : WEq (a -> b) :=
+  { weq := function_weq
+  }.
+
+(** ** Tuple Instances
+
+ *)
+
+Definition tuple_weq
+           {a b: Type}
+          `{WEq a}
+          `{WEq b}
+           (o o': a * b)
+  : Prop :=
+  fst o == fst o' /\ snd o == snd o'.
+
+Lemma tuple_weq_refl
+      {a b: Type}
+     `{WEq a}
+     `{WEq b}
+      (o: a * b)
+  : tuple_weq o o.
+Proof.
+  split; reflexivity.
+Qed.
+
+Lemma tuple_weq_sym
+      {a b: Type}
+     `{WEq a}
+     `{WEq b}
+      (o o': a * b)
+  : tuple_weq o o'
+    -> tuple_weq o' o.
+Proof.
+  intros [Hf Hs].
+  split; [ rewrite Hf; reflexivity
+         | rewrite Hs; reflexivity
+         ].
+Qed.
+
+Lemma tuple_weq_trans
+      {a b: Type}
+     `{WEq a}
+     `{WEq b}
+      (o o' o'': a * b)
+  : tuple_weq o o'
+    -> tuple_weq o' o''
+    -> tuple_weq o o''.
+Proof.
+  intros [Of Os] [Of' Os'].
+  split; [ rewrite Of; exact Of'
+         | rewrite Os; exact Os'
+         ].
+Qed.
+
+Add Parametric Relation
+    (a b: Type)
+   `{WEq a}
+   `{WEq b}
+  : (a * b) (tuple_weq)
+    reflexivity  proved by tuple_weq_refl
+    symmetry     proved by tuple_weq_sym
+    transitivity proved by tuple_weq_trans
+      as tuple_weq_equiv.
+
+Instance tuple_WEq
+         (a b: Type)
+        `{WEq a}
+        `{WEq b}
+  : WEq (a * b) :=
+  { weq := tuple_weq
+  }.
+
+Add Parametric Morphism
+    (a b: Type)
+   `{WEq a}
+   `{WEq b}
+  : fst
+    with signature (@weq (a * b) _) ==> (@weq a _)
+      as fst_tuple_weq_morphism.
+Proof.
+  intros o o' [P Q].
+  exact P.
+Qed.
+
+Add Parametric Morphism
+    (a b: Type)
+   `{WEq a}
+   `{WEq b}
+  : snd
+    with signature (@weq (a * b) _) ==> (@weq b _)
+      as snd_tuple_weq_morphism.
+Proof.
+  intros o o' [P Q].
+  exact Q.
+Qed.
+
+Add Parametric Morphism
+    (a b: Type)
+   `{WEq a}
+   `{WEq b}
+  : pair
+    with signature (@weq a _) ==> (@weq b _) ==> (@weq (a * b) _)
+      as pair_tuple_weq_morphism.
+Proof.
+  intros o o' Heq p p' Heq'.
+  constructor; [ exact Heq
+               | exact Heq'
+               ].
+Qed.
+
 (** * Weaker Decidable Equality
 
     Sometimes, it is not enough to have an equality. Thus, we
