@@ -17,6 +17,7 @@ theories/Control.v
 theories/Control/Classes.v
 theories/Control/Function.v
 theories/Control/State.v
+theories/Control/Reader.v
 theories/Control/Identity.v
 theories/PropBool.v
 theories/WEq.v
