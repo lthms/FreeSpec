@@ -92,6 +92,11 @@ Class Applicative
                                        (u: f (a -> b))
                                        (y: a),
          u <*> (pure y) == (pure (fun z => z y)) <*> u
+     ; applicative_pure_map: forall {a b: Type}
+                                   `{WEq b}
+                                    (g: a -> b)
+                                    (x: f a),
+         g <$> x == pure g <*> x
      }.
 
 Notation "f <*> g" :=
@@ -104,6 +109,7 @@ Arguments applicative_identity [f _ a _] (v).
 Arguments applicative_composition [f _ a b c _] (u v w).
 Arguments applicative_homomorphism [f _ a b _] (v x).
 Arguments applicative_interchange [f _ a b _] (u y).
+Arguments applicative_pure_map [f _ a b _] (g x).
 
 (** * Monad
 
@@ -139,6 +145,11 @@ Class Monad
                            (x: m a)
                            (f f': a -> m b)
        : f == f' -> bind x f == bind x f'
+     ; monad_bind_map {a b: Type}
+                     `{WEq b}
+                      (x: m a)
+                      (f: a -> b)
+       : f <$> x == (x >>= (fun y => pure (f y)))
      }.
 
 Arguments bind [m _ a b] (f g).
@@ -146,6 +157,7 @@ Arguments monad_left_identity [m _ a b _] (x f).
 Arguments monad_right_identity [m _ a _] (x).
 Arguments monad_bind_associativity [m _ a b c _] (f g h).
 Arguments monad_bind_morphism [m _ a b _] (x f f').
+Arguments monad_bind_map [m _ a b _] (x f).
 
 Add Parametric Morphism
     (m: Type -> Type)

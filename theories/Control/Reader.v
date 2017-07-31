@@ -106,6 +106,11 @@ Proof.
     intros z.
     unfold reader_apply, reader_pure.
     exact (applicative_interchange (u z) y).
+  + intros a b B g x.
+    cbn.
+    intros y.
+    unfold reader_map, reader_apply, reader_pure.
+    exact (applicative_pure_map g (x y)).
 Defined.
 
 (** * Monad
@@ -153,6 +158,11 @@ Proof.
     apply monad_bind_morphism.
     intros z.
     apply Heq.
+  + intros a b B x f.
+    cbn.
+    intros y.
+    unfold reader_map, reader_bind, reader_pure.
+    apply monad_bind_map.
 Defined.
 
 (** * Reader Monad

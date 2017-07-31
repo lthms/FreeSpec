@@ -300,6 +300,8 @@ Proof.
     constructor; reflexivity.
   + intros A B u y.
     constructor; reflexivity.
+  + intros A B HB g p.
+    constructor; reflexivity.
 Defined.
 
 Definition program_bind
@@ -349,6 +351,8 @@ Proof.
        }
        rewrite R2.
        reflexivity.
+  + intros A B HB g p.
+    constructor; reflexivity.
 Defined.
 
 (** ** Alternative [Program] Execution

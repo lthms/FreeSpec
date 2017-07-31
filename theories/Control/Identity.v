@@ -167,6 +167,7 @@ Proof.
   + intros; apply <- wrap_identity_weq; reflexivity.
   + intros; apply <- wrap_identity_weq; reflexivity.
   + intros; apply <- wrap_identity_weq; reflexivity.
+  + intros; apply <- wrap_identity_weq; reflexivity.
 Defined.
 
 Definition identity_bind
@@ -194,4 +195,5 @@ Proof.
     unfold function_weq in Heq.
     apply unwrap_identity_weq.
     apply Heq.
+  + intros; apply <- wrap_identity_weq; reflexivity.
 Defined.

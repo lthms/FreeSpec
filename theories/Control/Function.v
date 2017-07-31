@@ -51,6 +51,7 @@ Proof.
   + reflexivity.
   + reflexivity.
   + reflexivity.
+  + reflexivity.
 Defined.
 
 Definition func_bind
@@ -75,4 +76,5 @@ Proof.
     unfold function_weq, func_bind.
     intros x.
     apply Heq.
+  + reflexivity.
 Defined.

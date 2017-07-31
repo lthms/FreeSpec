@@ -315,6 +315,21 @@ Proof.
     reflexivity.
   + apply (@state_applicative_homomorphism m H s H0).
   + apply (@state_applicative_interchange m H s H0).
+  + intros a b B g x.
+    cbn.
+    intros y.
+    unfold state_apply, state_pure.
+    rewrite monad_left_identity.
+    cbn.
+    unfold state_map.
+    remember (fun o : a * s => (g (fst o), snd o)) as f.
+    assert ((x y >>= (fun (v: a * s)
+                      => pure (f:=m) (g (fst v), snd v)))
+           == (x y >>= (fun v => pure (f v)))).
+    rewrite Heqf.
+    reflexivity.
+    rewrite H1.
+    apply monad_bind_map.
 Defined.
 
 Definition state_bind
@@ -389,6 +404,10 @@ Proof.
     }
     rewrite (monad_bind_morphism _ _ _ R1).
     reflexivity.
+  + intros a b B x f.
+    unfold state_bind.
+    intros y.
+    apply monad_bind_map.
 Defined.
 
 (** * Transformer Instance
