@@ -5,4 +5,5 @@ docs/html/*
 *.vo.aux
 *.glob
 *.vo
+*.aux
 FreeSpec.hs
