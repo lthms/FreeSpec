@@ -104,7 +104,7 @@ Notation "t ':>' c '[' s ']'" :=
   (compliant c s t)
     (at level 60, no associativity).
 
-(** * Compliant Interprerter
+(** * Compliant Interpreter
 
     ** Definition
 
