@@ -1,3 +1,5 @@
+libs/vector/Vector.v
+
 theories/Interface.v
 theories/Interp.v
 theories/MonadInterp.v
@@ -6,13 +8,10 @@ theories/Abstract.v
 theories/Contract.v
 theories/Compose.v
 theories/Refine.v
-
 theories/Contract/Constant.v
-
 theories/TemporalLogic.v
 theories/TemporalLogic/Notations.v
 theories/Contract/Temporal.v
-
 theories/Control.v
 theories/Control/Classes.v
 theories/Control/Function.v
@@ -21,6 +20,9 @@ theories/Control/Reader.v
 theories/Control/Identity.v
 theories/PropBool.v
 theories/WEq.v
+
+specs/Hexa.v
+specs/Memory.v
 
 examples/Map.v
 examples/Smram.v
