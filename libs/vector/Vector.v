@@ -384,3 +384,19 @@ Next Obligation.
     rewrite <- H4; [| omega].
     reflexivity.
 Defined.
+
+Program Definition test_op
+  : vector nat 5 :=
+  set 2 1
+      (vcons 1 (vcons 2 (vcons 3 (vcons 4 (vcons 5 vnil)))))
+      (vcons 3 (vcons 4 vnil)).
+
+(** If Coq hangs on this lemma, this means Coq cannot evaluate the
+    [set] function properly. Said otherwise, it means we have
+    introduced an opaque lemmas in a key obligation proof.
+ *)
+Fact test_set
+  : test_op = vcons 1 (vcons 3 (vcons 4 (vcons 4 (vcons 5 vnil)))).
+Proof.
+  reflexivity.
+Qed.

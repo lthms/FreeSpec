@@ -51,3 +51,20 @@ Next Obligation.
     rewrite e1; [| omega].
     reflexivity.
 Defined.
+
+(** We add a test to check that split_works can indeed be evaluate by
+    Coq.  If Coq hangs on that lemmas, it means we have introduced an
+    opaque lemmas in a key proof obligation.
+
+ *)
+
+Program Definition test
+  : byte * byte :=
+  split_word (Ox _FA_ _AB_).
+
+Program Lemma test_split
+  : test = (Ox _AB_, Ox _FA_).
+Proof.
+  vm_compute. (* vm_compute works, not cbn *)
+  reflexivity.
+Qed.
