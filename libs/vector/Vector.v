@@ -208,6 +208,14 @@ Next Obligation.
   destruct H.
 Defined.
 
+Lemma sub_0_r: forall n : nat, n - 0 = n.
+  induction n; reflexivity.
+Defined.
+
+Lemma succ_0_l: forall n : nat, 0 + n = n.
+  induction n; reflexivity.
+Defined.
+
 Program Fixpoint drop
         {A:   Type}
         {n:   nat}
@@ -222,7 +230,7 @@ Program Fixpoint drop
             end
   end.
 Next Obligation.
-  rewrite <- minus_n_O.
+  rewrite sub_0_r.
   reflexivity.
 Defined.
 Next Obligation.
@@ -231,10 +239,12 @@ Next Obligation.
     reflexivity.
 Defined.
 Next Obligation.
-  omega.
+  apply Nat.succ_le_mono.
+  exact H.
 Defined.
 Next Obligation.
-  omega.
+  apply Nat.nle_succ_0 in H.
+  exact H.
 Defined.
 
 Program Definition extract
@@ -263,8 +273,10 @@ Next Obligation.
       apply Nat.sub_le_mono_r.
       exact H1.
     }
-    omega.
-  + omega.
+    apply Nat.lt_le_trans with (m:=e - b).
+    exact H.
+    exact H2.
+  + exact H.
 Defined.
 
 Program Fixpoint append
@@ -308,6 +320,179 @@ Next Obligation.
        omega.
 Defined.
 
+Lemma succ_inj_wd
+      (n m: nat)
+  : S n = S m <-> n = m.
+Proof.
+  split.
+  + intro Heq.
+    inversion Heq.
+    reflexivity.
+  + intros Heq; rewrite Heq; reflexivity.
+Defined.
+
+Lemma add_0_l
+      (n: nat)
+  : 0 + n = n.
+Proof.
+  cbn.
+  reflexivity.
+Defined.
+
+Lemma add_0_r
+      (n: nat)
+  : n + 0 = n.
+Proof.
+  induction n.
+  + reflexivity.
+  + cbn.
+    rewrite IHn.
+    reflexivity.
+Defined.
+
+Lemma add_succ_comm
+      (n m : nat)
+  : S n + m = n + S m.
+Proof.
+  induction n.
+  + cbn.
+    reflexivity.
+  + cbn.
+    rewrite <- IHn.
+    reflexivity.
+Defined.
+
+Lemma add_sym
+      (n m: nat)
+  : n + m = m + n.
+Proof.
+  induction n; destruct m.
+  + reflexivity.
+  + rewrite add_0_l.
+    rewrite add_0_r.
+    reflexivity.
+  + rewrite add_0_l.
+    rewrite add_0_r.
+    reflexivity.
+  + cbn.
+    apply succ_inj_wd.
+    rewrite IHn.
+    rewrite add_succ_comm.
+    reflexivity.
+Defined.
+
+Lemma sub_succ_r n m : n - (S m) = pred (n - m).
+Proof.
+  revert m.
+  induction n;
+    destruct m;
+    simpl;
+    auto.
+  apply sub_0_r.
+Defined.
+
+Lemma sub_succ_l
+      (n m: nat)
+  : n <= m -> S n - m = S (n - m).
+Proof.
+  revert n.
+  induction m.
+  + intros n H.
+Admitted.
+
+Lemma add_succ_r
+      (n m: nat)
+  : S n + m = S (n + m).
+Proof.
+  cbn.
+  reflexivity.
+Defined.
+
+Lemma add_succ_l
+      (n m: nat)
+  : n + S m = S (n + m).
+Proof.
+  induction n.
+  + repeat rewrite add_0_l.
+    reflexivity.
+  + cbn.
+    rewrite IHn.
+    reflexivity.
+Defined.
+
+Lemma S_le_lt
+      (n m: nat)
+  : S n <= m
+    -> n < m.
+Proof.
+  omega.
+Admitted.
+
+Lemma add_pred_r: forall n m : nat, m <> 0 -> n + Nat.pred m = Nat.pred (n + m).
+  induction n.
+  intros.
+  cbn.
+  reflexivity.
+  intros.
+  cbn.
+  rewrite IHn.
+  cbn.
+  induction m.
+  destruct H.
+  reflexivity.
+  rewrite add_succ_l.
+  cbn.
+  reflexivity.
+  exact H.
+Defined.
+
+
+Lemma add_sub_assoc
+      (n m p: nat)
+  : p <= m -> n + (m - p) = n + m - p.
+Proof.
+  revert m n.
+  induction p.
+  + intros n m Heq.
+    rewrite sub_0_r.
+    rewrite sub_0_r.
+    reflexivity.
+  + intros n m H.
+    repeat rewrite sub_succ_r.
+    rewrite <- IHp.
+    rewrite add_pred_r.
+    reflexivity.
+    apply S_le_lt in H.
+    apply Nat.sub_gt.
+    exact H.
+    apply le_Sn_le.
+    exact H.
+Defined.
+
+Lemma sub_diag
+      (n: nat)
+  : n - n = 0.
+Proof.
+  induction n.
+  + reflexivity.
+  + cbn.
+    rewrite IHn.
+    reflexivity.
+Defined.
+
+Lemma sub_add: forall n m : nat, n <= m -> m - n + n = m.
+Proof.
+  intros n m H.
+  rewrite add_sym.
+  rewrite add_sub_assoc; [| exact H].
+  rewrite add_sym.
+  rewrite <- add_sub_assoc.
+  rewrite (sub_diag n).
+  rewrite add_0_r.
+  reflexivity.
+  apply le_n.
+Defined.
+
 Program Definition set
         {A: Type}
         {n: nat}
@@ -323,34 +508,51 @@ Program Definition set
                         -> nth v'' i = nth v' (i - b))) } :=
   append (append (take v b) v') (drop v (b + m)).
 Next Obligation.
-  omega.
+  rewrite add_sym in H.
+  apply (Nat.le_le_add_le 0 m b n).
+  apply Peano.le_0_n.
+  rewrite (add_sym n).
+  rewrite add_0_l.
+  exact H.
 Defined.
 Next Obligation.
-  omega.
+  rewrite add_sym.
+  exact H.
 Defined.
 Next Obligation.
-  omega.
+  rewrite add_sym.
+  rewrite sub_add.
+  + reflexivity.
+  + rewrite add_sym.
+    exact H.
 Defined.
 Next Obligation.
+  cbn.
   destruct append.
   destruct append.
   destruct take.
   destruct drop.
   cbn in *.
-  split; repeat destruct Decidable.dec_not_not; cbn.
-  + assert ((i < b -> nth x i = nth x1 i) /\ (b <= i -> nth x i = nth v' (i - b)))
-      by apply (a i).
-    assert ((i < b + m -> nth x0 i = nth x i) /\
-            (b + m <= i -> nth x0 i = nth x2 (i - (b + m))))
-      by (apply (a0 i)).
-    destruct H2.
-    destruct H3.
-    intros [X|Y].
+  destruct sub_add.
+  cbn in *.
+  destruct add_sym.
+  cbn in *.
+  assert ((i < b -> nth x i = nth x1 i) /\ (b <= i -> nth x i = nth v' (i - b)))
+    by apply (a i).
+  assert ((i < b + m -> nth x0 i = nth x i) /\
+          (b + m <= i -> nth x0 i = nth x2 (i - (b + m))))
+    by (apply (a0 i)).
+  destruct H2.
+  destruct H3.
+  split.
+  + intros [X|Y].
     ++ rewrite <- e; [| exact X].
        rewrite <- H2; [| exact X].
        rewrite H3.
        +++ reflexivity.
-       +++ omega.
+       +++ Search (_ < _ -> _ < _ + _).
+           apply (Nat.lt_lt_add_r i b m) in X.
+           exact X.
     ++ rewrite H5.
        rewrite e0.
        assert (b + m + (i - (b + m)) = i) by omega.
@@ -358,15 +560,8 @@ Next Obligation.
        reflexivity.
        omega.
        omega.
-  + assert ((i < b -> nth x i = nth x1 i) /\ (b <= i -> nth x i = nth v' (i - b)))
-      by (apply (a i)).
-    destruct H2.
-    assert ((i < b + m -> nth x0 i = nth x i) /\
-            (b + m <= i -> nth x0 i = nth x2 (i - (b + m))))
-      by (apply (a0 i)).
-    destruct H4.
-    intros [X Y].
-    ++ rewrite <- H3; [| omega].
-       rewrite <- H4; [| omega].
-       reflexivity.
+  + intros [X Y].
+    rewrite H3; [| omega].
+    rewrite <- H4; [| omega].
+    reflexivity.
 Defined.
