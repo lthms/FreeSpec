@@ -68,3 +68,90 @@ Proof.
   vm_compute. (* vm_compute works, not cbn *)
   reflexivity.
 Qed.
+
+(** * Addition
+
+    Define an addition which can actually be evaluated by Coq.
+
+ *)
+
+Program Definition add_bit
+        {a: Type}
+        (b b': bit)
+        (c: bool)
+        (f: bit -> bool -> a)
+  : a :=
+  match b, b', c with
+  | false, false, false => f false false
+  | false, true, false => f true false
+  | true, false, false => f true false
+  | true, true, false => f false true
+  | false, false, true => f false true
+  | false, true, true => f false true
+  | true, false, true => f false true
+  | true, true, true => f true true
+  end.
+
+Program Fixpoint add_rec
+        {A: Type}
+        {n: nat}
+        (o o': mem n)
+        (f: mem (S n) -> bool -> A)
+        (b: bit)
+        (c: bool)
+        {measure n}
+  : A :=
+  match n with
+  | 0 => f (vcons b vnil) c
+  | S m => add_bit (@head bit m o) (@head bit m o') c (@add_rec A m (drop o 1) (drop o' 1) (fun v c' => f (vcons b v) c')) _
+  end.
+Next Obligation.
+  apply le_n_S.
+  apply Peano.le_0_n.
+Defined.
+Next Obligation.
+  cbn.
+  apply OpenNat.sub_0_r.
+Defined.
+Next Obligation.
+  apply le_n_S.
+  apply Peano.le_0_n.
+Defined.
+Next Obligation.
+  cbn.
+  apply OpenNat.sub_0_r.
+Defined.
+
+Program Definition add
+        {n: nat}
+        (o o': mem n)
+  : mem n * bool :=
+  match n with
+  | 0 => (vnil, false)
+  | S m => add_bit (@head bit m o) (@head bit m o') false (add_rec (drop o 1) (drop o' 1) (fun v c' => (v, c')))
+  end.
+Next Obligation.
+  apply le_n_S.
+  apply Peano.le_0_n.
+Defined.
+Next Obligation.
+  cbn.
+  rewrite OpenNat.sub_0_r.
+  reflexivity.
+Defined.
+
+(** We add this test lemma to check that the addition can actually be
+    evaluated properly.
+
+ *)
+
+Definition test_ff
+  : (mem 8 * bool) :=
+  add (Ox _FE_) (Ox _01_).
+
+Fact test_ff_eq
+  : fst test_ff = Ox _FF_.
+Proof.
+  vm_compute.
+  reflexivity.
+Qed.
