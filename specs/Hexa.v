@@ -1,48 +1,40 @@
 Require Import FreeSpec.Libs.Vector.Vector.
 
-Inductive bit
-  : Set :=
-| b1
-  : bit
-| b0
-  : bit.
-
-Notation "'0" := b0.
-Notation "'1" := b1.
+Definition bit := bool.
 
 Notation "'Ox'" := vnil.
 
-Notation "x '_0_'" := (vcons '0 (vcons '0 (vcons '0 (vcons '0 x))))
+Notation "x '_0_'" := (vcons false (vcons false (vcons false (vcons false x))))
                        (at level 20).
-Notation "x '_1_'" := (vcons '1 (vcons '0 (vcons '0 (vcons '0 x))))
+Notation "x '_1_'" := (vcons true (vcons false (vcons false (vcons false x))))
                        (at level 20).
-Notation "x '_2_'" := (vcons '0 (vcons '1 (vcons '0 (vcons '0 x))))
+Notation "x '_2_'" := (vcons false (vcons true (vcons false (vcons false x))))
                        (at level 20).
-Notation "x '_3_'" := (vcons '1 (vcons '1 (vcons '0 (vcons '0 x))))
+Notation "x '_3_'" := (vcons true (vcons true (vcons false (vcons false x))))
                        (at level 20).
-Notation "x '_4_'" := (vcons '0 (vcons '0 (vcons '1 (vcons '0 x))))
+Notation "x '_4_'" := (vcons false (vcons false (vcons true (vcons false x))))
                        (at level 20).
-Notation "x '_5_'" := (vcons '1 (vcons '0 (vcons '1 (vcons '0 x))))
+Notation "x '_5_'" := (vcons true (vcons false (vcons true (vcons false x))))
                        (at level 20).
-Notation "x '_6_'" := (vcons '0 (vcons '1 (vcons '1 (vcons '0 x))))
+Notation "x '_6_'" := (vcons false (vcons true (vcons true (vcons false x))))
                        (at level 20).
-Notation "x '_7_'" := (vcons '1 (vcons '1 (vcons '1 (vcons '0 x))))
+Notation "x '_7_'" := (vcons true (vcons true (vcons true (vcons false x))))
                        (at level 20).
-Notation "x '_8_'" := (vcons '0 (vcons '0 (vcons '0 (vcons '1 x))))
+Notation "x '_8_'" := (vcons false (vcons false (vcons false (vcons true x))))
                        (at level 20).
-Notation "x '_9_'" := (vcons '1 (vcons '0 (vcons '0 (vcons '1 x))))
+Notation "x '_9_'" := (vcons true (vcons false (vcons false (vcons true x))))
                       (at level 20).
-Notation "x '_A_'" := (vcons '0 (vcons '1 (vcons '0 (vcons '1 x))))
+Notation "x '_A_'" := (vcons false (vcons true (vcons false (vcons true x))))
                         (at level 20).
-Notation "x '_B_'" := (vcons '1 (vcons '1 (vcons '0 (vcons '1 x))))
+Notation "x '_B_'" := (vcons true (vcons true (vcons false (vcons true x))))
                         (at level 20).
-Notation "x '_C_'" := (vcons '0 (vcons '0 (vcons '1 (vcons '1 x))))
+Notation "x '_C_'" := (vcons false (vcons false (vcons true (vcons true x))))
                         (at level 20).
-Notation "x '_D_'" := (vcons '1 (vcons '0 (vcons '1 (vcons '1 x))))
+Notation "x '_D_'" := (vcons true (vcons false (vcons true (vcons true x))))
                         (at level 20).
-Notation "x '_E_'" := (vcons '0 (vcons '1 (vcons '1 (vcons '1 x))))
+Notation "x '_E_'" := (vcons false (vcons true (vcons true (vcons true x))))
                         (at level 20).
-Notation "x '_F_'" := (vcons '1 (vcons '1 (vcons '1 (vcons '1 x))))
+Notation "x '_F_'" := (vcons true (vcons true (vcons true (vcons true x))))
                       (at level 20).
 Notation "x '_00_'" := (x _0_ _0_)
                         (at level 20).

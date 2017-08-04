@@ -550,8 +550,7 @@ Next Obligation.
        rewrite <- H2; [| exact X].
        rewrite H3.
        +++ reflexivity.
-       +++ Search (_ < _ -> _ < _ + _).
-           apply (Nat.lt_lt_add_r i b m) in X.
+       +++ apply (Nat.lt_lt_add_r i b m) in X.
            exact X.
     ++ rewrite H5.
        rewrite e0.

@@ -23,6 +23,7 @@ theories/WEq.v
 
 specs/Hexa.v
 specs/Memory.v
+specs/SMRAMC.v
 
 examples/Map.v
 examples/Smram.v
