@@ -1,5 +1,3 @@
-libs/vector/Vector.v
-
 theories/Interface.v
 theories/Interp.v
 theories/MonadInterp.v
@@ -20,6 +18,9 @@ theories/Control/Reader.v
 theories/Control/Identity.v
 theories/PropBool.v
 theories/WEq.v
+
+libs/vector/OpenNat.v
+libs/vector/Vector.v
 
 specs/Hexa.v
 specs/Memory.v
