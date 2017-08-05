@@ -11,6 +11,54 @@ Definition word  := mem 16.
 Definition lword := mem 32.
 Definition qword := mem 64.
 
+Fixpoint vec_to_nat
+         {n: nat}
+         (v: mem n)
+  : nat :=
+  match v with
+  | vnil => 0
+  | vcons true rest => 1 + 2 * (vec_to_nat rest)
+  | vcons false rest => 2 * (vec_to_nat rest)
+  end.
+
+Program Definition vec_to_nat'
+        {n: nat}
+        (v: mem n)
+  : { m: nat | m < 2 ^ n } :=
+  vec_to_nat v.
+Next Obligation.
+  induction v.
+  + destruct a; cbn.
+    ++ repeat rewrite OpenNat.add_0_r.
+       apply OpenNat.lt_power_2.
+       exact IHv.
+    ++ repeat rewrite OpenNat.add_0_r.
+       assert (S ((vec_to_nat v) + (vec_to_nat v)) < 2 ^ n+ 2 ^ n)
+         by (apply (OpenNat.lt_power_2 (vec_to_nat v) n IHv)).
+       apply Nat.lt_succ_l in H.
+       exact H.
+  + cbn.
+    constructor.
+Defined.
+
+(** Right now, the [vec_to_nat] function is not efficient. It
+    overflows with a big number, such as [Ox _FF_ _FF_]. The function
+    [vec_to_nat'] can be used, but in addition to the flaw of
+    [vec_to_nat], it is _very_ slow _very_ quickly.
+
+ *)
+
+Program Definition test_to_nat
+  : nat
+  := vec_to_nat (Ox _FF_).
+
+Lemma test_to_nat_eq
+  : test_to_nat = 255.
+Proof.
+  cbn.
+  reflexivity.
+Qed.
+
 Program Definition split_word
         (w: word)
   : { o: (byte * byte) | forall i, i < 16 -> nth w i = nth (append (fst o) (snd o)) i }:=
