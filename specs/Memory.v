@@ -1,205 +1,172 @@
-Require Import FreeSpec.Libs.Vector.Vector.
-Require Import FreeSpec.Specs.Hexa.
-Require Import Omega.
+Require Import FreeSpec.Libs.OpenNat.OpenNat.
+Require Import FreeSpec.PropBool.
 Require Import Coq.Program.Program.
+Require Import Coq.Arith.Arith.
 
-Definition mem := vector bit.
-Definition carry := bit.
+(** * Definitions
 
-Definition byte  := mem 8.
-Definition word  := mem 16.
+ *)
+
+Program Record mem
+        (n: nat)
+  : Type :=
+  mkMem { mem_val: nat
+        ; mem_bound: mem_val < 2 ^ n
+        }.
+
+Arguments mem_val [n] (_).
+Arguments mem_bound [n] (_).
+
+Definition byte := mem 8.
+Definition word := mem 16.
 Definition lword := mem 32.
 Definition qword := mem 64.
 
-Fixpoint vec_to_nat
-         {n: nat}
-         (v: mem n)
-  : nat :=
-  match v with
-  | vnil => 0
-  | vcons true rest => 1 + 2 * (vec_to_nat rest)
-  | vcons false rest => 2 * (vec_to_nat rest)
-  end.
+(** * Manipulation
 
-Program Definition vec_to_nat'
-        {n: nat}
-        (v: mem n)
-  : { m: nat | m < 2 ^ n } :=
-  vec_to_nat v.
-Next Obligation.
-  induction v.
-  + destruct a; cbn.
-    ++ repeat rewrite OpenNat.add_0_r.
-       apply OpenNat.lt_power_2.
-       exact IHv.
-    ++ repeat rewrite OpenNat.add_0_r.
-       assert (S ((vec_to_nat v) + (vec_to_nat v)) < 2 ^ n+ 2 ^ n)
-         by (apply (OpenNat.lt_power_2 (vec_to_nat v) n IHv)).
-       apply Nat.lt_succ_l in H.
-       exact H.
-  + cbn.
-    constructor.
-Defined.
-
-(** Right now, the [vec_to_nat] function is not efficient. It
-    overflows with a big number, such as [Ox _FF_ _FF_]. The function
-    [vec_to_nat'] can be used, but in addition to the flaw of
-    [vec_to_nat], it is _very_ slow _very_ quickly.
+    ** Boxing
 
  *)
 
-Program Definition test_to_nat
-  : nat
-  := vec_to_nat (Ox _FF_).
+Program Definition box
+        (n x: nat)
+  : mem n :=
+  {| mem_val := x mod (2 ^ n)
+   ; mem_bound := _
+   |}.
+Next Obligation.
+  apply Nat.mod_bound_pos.
+  + apply OpenNat.le_0_n.
+  + assert (G: forall z, 0 < 2 ^ z). {
+      clear x.
+      induction z.
+      + constructor.
+      + cbn.
+        rewrite OpenNat.add_0_r.
+        rewrite <- OpenNat.add_0_r at 1.
+        unfold lt.
+        rewrite <- OpenNat.add_succ_l.
+        apply OpenNat.add_le_mono.
+        ++ apply OpenNat.le_0_n.
+        ++ exact IHz.
+    }
+    exact (G n).
+Defined.
 
-Lemma test_to_nat_eq
-  : test_to_nat = 255.
-Proof.
-  cbn.
-  reflexivity.
-Qed.
+Definition zero
+           (n: nat)
+  : mem n :=
+  box n 0.
+
+(** ** Unboxing
+
+ *)
+
+Definition unbox
+        {n: nat}
+        (x: mem n)
+  : nat :=
+  mem_val x.
+
+Definition cast
+           {n: nat}
+           (m: nat)
+           (x: mem n)
+  : mem m :=
+  box m (unbox x).
+
+(** ** Arithmetic
+
+ *)
+
+Definition add
+           {n: nat}
+           (x y: mem n)
+  : mem n :=
+  box n (unbox x + unbox y).
+
+Definition shiftl
+           {n: nat}
+           (x: mem n)
+           (b: nat)
+  : mem n :=
+    box n (Nat.shiftl (unbox x) b).
+
+Definition shiftr
+           {n: nat}
+           (x: mem n)
+           (b: nat)
+  : mem n :=
+    box n (Nat.shiftr (unbox x) b).
+
+Definition mle
+           {n: nat}
+           (x y: mem n)
+  : Prop :=
+  unbox x <= unbox y.
+
+Definition mleb
+           {n: nat}
+           (x y: mem n)
+  : bool :=
+  unbox x <=? unbox y.
+
+Definition mltb
+           {n: nat}
+           (x y: mem n)
+  : bool :=
+  unbox x <? unbox y.
+
+(** * Memory
+
+ *)
+
+Inductive Endianness : Type := BE | LE.
+
+Local Open Scope list_scope.
+
+Fixpoint split
+         (n: nat)
+         (x: mem (8 * n))
+         {struct n}
+  : list byte :=
+  match n with
+  | 0 => []
+  | S m => (cast 8 x)::(split m (cast (8 * m) (shiftr x 8)))
+  end.
 
 Program Definition split_word
-        (w: word)
-  : { o: (byte * byte) | forall i, i < 16 -> nth w i = nth (append (fst o) (snd o)) i }:=
-  (extract w 8 0, extract w 16 8).
-Next Obligation.
-  omega.
-Defined.
-Next Obligation.
-  omega.
-Defined.
-Next Obligation.
-  omega.
-Defined.
-Next Obligation.
-  destruct append.
-  cbn.
-  destruct take.
-  destruct drop.
-  destruct take.
-  cbn in *.
-  destruct drop.
-  cbn in *.
-  assert (
-      (i < 8 -> nth x i = nth x0 i) /\ (8 <= i -> nth x i = nth x2 (i - 8))
-    ) as H0 by apply a.
-  destruct H0.
-  destruct (lt_dec i 8).
-  + rewrite H0; [| exact l].
-    rewrite e; [| exact l].
-    rewrite e0; [| omega].
-    reflexivity.
-  + apply not_lt in n.
-    rewrite H1; [| omega].
-    remember (i - 8) as i'.
-    assert (i = S (S (S (S (S (S (S (S i')))))))) by omega.
-    rewrite H2.
-    rewrite <- e2; [| omega].
-    rewrite e1; [| omega].
-    reflexivity.
-Defined.
-
-(** We add a test to check that split_works can indeed be evaluate by
-    Coq.  If Coq hangs on that lemmas, it means we have introduced an
-    opaque lemmas in a key proof obligation.
-
- *)
-
-Program Definition test
+        (x: word)
   : byte * byte :=
-  split_word (Ox _FA_ _AB_).
-
-Program Lemma test_split
-  : test = (Ox _AB_, Ox _FA_).
-Proof.
-  vm_compute. (* vm_compute works, not cbn *)
-  reflexivity.
-Qed.
-
-(** * Addition
-
-    Define an addition which can actually be evaluated by Coq.
-
- *)
-
-Program Definition add_bit
-        {a: Type}
-        (b b': bit)
-        (c: bool)
-        (f: bit -> bool -> a)
-  : a :=
-  match b, b', c with
-  | false, false, false => f false false
-  | false, true, false => f true false
-  | true, false, false => f true false
-  | true, true, false => f false true
-  | false, false, true => f false true
-  | false, true, true => f false true
-  | true, false, true => f false true
-  | true, true, true => f true true
-  end.
-
-Program Fixpoint add_rec
-        {A: Type}
-        {n: nat}
-        (o o': mem n)
-        (f: mem (S n) -> bool -> A)
-        (b: bit)
-        (c: bool)
-        {measure n}
-  : A :=
-  match n with
-  | 0 => f (vcons b vnil) c
-  | S m => add_bit (@head bit m o) (@head bit m o') c (@add_rec A m (drop o 1) (drop o' 1) (fun v c' => f (vcons b v) c')) _
+  match split 2 x with
+  | b1 :: b2 :: nil => (b1, b2)
+  | _ => !
   end.
 Next Obligation.
-  apply le_n_S.
-  apply Peano.le_0_n.
-Defined.
-Next Obligation.
-  cbn.
-  apply OpenNat.sub_0_r.
-Defined.
-Next Obligation.
-  apply le_n_S.
-  apply Peano.le_0_n.
-Defined.
-Next Obligation.
-  cbn.
-  apply OpenNat.sub_0_r.
-Defined.
-
-Program Definition add
-        {n: nat}
-        (o o': mem n)
-  : mem n * bool :=
-  match n with
-  | 0 => (vnil, false)
-  | S m => add_bit (@head bit m o) (@head bit m o') false (add_rec (drop o 1) (drop o' 1) (fun v c' => (v, c')))
-  end.
-Next Obligation.
-  apply le_n_S.
-  apply Peano.le_0_n.
-Defined.
-Next Obligation.
-  cbn.
-  rewrite OpenNat.sub_0_r.
+  assert ([cast 8 x; cast 8 (cast 8 (shiftr x 8))] <> [cast 8 x; cast 8 (cast 8 (shiftr x 8))])
+    by apply H.
+  destruct H0.
   reflexivity.
 Defined.
 
-(** We add this test lemma to check that the addition can actually be
-    evaluated properly.
-
- *)
-
-Definition test_ff
-  : (mem 8 * bool) :=
-  add (Ox _FE_) (Ox _01_).
-
-Fact test_ff_eq
-  : fst test_ff = Ox _FF_.
-Proof.
-  vm_compute.
+Program Definition split_lword
+        (x: lword)
+  : byte * byte * byte * byte :=
+  match split 4 x with
+  | b1 :: b2 :: b3 :: b4 :: nil => (b1, b2, b3, b4)
+  | _ => !
+  end.
+Next Obligation.
+  assert (
+      [cast 8 x; cast 8 (cast 24 (shiftr x 8));
+      cast 8 (cast 16 (shiftr (cast 24 (shiftr x 8)) 8));
+      cast 8 (cast 8 (shiftr (cast 16 (shiftr (cast 24 (shiftr x 8)) 8)) 8))]
+        <>
+      [cast 8 x; cast 8 (cast 24 (shiftr x 8));
+      cast 8 (cast 16 (shiftr (cast 24 (shiftr x 8)) 8));
+      cast 8 (cast 8 (shiftr (cast 16 (shiftr (cast 24 (shiftr x 8)) 8)) 8))]
+    )
+    by apply H.
+  destruct H0.
   reflexivity.
-Qed.
+Defined.

@@ -1,4 +1,4 @@
--R libs/vector FreeSpec.Libs.Vector
+-R libs/coq-open-nat FreeSpec.Libs.OpenNat
 -R theories FreeSpec
 -R specs FreeSpec.Specs
 -R examples FreeSpec.Examples

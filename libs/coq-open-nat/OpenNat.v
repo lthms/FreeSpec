@@ -26,6 +26,16 @@ Proof.
     exact IHle.
 Defined.
 
+Lemma le_0_n
+      (n: nat)
+  : 0 <= n.
+Proof.
+  induction n.
+  + constructor.
+  + constructor.
+    apply IHn.
+Defined.
+
 Lemma le_trans
       (p q r: nat)
   : p <= q -> q <= r -> p <= r.
@@ -373,6 +383,43 @@ Proof.
   + now apply add_le_mono_l.
 Defined.
 
+Lemma pred_le_mono (n m: nat)
+  : n <= m -> Nat.pred n <= Nat.pred m.
+Proof.
+  revert m.
+  induction n.
+  + intros m H.
+    inversion H.
+    ++ constructor.
+    ++ cbn.
+       apply le_0_n.
+  + intros m H.
+    inversion H.
+    ++ constructor.
+    ++ subst.
+       cbn.
+       apply le_Sn_le in H.
+       apply (le_trans n (S n) m0).
+       +++ apply le_S.
+           constructor.
+       +++ exact H0.
+Defined.
+
+Lemma succ_le_mono
+      (n m: nat)
+  : n <= m <-> S n <= S m.
+Proof.
+  split.
+  + apply le_n_S.
+  + intros H.
+    induction m.
+    ++ inversion H; [ reflexivity
+                    | inversion H1
+                    ].
+    ++ apply le_S_n.
+       exact H.
+Defined.
+
 Lemma le_0_le_minus
       (n m: nat)
   : n <= m -> 0 <= m - n.
@@ -526,3 +573,18 @@ Proof.
   repeat apply le_Sn_le in H.
   exact H.
 Defined.
+
+Lemma mod_bound_pos
+      (x y: nat)
+  : 0 <= x -> 0 < y -> 0 <= x mod y < y.
+Proof.
+  intros H H'.
+  split.
+  + apply le_0_n.
+  + revert H H'. revert x.
+    induction y.
+    ++ intros x _H H.
+       inversion H.
+    ++ intros x H H'.
+       admit.
+Admitted.
