@@ -6,6 +6,7 @@ Require Import FreeSpec.WEq.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Contract.
+Require Import FreeSpec.Control.
 
 Local Open Scope free_weq_scope.
 
@@ -42,6 +43,28 @@ Infix "<+>" :=
   : free_scope.
 
 Local Open Scope free_scope.
+
+Fixpoint liftl
+         {I I': Interface}
+         {A: Type}
+         (p: Program I A)
+  : Program (I <+> I') A :=
+  match p with
+  | ret a => ret a
+  | instr i => instr (ileft i)
+  | pbind p f => pbind (liftl p) (fun x =>  liftl (f x))
+  end.
+
+Fixpoint liftr
+         {I I': Interface}
+         {A: Type}
+         (p: Program I' A)
+  : Program (I <+> I') A :=
+  match p with
+  | ret a => ret a
+  | instr i => instr (iright i)
+  | pbind p f => pbind (liftr p) (fun x =>  liftr (f x))
+  end.
 
 (** * Interpretation
 

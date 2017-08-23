@@ -17,6 +17,7 @@ theories/Control/State.v
 theories/Control/Reader.v
 theories/Control/Identity.v
 theories/PropBool.v
+theories/Undefined.v
 theories/WEq.v
 
 libs/coq-open-nat/OpenNat.v
