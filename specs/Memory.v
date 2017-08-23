@@ -170,3 +170,23 @@ Next Obligation.
   destruct H0.
   reflexivity.
 Defined.
+
+(** * Manipulation
+
+  *)
+
+Definition append
+           {n m:  nat}
+           (v:    mem n)
+           (v':   mem m)
+  : mem (n + m) :=
+  add (shiftl (cast (n + m) v') n)
+      (cast (n + m) v).
+
+Program Definition extract
+        {n:           nat}
+        (m:           mem n)
+        (offset:      nat | offset <= n)
+        (size:        nat | offset + size <= n)
+  : mem size :=
+  cast size (shiftr m offset).

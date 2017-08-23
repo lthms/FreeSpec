@@ -9,22 +9,28 @@ Definition SMRAMC_D_LCK : Type := mem 1.
 Definition SMRAMC_D_CLS : Type := mem 1.
 Definition SMRAMC_D_OPEN : Type := mem 1.
 
-Definition read_c_base_seg
-           (reg: SMRAMC)
+Program Definition read_c_base_seg
+        (reg: SMRAMC)
   : SMRAMC_C_BASE_SEG :=
-  cast 3 reg.
+  extract reg 0 3.
+Next Obligation.
+  apply OpenNat.le_0_n.
+Defined.
+Next Obligation.
+  repeat constructor.
+Defined.
 
 Program Definition read_d_lck
         (reg: SMRAMC)
   : SMRAMC_D_LCK :=
-  cast 1 (shiftr reg 4).
+  extract reg 4 1.
 
 Program Definition read_d_cls
         (reg: SMRAMC)
   : SMRAMC_D_LCK :=
-  cast 1 (shiftr reg 5).
+  extract reg 5 1.
 
 Program Definition read_d_open
         (reg: SMRAMC)
   : SMRAMC_D_OPEN :=
-  cast 1 (shiftr reg 6).
+  extract reg 6 1.
