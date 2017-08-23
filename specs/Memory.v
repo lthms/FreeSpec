@@ -22,6 +22,9 @@ Definition word := mem 16.
 Definition lword := mem 32.
 Definition qword := mem 64.
 
+Notation "x 'Byte'" := (x * 8) (at level 30, no associativity).
+Notation "x 'Bytes'" := (x * 8) (at level 30, no associativity).
+
 (** * Manipulation
 
     ** Boxing
