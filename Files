@@ -22,6 +22,7 @@ theories/WEq.v
 libs/coq-open-nat/OpenNat.v
 
 specs/Memory.v
+specs/Bitfield.v
 specs/Address.v
 specs/x86/MCH/SMRAMC.v
 specs/x86/MCH/MCH.v

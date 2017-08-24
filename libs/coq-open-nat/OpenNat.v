@@ -127,6 +127,54 @@ Proof.
   apply sub_0_r.
 Defined.
 
+Lemma pred_le_mono (n m: nat)
+  : n <= m -> Nat.pred n <= Nat.pred m.
+Proof.
+  revert m.
+  induction n.
+  + intros m H.
+    inversion H.
+    ++ constructor.
+    ++ cbn.
+       apply le_0_n.
+  + intros m H.
+    inversion H.
+    ++ constructor.
+    ++ subst.
+       cbn.
+       apply le_Sn_le in H.
+       apply (le_trans n (S n) m0).
+       +++ apply le_S.
+           constructor.
+       +++ exact H0.
+Defined.
+
+Lemma sub_le_mono_r (n m p: nat)
+  : n <= m -> n - p <= m - p.
+Proof.
+  revert n m.
+  induction p.
+  + intros n m H.
+    repeat rewrite sub_0_r.
+    exact H.
+  + intros n m H.
+    repeat rewrite sub_succ_r.
+    apply pred_le_mono.
+    apply IHp.
+    exact H.
+Defined.
+
+Lemma sub_diag
+      (n: nat)
+  : n - n = 0.
+Proof.
+  induction n.
+  + reflexivity.
+  + cbn.
+    rewrite IHn.
+    reflexivity.
+Defined.
+
 Lemma sub_succ_l
       (n m: nat)
   : n <= m
@@ -151,7 +199,12 @@ Proof.
     rewrite (S_pred (m - n) 0).
     cbn.
     reflexivity.
-    omega.
+    unfold lt.
+    apply (sub_le_mono_r (S n) m n) in H.
+    rewrite IHn in H.
+    ++ rewrite sub_diag in H.
+       exact H.
+    ++ apply le_refl.
 Defined.
 
 Lemma add_succ_r
@@ -233,17 +286,6 @@ Proof.
     exact H.
     apply le_Sn_le.
     exact H.
-Defined.
-
-Lemma sub_diag
-      (n: nat)
-  : n - n = 0.
-Proof.
-  induction n.
-  + reflexivity.
-  + cbn.
-    rewrite IHn.
-    reflexivity.
 Defined.
 
 Lemma sub_add: forall n m : nat, n <= m -> m - n + n = m.
@@ -381,28 +423,6 @@ Proof.
   apply le_trans with (q:=m + p).
   + now apply add_le_mono_r.
   + now apply add_le_mono_l.
-Defined.
-
-Lemma pred_le_mono (n m: nat)
-  : n <= m -> Nat.pred n <= Nat.pred m.
-Proof.
-  revert m.
-  induction n.
-  + intros m H.
-    inversion H.
-    ++ constructor.
-    ++ cbn.
-       apply le_0_n.
-  + intros m H.
-    inversion H.
-    ++ constructor.
-    ++ subst.
-       cbn.
-       apply le_Sn_le in H.
-       apply (le_trans n (S n) m0).
-       +++ apply le_S.
-           constructor.
-       +++ exact H0.
 Defined.
 
 Lemma succ_le_mono
@@ -574,17 +594,42 @@ Proof.
   exact H.
 Defined.
 
-Lemma mod_bound_pos
-      (x y: nat)
-  : 0 <= x -> 0 < y -> 0 <= x mod y < y.
+Lemma not_eq_S
+  : forall n, ~ S n = n.
 Proof.
-  intros H H'.
-  split.
-  + apply le_0_n.
-  + revert H H'. revert x.
-    induction y.
-    ++ intros x _H H.
-       inversion H.
-    ++ intros x H H'.
-       admit.
-Admitted.
+  induction n.
+  + intros H; discriminate H.
+  + intros H.
+    inversion H.
+    apply (IHn H1).
+Defined.
+
+Lemma nle_gt'
+      (n m: nat)
+  : m < n -> ~ n <= m.
+Proof.
+  intros H.
+  unfold lt in H.
+  intros H'.
+  assert (S m <= m). {
+    transitivity n; assumption.
+  }
+  inversion H0.
+  + apply not_eq_S in H1.
+    exact H1.
+  + apply le_Sn_le in H1.
+    apply Nat.nle_succ_diag_l in H1.
+    exact H1.
+Defined.
+
+Lemma le_le_add_le (n m p q: nat)
+  : n <= m
+    -> p + m <= q + n
+    -> p <= q.
+Proof.
+  intros H1 H2.
+  destruct (le_gt_dec p q); [assumption |].
+  contradict H2.
+  apply nle_gt'.
+  now apply Nat.add_lt_le_mono.
+Defined.
