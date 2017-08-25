@@ -11,7 +11,7 @@ Definition map_func
            (f:     b -> c)
            (g:     func a b)
   : func a c :=
-  f >>> g.
+  f <<< g.
 
 Instance func_Functor
          (a: Type)

@@ -94,8 +94,8 @@ Lemma state_functor_composition_identity
      `{WEq s}
       {a b c: Type}
      `{WEq c}
-      (u: a -> b)
-      (v: b -> c)
+      (u: b -> c)
+      (v: a -> b)
       (ps: StateT s m a)
   : state_map _ _ (u <<< v) ps == ((state_map _ _ u) <<< (state_map _ _ v)) ps.
 Proof.
@@ -103,13 +103,13 @@ Proof.
   unfold function_weq, state_map.
   intros x.
   assert (R1: (fun o : a * s => ((v >>> u) (fst o), snd o))
-              = ((fun o : b * s => (v (fst o), snd o))
-                   >>> (fun o : a * s => (u (fst o), snd o)))). {
+              = ((fun o : a * s => (v (fst o), snd o))
+                   >>> (fun o : b * s => (u (fst o), snd o)))). {
     apply functional_extensionality.
     intros y.
     destruct y.
     cbn.
-    assert (R2: ((fun o : b * s => (v (fst o), snd o)) >>> (fun o : a * s => (u (fst o), snd o)))
+    assert (R2: ((fun o : a * s => (v (fst o), snd o)) >>> (fun o : b * s => (u (fst o), snd o)))
                 = (fun o => ((v >>> u) (fst o), snd o))). {
       apply functional_extensionality.
       intros z.
@@ -282,7 +282,7 @@ Proof.
       repeat rewrite monad_bind_associativity.
       cbn.
       assert (R3: (fun x0
-                  => (u0 <- pure (fst y >>> fst x0, snd x0);
+                  => (u0 <- pure (fst y <<< fst x0, snd x0);
                       v0 <- w (snd u0); pure (fst u0 (fst v0), snd v0)))
                   == fun x0
                      => (v0 <- (v0 <- w (snd x0); pure (fst x0 (fst v0), snd v0));
@@ -293,7 +293,7 @@ Proof.
         repeat rewrite monad_bind_associativity.
         cbn.
         assert (R4: (fun (v0: a * s)
-                     => pure (f:=m) ((fst y >>> fst z) (fst v0), snd v0))
+                     => pure (f:=m) ((fst y <<< fst z) (fst v0), snd v0))
                     == (fun x0
                         => v0 <- pure (fst z (fst x0), snd x0); pure (fst y (fst v0), snd v0))). {
           cbn.

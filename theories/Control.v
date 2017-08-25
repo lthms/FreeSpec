@@ -21,8 +21,8 @@ Polymorphic Definition id
   : a :=
   x.
 
-Notation "f <<< g" := (compose g f) (at level 50).
-Notation "f >>> g" := (compose f g) (at level 50).
+Notation "f <<< g" := (compose f g) (at level 50).
+Notation "f >>> g" := (compose g f) (at level 50).
 (** * Functor
 
  *)
@@ -42,8 +42,8 @@ Class Functor
        : map (@id a) x == id x
      ; functor_composition_identity {a b c: Type}
                                    `{WEq c}
-                                    (u:     a -> b)
-                                    (v:     b -> c)
+                                    (u:     b -> c)
+                                    (v:     a -> b)
                                     (x:     f a)
        : map (u <<< v) x == ((map u) <<< (map v)) x
      }.
