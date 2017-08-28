@@ -10,6 +10,8 @@ Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.WEq.
 Require Import FreeSpec.Compose.
+Require Import FreeSpec.Specs.Bitfield.
+Require Import FreeSpec.Specs.x86.MCH.SMRAMC.
 
 Local Open Scope free_scope.
 Local Open Scope free_control_scope.
@@ -37,21 +39,34 @@ Inductive MCHi
 
 Inductive ConfAddr
   : Type :=
-| confaddr (bus:      nat)
-           (device:   nat)
-           (function: nat)
-           (register: nat)
+| confaddr (bus:        nat)
+           (device:     nat)
+           (function:   nat)
+           (register:   nat)
+           (pci_enable: bool)
   : ConfAddr.
 
-Axiom lword_to_confaddr
-  : lword -> option ConfAddr.
-Axiom confaddr_location
-  : word.
+Definition ConfAddr_bf
+  : Bitfield 32 ConfAddr :=
+  skip 1                 :;
+  register :<- field 7    ;
+  function :<- field 3    ;
+  device   :<- field 5    ;
+  bus      :<- field 8    ;
+  skip 7                 :;
+  pci      :<- bit        ;
+  bf_pure (confaddr bus device function register pci).
+
+Definition parse_confaddr
+           (w: lword)
+  : ConfAddr :=
+  parse ConfAddr_bf w.
 
 Inductive io_write32_target
   : Type :=
-| ConfAddr_tar
-| Invalid_tar.
+| ConfAddr_target
+| ConfData_target
+| Invalid_target.
 
 Axiom word_to_target
   : word -> option io_write32_target.
@@ -79,13 +94,20 @@ Definition mch_undefined
   : MCHm A :=
   undef (UndefMonad:=undefmonad_Trans _ _).
 
+Definition update_confaddr
+           (ca: ConfAddr)
+           (s: MCHs)
+  : MCHs :=
+  {| confAddr := ca
+   |}.
+
 Definition pio_out32
            (x: word)
            (val: lword)
   : MCHm unit :=
   match word_to_target x with
-  | Some ConfAddr_tar
-    => pure tt
+  | Some ConfAddr_target
+    => modify (update_confaddr (parse_confaddr val))
   | Some _ (* This is a valid target, but it has not been specified
               yet                                                   *)
     => mch_undefined
