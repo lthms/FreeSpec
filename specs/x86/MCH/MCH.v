@@ -12,6 +12,7 @@ Require Import FreeSpec.WEq.
 Require Import FreeSpec.Compose.
 Require Import FreeSpec.Specs.Bitfield.
 Require Import FreeSpec.Specs.x86.MCH.SMRAMC.
+Require Import FreeSpec.PropBool.
 
 Local Open Scope free_scope.
 Local Open Scope free_control_scope.
@@ -46,6 +47,59 @@ Inductive ConfAddr
            (pci_enable: bool)
   : ConfAddr.
 
+Definition confaddr_eqb
+           (c c': ConfAddr)
+  : bool :=
+  match c, c' with
+  | confaddr b d f r p, confaddr b' d' f' r' p'
+    =>  Nat.eqb b b'
+     && Nat.eqb d d'
+     && Nat.eqb f f'
+     && Nat.eqb r r'
+     && Bool.eqb p p'
+  end.
+
+Fact confaddr_eqb_refl
+     (c: ConfAddr)
+  : confaddr_eqb c c = true.
+Proof.
+  destruct c.
+  unfold confaddr_eqb.
+  repeat rewrite <- EqNat.beq_nat_refl.
+  rewrite Bool.eqb_reflx.
+  reflexivity.
+Qed.
+
+Instance confaddr_PropBoolP
+  : PropBool2 (@eq ConfAddr) (confaddr_eqb) :=
+  {
+  }.
+  intros c c'; split.
+  + intros H.
+    destruct c; destruct c'.
+    unfold confaddr_eqb in H.
+    Search (andb _ _ = true).
+    apply Bool.andb_true_iff in H; destruct H as [H H'].
+    apply Bool.andb_true_iff in H; destruct H as [H H''].
+    apply Bool.andb_true_iff in H; destruct H as [H H'''].
+    apply Bool.andb_true_iff in H; destruct H as [H H''''].
+    apply EqNat.beq_nat_true in H.
+    apply EqNat.beq_nat_true in H''.
+    apply EqNat.beq_nat_true in H'''.
+    apply EqNat.beq_nat_true in H''''.
+    apply Bool.eqb_prop in H'.
+    subst.
+    reflexivity.
+  + intros Heq.
+    rewrite Heq.
+    rewrite confaddr_eqb_refl.
+    reflexivity.
+Defined.
+
+Definition SMRAMC_Addr
+  : ConfAddr :=
+  confaddr 0 16 0 22 true. (* 16h *)
+
 Definition ConfAddr_bf
   : Bitfield 32 ConfAddr :=
   skip 1                 :;
@@ -73,6 +127,7 @@ Axiom word_to_target
 
 Record MCHs :=
   { confAddr: ConfAddr
+  ; smramc: SMRAMC
   }.
 
 Instance mchs_WEq
@@ -96,10 +151,27 @@ Definition mch_undefined
 
 Definition update_confaddr
            (ca: ConfAddr)
-           (s: MCHs)
-  : MCHs :=
-  {| confAddr := ca
-   |}.
+  : MCHm unit :=
+  modify (fun s
+          => {| confAddr := ca
+              ; smramc := smramc s
+              |}).
+
+Definition get_confaddr
+  : MCHm ConfAddr :=
+  gets confAddr.
+
+Definition update_smramc
+           (reg: SMRAMC)
+  : MCHm unit :=
+  modify (fun s
+          => {| confAddr := confAddr s
+              ; smramc := reg
+              |}).
+
+Definition get_smramc
+  : MCHm SMRAMC :=
+  gets smramc.
 
 Definition pio_out32
            (x: word)
@@ -107,10 +179,16 @@ Definition pio_out32
   : MCHm unit :=
   match word_to_target x with
   | Some ConfAddr_target
-    => modify (update_confaddr (parse_confaddr val))
-  | Some _ (* This is a valid target, but it has not been specified
-              yet                                                   *)
-    => mch_undefined
+    => update_confaddr (parse_confaddr val)
+  | Some ConfData
+    => confaddr <- get_confaddr                                      ;
+       match confaddr with
+       | confaddr 0 16 0 97 (* 61h *) true (* SMRAMC *)
+         => (* update_smramc (parse_smramc val) *)
+             mch_undefined
+       | _
+         => mch_undefined
+       end
   | Nothing (* An invalid IO out access is just ignore by the MCH   *)
     => pure tt
   end.
