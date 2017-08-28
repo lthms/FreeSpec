@@ -1,36 +1,28 @@
-Require Import FreeSpec.Specs.Memory.
 Require Import Coq.Program.Program.
-Require Import Omega.
 
-Definition SMRAMC : Type := byte.
+Require Import FreeSpec.Specs.Memory.
+Require Import FreeSpec.Specs.Bitfield.
 
-Definition SMRAMC_C_BASE_SEG : Type := mem 3.
-Definition SMRAMC_D_LCK : Type := mem 1.
-Definition SMRAMC_D_CLS : Type := mem 1.
-Definition SMRAMC_D_OPEN : Type := mem 1.
+Record SMRAMC :=
+  { d_lock: bool
+  ; d_open: bool
+  ; d_cls:  bool
+  }.
 
-Program Definition read_c_base_seg
-        (reg: SMRAMC)
-  : SMRAMC_C_BASE_SEG :=
-  extract reg 0 3.
-Next Obligation.
-  apply OpenNat.le_0_n.
-Defined.
-Next Obligation.
-  repeat constructor.
-Defined.
+Definition SMRAMC_bf
+  : Bitfield 8 SMRAMC :=
+  skip 4                  :;
+  d_lck  :<- bit           ;
+  d_cls  :<- bit           ;
+  d_open :<- bit           ;
+  skip 1                  :;
 
-Program Definition read_d_lck
-        (reg: SMRAMC)
-  : SMRAMC_D_LCK :=
-  extract reg 4 1.
+  bf_pure {| d_lock  := d_lck
+           ; d_open := d_open
+           ; d_cls  := d_cls
+           |}.
 
-Program Definition read_d_cls
-        (reg: SMRAMC)
-  : SMRAMC_D_LCK :=
-  extract reg 5 1.
-
-Program Definition read_d_open
-        (reg: SMRAMC)
-  : SMRAMC_D_OPEN :=
-  extract reg 6 1.
+Definition parse_smramc
+           (b: byte)
+  : SMRAMC :=
+  parse SMRAMC_bf b.
