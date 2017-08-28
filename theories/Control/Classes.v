@@ -1,6 +1,8 @@
 Require Import FreeSpec.Control.
 Require Import FreeSpec.WEq.
 
+Local Open Scope free_control_scope.
+
 (** * Monad Transformer
 
  *)
@@ -27,6 +29,24 @@ Class MonadState
 
 Arguments put [m s _] (_).
 Arguments get [m s _].
+
+Definition modify
+           {s: Type}
+           {m: Type -> Type}
+          `{MonadState m s}
+           (f: s -> s)
+  : m unit :=
+  x <- get                             ;
+  put (f x).
+
+Definition gets
+           {s a: Type}
+           {m:   Type -> Type}
+          `{MonadState m s}
+           (f: s -> a)
+  : m a :=
+  x <- get            ;
+  pure (f x).
 
 Instance monadtransform_state
          (t: forall (m: Type -> Type) `{Monad m}, Type -> Type)
