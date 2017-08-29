@@ -179,5 +179,3 @@ Definition SMRAMC_bf
     d_open :<- bit                   ;
     skip 1                          :;
     bf_pure (d_lck, d_cls, d_open)   .
-
-Eval vm_compute in (SMRAMC_bf 255).

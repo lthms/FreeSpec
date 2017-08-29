@@ -78,7 +78,6 @@ Instance confaddr_PropBoolP
   + intros H.
     destruct c; destruct c'.
     unfold confaddr_eqb in H.
-    Search (andb _ _ = true).
     apply Bool.andb_true_iff in H; destruct H as [H H'].
     apply Bool.andb_true_iff in H; destruct H as [H H''].
     apply Bool.andb_true_iff in H; destruct H as [H H'''].
