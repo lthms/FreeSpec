@@ -4,6 +4,7 @@ theories/MonadInterp.v
 theories/Program.v
 theories/Abstract.v
 theories/Contract.v
+theories/Contract/Reference.v
 theories/Compose.v
 theories/Refine.v
 theories/Contract/Constant.v
