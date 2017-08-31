@@ -1,10 +1,11 @@
-Require Import FreeSpec.Libs.OpenNat.OpenNat.
-Require Import FreeSpec.PropBool.
-
 Require Import Coq.Arith.Arith.
 Require Import Coq.Program.Program.
 Require Import Coq.Setoids.Setoid.
 Require Import Omega.
+
+Require Import FreeSpec.Libs.OpenNat.OpenNat.
+Require Import FreeSpec.PropBool.
+Require Import FreeSpec.WEq.
 
 (** * Definitions
 
@@ -72,6 +73,35 @@ Add Parametric Relation
     symmetry proved by mem_eq_sym
     transitivity proved by mem_eq_trans
       as mem_eq_rel.
+
+Instance mem_WEq
+         (n: nat)
+  : WEq (mem n) :=
+  { weq := @mem_eq n
+  }.
+
+Definition mem_bool
+           {n:     nat}
+           (m m':  mem n)
+  : bool :=
+  Nat.eqb (mem_val m) (mem_val m').
+
+Instance mem_bool_propbool
+         (n:  nat)
+  : PropBool2 (@mem_eq n) (@mem_bool n) :=
+  {
+  }.
+Proof.
+  intros m m'.
+  unfold mem_eq, mem_bool.
+  apply (Nat.eqb_eq (mem_val m) (mem_val m')).
+Defined.
+
+Instance mem_WEqBool
+         (n:  nat)
+  : WEqBool (mem n) :=
+  { weq_bool := @mem_bool n
+  }.
 
 (** * Manipulation
 
