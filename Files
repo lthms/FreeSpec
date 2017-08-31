@@ -27,6 +27,7 @@ specs/Bitfield.v
 specs/Address.v
 specs/x86/MCH/SMRAMC.v
 specs/x86/MCH/MCH.v
+specs/x86/MCH/MemStorage.v
 
 examples/Map.v
 examples/Smram.v
