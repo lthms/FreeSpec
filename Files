@@ -30,6 +30,8 @@ specs/x86/MCH/SMRAMC.v
 specs/x86/MCH/MCH.v
 specs/x86/MCH/MemStorage.v
 
+oracle/Oracle.v
+
 examples/Map.v
 examples/Smram.v
 

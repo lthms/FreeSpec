@@ -2,3 +2,4 @@
 -R theories FreeSpec
 -R specs FreeSpec.Specs
 -R examples FreeSpec.Examples
+-R oracle FreeSpec.Oracle
