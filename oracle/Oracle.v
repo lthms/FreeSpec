@@ -61,20 +61,18 @@ Definition step_ret
   | interpreter_step _ x => x
   end.
 
-Class InstructionGenerator
-      (M:  Type -> Type)
-      (I:  Interface) :=
-  { pick: (forall (A:  Type), I A -> bool) -> M (InterpreterStep I)
-  }.
-
+Definition instruction_picker
+           (M:  Type -> Type)
+           (I:  Interface) :=
+  (forall (A:  Type), I A -> bool) -> M (InterpreterStep I).
 
 Definition test_interpreter_once
-           {I:          Interface}
-           {S:          Type}
-           {M:          Type -> Type}
+           {I:     Interface}
+           {S:     Type}
+           {M:     Type -> Type}
           `{MonadState M S}
-          `{InstructionGenerator M I}
-           (c:  Contract S I)
+           (pick:  instruction_picker M I)
+           (c:     Contract S I)
           `{ContractBool S I c}
   : M (InterpreterStep I * bool) :=
   s    <- get                                                        ;
@@ -83,12 +81,12 @@ Definition test_interpreter_once
   pure (is, promises_bool c (step_instr is) (step_ret is) s).
 
 Fixpoint test_interpreter_aux
-         {I:          Interface}
-         {S:          Type}
-         {M:          Type -> Type}
+         {I:     Interface}
+         {S:     Type}
+         {M:     Type -> Type}
         `{MonadState M S}
-        `{InstructionGenerator M I}
-         (c:  Contract S I)
+         (pick:  instruction_picker M I)
+         (c:     Contract S I)
         `{ContractBool S I c}
          (n: nat)
          (l: list (InterpreterStep I))
@@ -97,21 +95,21 @@ Fixpoint test_interpreter_aux
   | O
     => pure (l, true)
   | S m
-    => res <- test_interpreter_once c                                ;
-       if snd res
-       then test_interpreter_aux c m (fst res :: l)
+    => res <- test_interpreter_once pick c                           ;
+       if (snd res: bool)
+       then test_interpreter_aux pick c m (fst res :: l)
        else pure (fst res :: l, false)
   end.
 
 Definition test_interpreter
-           {I:          Interface}
-           {S:          Type}
-           {M:          Type -> Type}
+           {I:     Interface}
+           {S:     Type}
+           {M:     Type -> Type}
           `{MonadState M S}
-          `{InstructionGenerator M I}
-           (c:  Contract S I)
+           (pick:  instruction_picker M I)
+           (c:     Contract S I)
           `{ContractBool S I c}
-           (n: nat)
-           (l: list (InterpreterStep I))
+           (n:     nat)
+           (l:     list (InterpreterStep I))
   : M (list (InterpreterStep I) * bool) :=
-  test_interpreter_aux c n nil.
+  test_interpreter_aux pick c n nil.
