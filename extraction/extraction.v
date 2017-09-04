@@ -9,4 +9,4 @@ Extraction Language Haskell.
 
 Extraction "FreeSpec"
            Program.Program Program.runProgram'
-           Map.IMap test_interpreter_once.
+           Map.IMap test_interpreter.
