@@ -27,22 +27,6 @@ Class ContractBool
 Arguments requirements_bool [S I] (c) [_ A] (_ _).
 Arguments promises_bool [S I] (c) [_ A] (_ _ _).
 
-Class InterfaceSelector
-      (Archetype:  Type)
-      (I:          Interface) :=
-  { ret_type  (a: Archetype)
-    : Type
-  ; at_least_one_primitive (a: Archetype)
-    : exists (i: I (ret_type a)), True
-  }.
-
-Class RandomGenerator
-      (M:  Type -> Type)
-      (A:  Type) :=
-  { pick: M A
-  ; pick_with: (A -> bool) -> M A
-  }.
-
 Inductive InterpreterStep
           (I:  Interface)
   : Type :=
@@ -53,37 +37,57 @@ Inductive InterpreterStep
 
 Arguments interpreter_step [I A] (i res).
 
+Definition step_type
+           {I:   Interface}
+           (is:  InterpreterStep I)
+  : Type :=
+  match is with
+  | @interpreter_step _ A _ _ => A
+  end.
+
+Definition step_instr
+           {I:   Interface}
+           (is:  InterpreterStep I)
+  : I (step_type is) :=
+  match is with
+  | interpreter_step i _ => i
+  end.
+
+Definition step_ret
+           {I:   Interface}
+           (is:  InterpreterStep I)
+  : step_type is :=
+  match is with
+  | interpreter_step _ x => x
+  end.
+
+Class InstructionGenerator
+      (M:  Type -> Type)
+      (I:  Interface) :=
+  { pick: (forall (A:  Type), I A -> bool) -> M (InterpreterStep I)
+  }.
+
+
 Definition test_interpreter_once
            {I:          Interface}
-           {Archetype:  Type}
            {S:          Type}
            {M:          Type -> Type}
-          `{InterfaceSelector Archetype I}
           `{MonadState M S}
-          `{MonadInterp I M}
-          `{RandomGenerator M Archetype}
-          `{forall (a:  Archetype), RandomGenerator M (I (ret_type a))}
+          `{InstructionGenerator M I}
            (c:  Contract S I)
           `{ContractBool S I c}
   : M (InterpreterStep I * bool) :=
   s    <- get                                                        ;
-  sel  <- pick                                                       ;
-  i    <- pick_with (fun (i:  I (ret_type sel))
-                     => requirements_bool c i s)                     ;
-  x    <- interpret i                                                ;
-  modify (abstract_step c i x)                                      ;;
-  pure (interpreter_step i x, promises_bool c i x s).
+  is   <- pick (fun {A:  Type} (i: I A) => requirements_bool c i s)  ;
+  modify (abstract_step c (step_instr is) (step_ret is))            ;;
+  pure (is, promises_bool c (step_instr is) (step_ret is) s).
 
 Fixpoint test_interpreter_aux
          {I:          Interface}
-         {Archetype:  Type}
          {S:          Type}
          {M:          Type -> Type}
-        `{InterfaceSelector Archetype I}
         `{MonadState M S}
-        `{MonadInterp I M}
-        `{RandomGenerator M Archetype}
-        `{forall (a:  Archetype), RandomGenerator M (I (ret_type a))}
+        `{InstructionGenerator M I}
          (c:  Contract S I)
         `{ContractBool S I c}
          (n: nat)
@@ -101,14 +105,10 @@ Fixpoint test_interpreter_aux
 
 Definition test_interpreter
            {I:          Interface}
-           {Archetype:  Type}
            {S:          Type}
            {M:          Type -> Type}
-          `{InterfaceSelector Archetype I}
           `{MonadState M S}
-          `{MonadInterp I M}
-          `{RandomGenerator M Archetype}
-          `{forall (a:  Archetype), RandomGenerator M (I (ret_type a))}
+          `{InstructionGenerator M I}
            (c:  Contract S I)
           `{ContractBool S I c}
            (n: nat)
