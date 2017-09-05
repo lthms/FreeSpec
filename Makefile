@@ -11,9 +11,9 @@ COQDOCFLAGS :=                                      \
 
 export COQDOCFLAGS
 
-.PHONY:all clean mrproper docs html tex
+.PHONY:all clean mrproper docs html tex hextraction
 
-all: $(SUBMAKE) $(SRC)
+all: hextraction $(SUBMAKE) $(SRC)
 	@(echo "[*] Compiling the project")
 	@(make -f $(SUBMAKE))
 
@@ -28,6 +28,7 @@ $(SUBMAKE): .make
 
 clean: $(SUBMAKE)
 	make -f $(SUBMAKE) clean
+	make -C libs/haskell-extraction clean
 
 mrproper: clean
 	rm .make
@@ -49,3 +50,6 @@ html:
 tex:
 	make -f $(SUBMAKE) all-gal.pdf
 	mv all-gal.pdf docs/$(NAME).pdf
+
+hextraction:
+	make -C libs/haskell-extraction

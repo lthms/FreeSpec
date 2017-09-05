@@ -1,0 +1,3 @@
+[submodule "libs/haskell-extraction"]
+	path = libs/haskell-extraction
+	url = git@gitlab.inria.fr:freespec/haskell-extraction.git
