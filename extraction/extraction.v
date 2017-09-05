@@ -11,6 +11,8 @@ Require Import HaskellExtraction.HaskellExtraction.
 
 Extraction Language Haskell.
 
+Hextraction , Map.IMap.
+
 Extraction "FreeSpec"
            Program.Program Program.runProgram'
            Map.IMap test_interpreter.

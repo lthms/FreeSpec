@@ -7,3 +7,4 @@ docs/html/*
 *.vo
 *.aux
 FreeSpec.hs
+OUT.coc
