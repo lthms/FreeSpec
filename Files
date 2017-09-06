@@ -13,6 +13,7 @@ theories/TemporalLogic/Notations.v
 theories/Contract/Temporal.v
 theories/Control.v
 theories/Control/Classes.v
+theories/Control/Option.v
 theories/Control/Function.v
 theories/Control/State.v
 theories/Control/Reader.v
