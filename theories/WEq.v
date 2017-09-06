@@ -475,3 +475,138 @@ Instance option_WEqBool
   : WEqBool (option a) :=
   { weq_bool := option_weq_bool
   }.
+
+(** * List
+
+ *)
+
+Inductive list_weq
+          {a:  Type}
+         `{WEq a}
+  : list a -> list a -> Prop :=
+| list_weq_cons (x y:   a)
+                (r r':  list a)
+                (Heq:   x == y)
+                (Heq':  list_weq r r')
+  : list_weq (cons x r) (cons y r')
+| list_weq_nil
+  : list_weq nil nil.
+
+Lemma list_weq_refl
+      {a:  Type}
+     `{WEq a}
+      (l:  list a)
+  : list_weq l l.
+Proof.
+  induction l.
+  + constructor.
+  + constructor; [ reflexivity
+                 | exact IHl
+                 ].
+Qed.
+
+Lemma list_weq_sym
+      {a:     Type}
+     `{WEq a}
+      (l l':  list a)
+  : list_weq l l'
+    -> list_weq l' l.
+Proof.
+  intros Heq; induction Heq.
+  + constructor.
+    ++ symmetry; exact Heq.
+    ++ exact IHHeq.
+  + constructor.
+Qed.
+
+Lemma list_weq_trans
+      {a:     Type}
+     `{WEq a}
+      (l l' l'':  list a)
+  : list_weq l l'
+    -> list_weq l' l''
+    -> list_weq l l''.
+Proof.
+  revert l' l''.
+  induction l; intros l' l''.
+  + intros Heq Heq'.
+    inversion Heq; subst.
+    inversion Heq'; subst.
+    constructor.
+  + intros Heq Heq'.
+    inversion Heq; subst.
+    inversion Heq'; subst.
+    constructor.
+    ++ rewrite Heq0.
+       exact Heq1.
+    ++ apply (IHl r' r'0 Heq'0 Heq'1).
+Qed.
+
+Add Parametric Relation
+    (a:  Type)
+   `{WEq a}
+  : (list a) (list_weq)
+    reflexivity  proved by list_weq_refl
+    symmetry     proved by list_weq_sym
+    transitivity proved by list_weq_trans
+      as list_web_equiv.
+
+Instance list_WEq
+         (a:  Type)
+        `{WEq a}
+  : WEq (list a) :=
+  { weq := list_weq
+  }.
+
+Fixpoint list_weq_bool
+         {a:     Type}
+        `{WEqBool a}
+         (l l':  list a)
+  : bool :=
+  match l, l' with
+  | cons x r, cons x' r'
+    => (x ?= x') && (list_weq_bool r r')
+  | nil, nil
+    => true
+  | _, _
+    => false
+  end.
+
+Instance list_weq_propbool
+         (a:  Type)
+        `{WEqBool a}
+  : PropBool2 (@weq (list a) _) list_weq_bool :=
+  {
+  }.
++ induction a0; induction b.
+  ++ split; reflexivity.
+  ++ split; [ discriminate |].
+     intros Hf; inversion Hf.
+  ++ split; [ discriminate |].
+     intros Hf; inversion Hf.
+  ++ split.
+     +++ intros Hweq.
+         apply Bool.andb_true_iff in Hweq.
+         fold list_weq_bool in Hweq.
+         destruct Hweq as [H1 H2].
+         constructor.
+         ++++ apply pred_bool_pred_2.
+              exact H1.
+         ++++ apply IHa0 in H2.
+              exact H2.
+     +++ intros Heq.
+         inversion Heq; subst.
+         apply Bool.andb_true_iff.
+         fold list_weq_bool.
+         apply pred_bool_pred_2 in Heq0.
+         split; [ exact Heq0 |].
+         apply IHa0.
+         exact Heq'.
+Qed.
+
+Instance list_WEqBool
+         (a:  Type)
+        `{WEqBool a}
+  : WEqBool (list a) :=
+  {
+  }.
