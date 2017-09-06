@@ -422,7 +422,7 @@ Section SMRAM_EXAMPLE.
                   rewrite (H a' Hsmram).
                   reflexivity.
          +++ case_eq (addr_eq_bool a a'); intro Heq.
-             ++++ apply pred_bool_pred_2 in Heq.
+             ++++ apply (pred_bool_pred_2 a a') in Heq.
                   rewrite Heq in Hsmram'.
                   apply (pred_bool_false_1 Smram Smram_bool a') in Hsmram'.
                   apply Hsmram' in Hsmram.
@@ -445,7 +445,7 @@ Section SMRAM_EXAMPLE.
              rewrite (H a' Hsmram).
              reflexivity.
          +++ case_eq (addr_eq_bool a a'); intro Heq.
-             ++++ apply pred_bool_pred_2 in Heq.
+             ++++ apply (pred_bool_pred_2 a a') in Heq.
                   rewrite Heq in Hsmram'.
                   apply (pred_bool_false_1 Smram Smram_bool a') in Hsmram'.
                   apply Hsmram' in Hsmram.

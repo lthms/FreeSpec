@@ -1,6 +1,5 @@
-Require Import Coq.Classes.Equivalence.
 Require Import Coq.Setoids.Setoid.
-Require Import Coq.Bool.Bool.
+Require Import Coq.Arith.PeanoNat.
 
 Require Import FreeSpec.PropBool.
 
@@ -32,7 +31,82 @@ Notation "a /= b" :=
 
 Local Open Scope free_weq_scope.
 
-(** ** Function Instances
+(** * Weaker Decidable Equality
+
+    Sometimes, it is not enough to have an equality. Thus, we
+    introduce the notion of weaker decidable equality. It comes in two
+    “flavors”: one based on sumbool and one based on bool.
+
+ *)
+
+Class WEqDec
+      (A: Type)
+     `{WEq A} :=
+  { weq_dec (a a': A): {weq a a'} + {~weq a a'}
+  }.
+
+Arguments weq_dec [A _ _] (_ _).
+
+Infix "=?" :=
+  weq_dec
+    (at level 70, no associativity)
+  : free_weq_scope.
+
+Class WEqBool
+      (A: Type)
+     `{WEq A} :=
+  { weq_bool (a a': A): bool
+  ; weq_bool_is_bool_prop :> PropBool2 (@weq A _) weq_bool
+  }.
+
+Arguments weq_bool [A _ _] (_ _).
+
+Lemma weq_bool_weq
+      {A:    Type}
+     `{WEqBool A}
+      (a a': A)
+  : weq_bool a a' = true <-> weq a a'.
+Proof.
+  apply pred_bool_pred_2.
+Qed.
+
+Lemma weq_bool_refl
+      {A: Type}
+     `{WEqBool A}
+      (a: A)
+  : weq_bool a a = true.
+Proof.
+  apply weq_bool_weq.
+  reflexivity.
+Qed.
+
+Lemma weq_bool_false
+      {A:    Type}
+     `{WEqBool A}
+      (a a': A)
+  : weq_bool a a' = false <-> ~weq a a'.
+Proof.
+  split.
+  + intros Hweq_bool Hweq.
+    apply (weq_bool_weq a a') in Hweq.
+    rewrite Hweq in Hweq_bool.
+    discriminate.
+  + intros Hnweq.
+    case_eq (weq_bool a a'); intro Heq.
+    ++ apply weq_bool_weq in Heq.
+       apply Hnweq in Heq.
+       destruct Heq.
+    ++ reflexivity.
+Qed.
+
+Infix "?=" :=
+  weq_bool
+    (at level 70, no associativity)
+  : free_weq_scope.
+
+(** * Instances
+
+    ** Function Instances
 
  *)
 
@@ -203,75 +277,201 @@ Proof.
                ].
 Qed.
 
-(** * Weaker Decidable Equality
+Definition tuple_weq_bool
+           {a b:  Type}
+          `{WEqBool a}
+          `{WEqBool b}
+           (x y:  a * b)
+  : bool :=
+  (fst x ?= fst y) && (snd x ?= snd y).
 
-    Sometimes, it is not enough to have an equality. Thus, we
-    introduce the notion of weaker decidable equality. It comes in two
-    “flavors”: one based on sumbool and one based on bool.
+Instance tuple_PropBool
+         (a b:  Type)
+        `(WEqBool a)
+        `(WEqBool b)
+  : PropBool2 (@tuple_weq a b _ _) (@tuple_weq_bool a b _ _ _ _) :=
+  {
+  }.
++ intros x y.
+  unfold tuple_weq_bool.
+  unfold tuple_weq.
+  split.
+  ++ intros Hbool.
+     apply andb_prop in Hbool.
+     destruct Hbool as [Hb Hb'].
+     apply pred_bool_pred_2 in Hb.
+     apply pred_bool_pred_2 in Hb'.
+     split; [ exact Hb | exact Hb' ].
+  ++ intros [Hp Hp'].
+     apply pred_bool_pred_2 in Hp.
+     apply pred_bool_pred_2 in Hp'.
+     apply andb_true_intro.
+     split; [ exact Hp | exact Hp' ].
+Defined.
+
+(** ** Nat
 
  *)
 
-Class WEqDec
-      (A: Type)
-     `{WEq A} :=
-  { weq_dec (a a': A): {weq a a'} + {~weq a a'}
+Instance nat_WEq
+  : WEq nat :=
+  { weq := eq
   }.
 
-Arguments weq_dec [A _ _] (_ _).
+Instance nat_eq_eqb_PropBool2
+  : PropBool2 (@eq nat) (Nat.eqb) :=
+  {
+  }.
++ apply Nat.eqb_eq.
+Defined.
 
-Infix "=?" :=
-  weq_dec
-    (at level 70, no associativity)
-  : free_weq_scope.
-
-Class WEqBool
-      (A: Type)
-     `{WEq A} :=
-  { weq_bool (a a': A): bool
-  ; weq_bool_is_bool_prop :> PropBool2 (@weq A _) weq_bool
+Instance nat_WEqBool
+  : WEqBool nat :=
+  { weq_bool := Nat.eqb
   }.
 
-Arguments weq_bool [A _ _] (_ _).
+(** * Bool
 
-Lemma weq_bool_weq
-      {A:    Type}
-     `{WEqBool A}
-      (a a': A)
-  : weq_bool a a' = true <-> weq a a'.
-Proof.
-  apply pred_bool_pred_2.
-Qed.
+ *)
 
-Lemma weq_bool_refl
-      {A: Type}
-     `{WEqBool A}
-      (a: A)
-  : weq_bool a a = true.
+Instance bool_WEq
+  : WEq bool :=
+  { weq := eq
+  }.
+
+Instance bool_eq_eqb_PropBool2
+  : PropBool2 (@eq bool) (Bool.eqb) :=
+  {
+  }.
++ apply Bool.eqb_true_iff.
+Defined.
+
+Instance bool_WEqBool
+  : WEqBool bool :=
+  { weq_bool := Bool.eqb
+  }.
+
+(** * Option
+
+ *)
+
+Inductive option_weq
+          {a:    Type}
+         `{WEq a}
+  : option a -> option a -> Prop :=
+| option_weq_some (x:    a)
+                  (y:    a)
+                  (Heq:  x == y)
+  : option_weq (Some x) (Some y)
+| option_weq_none
+  : option_weq None None.
+
+Lemma option_weq_refl
+      {a:  Type}
+     `{WEq a}
+      (x:  option a)
+  : option_weq x x.
 Proof.
-  apply weq_bool_weq.
+  destruct x; constructor.
   reflexivity.
 Qed.
 
-Lemma weq_bool_false
-      {A:    Type}
-     `{WEqBool A}
-      (a a': A)
-  : weq_bool a a' = false <-> ~weq a a'.
+Lemma option_weq_sym
+      {a:    Type}
+     `{WEq a}
+      (x y:  option a)
+  : option_weq x y
+    -> option_weq y x.
 Proof.
-  split.
-  + intros Hweq_bool Hweq.
-    apply (weq_bool_weq a a') in Hweq.
-    rewrite Hweq in Hweq_bool.
-    discriminate.
-  + intros Hnweq.
-    case_eq (weq_bool a a'); intro Heq.
-    ++ apply weq_bool_weq in Heq.
-       apply Hnweq in Heq.
-       destruct Heq.
-    ++ reflexivity.
+  intro Heq.
+  destruct x; inversion Heq; constructor.
+  symmetry; exact Heq0.
 Qed.
 
-Infix "?=" :=
-  weq_bool
-    (at level 70, no associativity)
-  : free_weq_scope.
+Lemma option_weq_trans
+      {a:      Type}
+     `{WEq a}
+      (x y z:  option a)
+  : option_weq x y
+    -> option_weq y z
+    -> option_weq x z.
+Proof.
+  intros Heq Heq'.
+  induction Heq'.
+  + induction x.
+    ++ constructor.
+       inversion Heq.
+       rewrite <- Heq0.
+       exact Heq1.
+    ++ inversion Heq.
+  + inversion Heq.
+    constructor.
+Qed.
+
+Add Parametric Relation
+    (a:  Type)
+   `{WEq a}
+  : (option a) (option_weq)
+    reflexivity proved by   option_weq_refl
+    symmetry proved by      option_weq_sym
+    transitivity proved by  option_weq_trans
+      as option_weq_relation.
+
+Instance option_WEq
+         (a:  Type)
+        `{WEq a}
+  : WEq (option a) :=
+  { weq := option_weq
+  }.
+
+Add Parametric Morphism
+    (a:  Type)
+   `{WEq a}
+  : (@Some a)
+    with signature (@weq a _) ==> (@weq (option a) _)
+      as some_weq_morphism.
+  + intros x y Heq.
+    constructor.
+    exact Heq.
+Qed.
+
+Definition option_weq_bool
+           {a:    Type}
+          `{WEqBool a}
+           (x y:  option a)
+  : bool :=
+  match x, y with
+  | Some x, Some y
+    => x ?= y
+  | None, None
+    => true
+  | _, _
+    => false
+  end.
+
+Instance option_weq_bool_prop
+         (a:  Type)
+        `{WEqBool a}
+  : PropBool2 (@weq (option a) _) (@option_weq_bool a _ _) :=
+  {
+  }.
++ intros x y.
+  split; [ intro Hb | intro Hp ].
+  ++ destruct x; induction y; try discriminate.
+     +++ constructor.
+         apply pred_bool_pred_2.
+         exact Hb.
+     +++ constructor.
+  ++ induction Hp.
+     +++ cbn.
+         apply pred_bool_pred_2.
+         exact Heq.
+     +++ reflexivity.
+Defined.
+
+Instance option_WEqBool
+         (a:  Type)
+        `{WEqBool a}
+  : WEqBool (option a) :=
+  { weq_bool := option_weq_bool
+  }.
