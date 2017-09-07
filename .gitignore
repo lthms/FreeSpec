@@ -8,3 +8,4 @@ docs/html/*
 *.aux
 FreeSpec.hs
 OUT.coc
+extraction/hs/*.hs
