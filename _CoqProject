@@ -4,3 +4,4 @@
 -R examples FreeSpec.Examples
 -R oracle FreeSpec.Oracle
 -R libs/haskell-extraction/theories HaskellExtraction
+-R poc FreeSpec.PoC

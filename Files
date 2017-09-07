@@ -19,6 +19,8 @@ theories/Control/Function.v
 theories/Control/State.v
 theories/Control/Reader.v
 theories/Control/Identity.v
+theories/Control/IO.v
+theories/Control/IO/ExtrHaskell.v
 theories/PropBool.v
 theories/Undefined.v
 theories/WEq.v
@@ -36,5 +38,8 @@ oracle/Oracle.v
 
 examples/Map.v
 examples/Smram.v
+
+poc/CoqMain.v
+poc/extraction.v
 
 extraction/extraction.v
