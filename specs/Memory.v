@@ -11,8 +11,8 @@ Require Import FreeSpec.WEq.
 
  *)
 
-Program Record mem
-        (n: nat)
+Record mem
+       (n: nat)
   : Type :=
   mkMem { mem_val: nat
         ; mem_bound: mem_val < 2 ^ n
@@ -369,11 +369,3 @@ Definition append
   : mem (n + m) :=
   add (shiftl (cast (n + m) v') n)
       (cast (n + m) v).
-
-Program Definition extract
-        {n:           nat}
-        (m:           mem n)
-        (offset:      nat | offset <= n)
-        (size:        nat | offset + size <= n)
-  : mem size :=
-  cast size (shiftr m offset).

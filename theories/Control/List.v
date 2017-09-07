@@ -9,19 +9,27 @@ Local Open Scope list_scope.
 (* WORK IN PROGRESS *)
 
 Fixpoint list_map
-         (a b:  Type)
+         {a b:  Type}
          (f:    a -> b)
          (l:    list a)
   : list b :=
   match l with
   | nil
     => nil
-  | x :: r => (f x) :: (list_map a b f r)
+  | x :: r => (f x) :: (list_map f r)
   end.
+
+Lemma list_map_nil
+      {a b:  Type}
+      (f:    a -> b)
+  : list_map f nil = nil.
+Proof.
+  reflexivity.
+Qed.
 
 Instance list_Functor
   : Functor list :=
-  { map := list_map
+  { map := @list_map
   }.
 + intros a Ha x.
   induction x; constructor.
@@ -34,7 +42,7 @@ Instance list_Functor
 Defined.
 
 Definition list_pure
-           (a:  Type)
+           {a:  Type}
            (x:  a)
   : list a :=
   x :: nil.
@@ -92,13 +100,13 @@ Fixpoint list_join
   end.
 
 Fixpoint list_app
-         (a b:  Type)
+         {a b:  Type}
          (f:    list (a -> b))
          (l:    list a)
   : list b :=
   match f with
   | f :: r
-    => concat (f <$> l) (list_app a b r l)
+    => concat (f <$> l) (list_app r l)
   | nil
     => nil
   end.
@@ -106,7 +114,7 @@ Fixpoint list_app
 Lemma list_app_nil
       {a b:  Type}
       (f:    list (a -> b))
-  : list_app a b f nil = nil.
+  : list_app f nil = nil.
 Proof.
   induction f.
   + reflexivity.
@@ -116,8 +124,8 @@ Qed.
 
 Instance list_Applicative
   : Applicative list :=
-  { pure := list_pure
-  ; apply := list_app
+  { pure := @list_pure
+  ; apply := @list_app
   }.
 + intros a Ha v.
   induction v.
@@ -126,10 +134,4 @@ Instance list_Applicative
      reflexivity.
      exact IHv.
 + intros a b c Hc u v w.
-  cbn.
-  rewrite concat_nil.
-  induction w.
-  ++ repeat rewrite list_app_nil.
-     reflexivity.
-  ++ repeat rewrite list_app_cons.
 Admitted.
