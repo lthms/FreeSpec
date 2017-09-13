@@ -21,7 +21,14 @@ Local Open Scope free_prog_scope.
 Local Open Scope free_control_scope.
 
 (** This Example is here to show how to create a Component which
-    relies on two separated interfaces.
+    relies on two separated interfaces. To do that, we take the
+    example of the SMRAM protection by the Memory Controller. The
+    current example simplifies *a lot* both the Memory Controller and
+    how it works. Keep in mind it is just a showcase to get a quick
+    understanding on how FreeSpec works and what you can do with it.
+
+    If you want to see a more in-depth example, you can have a look at
+    [FreeSpec.Specs.x86.MCH] and related.
 
  *)
 
@@ -33,9 +40,7 @@ Section SMRAM_EXAMPLE.
 
       This is an example, not a real proof of concept. Therefore, we
       do not really care about code extraction and could easily work
-      with axioms.
-
-      We don’t really care which addresses and values we
+      with axioms.  We don’t really care which addresses and values we
       consider. However, we really want to know when one address falls
       into the SMRAM.
     *)
@@ -87,6 +92,11 @@ Section SMRAM_EXAMPLE.
     { smram_lock: bool
     }.
 
+  Instance mch_WEq
+    : WEq (MCH) :=
+    { weq := eq
+    }.
+
   (** ** Required Interfaces
 
       Our Memory Controller is used as a memory proxy. It receives
@@ -107,11 +117,6 @@ Section SMRAM_EXAMPLE.
       so, we first define several helper programs.
 
    *)
-
-  Instance mch_WEq
-    : WEq (MCH) :=
-    { weq := eq
-    }.
 
   Definition read_dram
              (a: Addr)
@@ -261,6 +266,8 @@ Section SMRAM_EXAMPLE.
 
   (** ** Definition
 
+    We can now put all the different pieces together.
+
    *)
 
   Definition smram_contract
@@ -280,10 +287,16 @@ Section SMRAM_EXAMPLE.
       sub-contract, which will basically describe who it is supposed
       to work.
 
+      The state is a simple map from addresses to values. This is a
+      very straightforward and natural (but inefficient, but we really
+      don't care about that for this example) way to model a key-value
+      store.
+
    *)
 
   Definition DRAMState
     := Addr -> Value.
+
 
   Definition DRAM_step
              (A: Type)
@@ -301,7 +314,8 @@ Section SMRAM_EXAMPLE.
       => s
     end.
 
-  (** We do not need any requirements on the DRAM Interface...
+  (** We do not need any requirements on the DRAM Interface. This is
+      mostly because we only describe how it works.
 
    *)
 
@@ -313,7 +327,9 @@ Section SMRAM_EXAMPLE.
     True.
 
   (** But we need the result of the Read primitive to stay
-  synchronized with the abstract step.
+      synchronized with the abstract step. This is because we will use
+      the primitives introduces in [FreeSpec.Refine] library. See, in
+      particular, [sync_pred].
 
    *)
 
@@ -334,6 +350,11 @@ Section SMRAM_EXAMPLE.
       => fun _ => True
     end (eq_refl A).
 
+  (** We then put all the pieces together to build a contract for the
+      DRAM Controller.
+
+   *)
+
   Definition dram_contract
     : Contract DRAMState IDRAM :=
     {| abstract_step := DRAM_step
@@ -341,11 +362,60 @@ Section SMRAM_EXAMPLE.
      ; promises      := DRAM_promises
      |}.
 
+  (** But, remember, the MCH is a proxy and roots memory accesses to
+      either the DRAM controller (we have taken care of this one) _or
+      the VGA controller_.
+
+      The thing is, we will later prove not matter how the VGA
+      controller behaves, it does not interfere with the functionning
+      of the MCH and the SMRAM protection. This works because:
+
+        - We know exactly how the MCH is using both the DRAM
+          Controller and the VGA Controller (the refinement)
+        - We consider the VGA Controller and the DRAM Controller are
+          totally independent (this is explicit because we have two
+          interfaces).
+
+      The [FreeSpec.Compose] library provides a convenient helper to
+      expand a contract of a given contract to make it usable to check
+      against more complex specifications that rely on other
+      Interfaces as well: [expand_contact_left]. It also provides
+      other helpers, see the module documentation for more
+      informations about them.
+
+   *)
+
   Definition smram_subcontract
     : Contract DRAMState (IDRAM <+> IVGA) :=
     expand_contract_left (dram_contract) IVGA.
 
   (** ** Predicate of Synchronization
+
+      Before going any further, you need to have a clear idea of how
+      the [FreeSpec.Refine] library works. In a few words, all the
+      proofs logic relies on a so-called predicate of synchronization
+      (see [sync_pred]). This predicate is specific to each refinement
+      and it allows to reason by induction. Basically, you show that
+      if all the considered states (the abstract state of your main
+      contract, the concrete state of your specifications and the
+      abstract states of the subcontracts) are “synchronized“, if you
+      have to handle an instruction that is allowed by the main
+      contract ([requirements]), then
+
+        - The states stay synchronized after the instruction has been
+          executed.
+        - You only uses instructions that are allowed by the
+          subcontracts when interacting with the subcomponents
+        - The instuction result matches the contract [promises]
+
+
+      Here, our predicate of synchronization is two-folded:
+
+        - We need the MCH to be “locked” (that is, the protection of
+          the SMRAM is enable and working)
+        - We need the MCH abstract view of the SMRAM to match the
+          current abstract view of the SMRAM inside the DRAM
+          controller
 
  *)
 
@@ -372,6 +442,18 @@ Section SMRAM_EXAMPLE.
 
   Ltac next := repeat (try constructor; cbn; trivial).
 
+  (** Our goal is to be able to use the [enforcer_refinement] lemma,
+      we therefore prove its premises, which are summarized in the
+      introduction of this section.
+
+      First, we only use the underlying interfaces in a way that
+      respect the subcontracts. As a reminder, a refinement is
+      basically a translation from one interface into a program of
+      sub-interfaces. We therefore check these programs comply with
+      the subcontract previously introduced.
+
+   *)
+
   Lemma mch_specs_compliant_refinement
     : compliant_refinement mch_refine
                            smram_contract
@@ -392,6 +474,12 @@ Section SMRAM_EXAMPLE.
       rewrite andb_true_r.
       destruct (Smram_bool a); next.
   Qed.
+
+  (** Then, we prove the predicate of synchronization is effectively
+      an invariant preserved by the [requirements] predicate of the
+      main contract.
+
+   *)
 
   Lemma mch_specs_sync_preservation
     : sync_preservation mch_refine
@@ -454,6 +542,15 @@ Section SMRAM_EXAMPLE.
                   rewrite (H a' Hsmram).
                   reflexivity.
   Qed.
+
+  (** Finally, we check all this work and constrains brings the
+      expected result, that is the [promises] predicate. In other
+      word, if the caller does its job, then the component (here, the
+      MCH) does its job too. In this example, the promises is that an
+      unprivileged write cannot tamper with the SMRAM content as seen
+      by the privileged reads.
+
+ *)
 
   Lemma mch_specs_sync_promises
     : sync_promises mch_refine
