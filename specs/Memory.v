@@ -27,9 +27,6 @@ Definition word := mem 16.
 Definition lword := mem 32.
 Definition qword := mem 64.
 
-Notation "x 'Byte'" := (x * 8) (at level 30, no associativity).
-Notation "x 'Bytes'" := (x * 8) (at level 30, no associativity).
-
 Inductive mem_eq
           {n:     nat}
           (m m':  mem n)
@@ -142,11 +139,6 @@ Next Obligation.
   apply Nat.pow_nonzero.
   intro H; discriminate.
 Qed.
-
-Definition zero
-           (n: nat)
-  : mem n :=
-  box n 0.
 
 (** ** Unboxing
 
@@ -768,3 +760,15 @@ Proof.
   rewrite <- join_word_upper_lower_eq.
   reflexivity.
 Qed.
+
+(** * Coercion
+
+ *)
+
+Definition make_byte: nat -> byte := box 8.
+Definition make_word: nat -> word := box 16.
+Definition make_lword: nat -> lword := box 32.
+
+Coercion make_byte:   nat >-> byte.
+Coercion make_word:   nat >-> word.
+Coercion make_lword:  nat >-> lword.
