@@ -352,17 +352,60 @@ Definition upper_half
   : mem n :=
   cast n (shiftr x n).
 
+Add Parametric Morphism
+    (n:  nat)
+  : (upper_half n) with signature (@mem_eq (2*n)) ==> (@mem_eq n)
+      as upper_half_morphism.
+Proof.
+  intros [x Hx] [y Hy] [Heq].
+  cbn in Heq.
+  constructor.
+  unfold upper_half, cast, shiftr, box, unbox.
+  cbn.
+  subst.
+  reflexivity.
+Qed.
+
 Definition lower_half
            (n:  nat)
            (x:  mem (2 * n))
   : mem n :=
   cast n x.
 
+Add Parametric Morphism
+    (n:  nat)
+  : (lower_half n) with signature (@mem_eq (2*n)) ==> (@mem_eq n)
+      as lower_half_morphism.
+Proof.
+  intros [x Hx] [y Hy] [Heq].
+  cbn in Heq.
+  constructor.
+  unfold lower_half, cast, shiftr, box, unbox.
+  cbn.
+  subst.
+  reflexivity.
+Qed.
+
 Definition join
            (n:    nat)
            (h l:  mem n)
   : mem (2 * n) :=
   add (cast (2 * n) l) (shiftl (cast (2 * n) h) n).
+
+Add Parametric Morphism
+    (n:  nat)
+  : (join n) with signature (@mem_eq n) ==> (@mem_eq n) ==> (@mem_eq (2*n))
+      as join_morphism.
+Proof.
+  intros [x Hx] [y Hy] [Heq].
+  intros [x' Hx'] [y' Hy'] [Heq'].
+  cbn in *.
+  constructor.
+  unfold join, cast, shiftl, box, unbox.
+  cbn.
+  subst.
+  reflexivity.
+Qed.
 
 Lemma pow_pos
       (a b:  nat)
@@ -527,36 +570,201 @@ Proof.
     ++ apply Nat.pow_le_mono_r; omega.
 Qed.
 
-Program Definition split_word
-        (x: word)
-  : byte * byte :=
-  (upper_half 8 x, lower_half 8 x).
+Definition upper_word_half
+           (x:  word)
+  : byte :=
+  upper_half 8 x.
 
-Program Definition split_lword
-        (x: lword)
-  : byte * byte * byte * byte :=
-  (fst (split_word (upper_half 16 x)),
-   snd (split_word (upper_half 16 x)),
-   fst (split_word (lower_half 16 x)),
-   snd (split_word (lower_half 16 x))
-   ).
+Add Parametric Morphism
+  : upper_word_half with signature (@mem_eq 16) ==> (@mem_eq 8)
+      as upper_word_morphism.
+Proof.
+  intros x y Heq.
+  unfold upper_word_half.
+  rewrite Heq.
+  reflexivity.
+Qed.
 
-Definition qfst
-           {A B C D:  Type}
-  : A * B * C * D -> A :=
-  fst <<< fst <<< fst.
+Definition lower_word_half
+           (x:  word)
+  : byte :=
+  lower_half 8 x.
 
-Definition qsnd
-           {A B C D:  Type}
-  : A * B * C * D -> B :=
-  snd <<< fst <<< fst.
+Add Parametric Morphism
+  : lower_word_half with signature (@mem_eq 16) ==> (@mem_eq 8)
+      as lower_word_morphism.
+Proof.
+  intros x y Heq.
+  unfold lower_word_half.
+  rewrite Heq.
+  reflexivity.
+Qed.
 
-Definition qthrd
-           {A B C D:  Type}
-  : A * B * C * D -> C :=
-  snd <<< fst.
+Definition join_bytes_to_word
+           (b b':  byte)
+  : word :=
+  join 8 b b'.
 
-Definition qlst
-           {A B C D:  Type}
-  : A * B * C * D -> D :=
-  snd.
+Add Parametric Morphism
+  : join_bytes_to_word with signature (@mem_eq 8) ==> (@mem_eq 8) ==> (@mem_eq 16)
+      as join_bytes_to_word_morphism.
+Proof.
+  intros x y Heq x' y' Heq'.
+  unfold join_bytes_to_word.
+  rewrite Heq.
+  rewrite Heq'.
+  reflexivity.
+Qed.
+
+Lemma join_bytes_upper_lower_eq
+      (x:  word)
+  : mem_eq x (join_bytes_to_word (upper_word_half x) (lower_word_half x)).
+Proof.
+  unfold join_bytes_to_word, upper_word_half, lower_word_half.
+  apply (split_merge_eq 8 x).
+Qed.
+
+Definition upper_lword_half
+           (l:  lword)
+  : word :=
+  upper_half 16 l.
+
+Add Parametric Morphism
+  : upper_lword_half with signature (@mem_eq 32) ==> (@mem_eq 16)
+      as upper_lword_morphism.
+Proof.
+  intros x y Heq.
+  unfold upper_lword_half.
+  rewrite Heq.
+  reflexivity.
+Qed.
+
+Definition lower_lword_half
+           (l:  lword)
+  : word :=
+  lower_half 16 l.
+
+Add Parametric Morphism
+  : lower_lword_half with signature (@mem_eq 32) ==> (@mem_eq 16)
+      as lower_lword_morphism.
+Proof.
+  intros x y Heq.
+  unfold lower_lword_half.
+  rewrite Heq.
+  reflexivity.
+Qed.
+
+Definition join_words_to_lword
+           (w w':  word)
+  : lword :=
+  join 16 w w'.
+
+Add Parametric Morphism
+  : join_words_to_lword with signature (@mem_eq 16) ==> (@mem_eq 16) ==> (@mem_eq 32)
+      as join_words_to_word_morphism.
+Proof.
+  intros x y Heq x' y' Heq'.
+  unfold join_bytes_to_word.
+  rewrite Heq.
+  rewrite Heq'.
+  reflexivity.
+Qed.
+
+Lemma join_word_upper_lower_eq
+      (x:  lword)
+  : mem_eq x (join_words_to_lword (upper_lword_half x) (lower_lword_half x)).
+Proof.
+  unfold join_words_to_lword, upper_word_half, lower_word_half.
+  apply (split_merge_eq 16 x).
+Qed.
+
+Definition lword_quarter_4
+           (l:  lword)
+  : byte :=
+  upper_word_half (upper_lword_half l).
+
+Add Parametric Morphism
+  : lword_quarter_4 with signature (@mem_eq 32) ==> (@mem_eq 8)
+      as lword_quarter_4_morphism.
+Proof.
+  intros x y Heq.
+  unfold lword_quarter_4.
+  rewrite Heq.
+  reflexivity.
+Qed.
+
+Definition lword_quarter_3
+           (l:  lword)
+  : byte :=
+  lower_word_half (upper_lword_half l).
+
+Add Parametric Morphism
+  : lword_quarter_3 with signature (@mem_eq 32) ==> (@mem_eq 8)
+      as lword_quarter_3_morphism.
+Proof.
+  intros x y Heq.
+  unfold lword_quarter_3.
+  rewrite Heq.
+  reflexivity.
+Qed.
+
+Definition lword_quarter_2
+           (l:  lword)
+  : byte :=
+  upper_word_half (lower_lword_half l).
+
+Add Parametric Morphism
+  : lword_quarter_2 with signature (@mem_eq 32) ==> (@mem_eq 8)
+      as lword_quarter_2_morphism.
+Proof.
+  intros x y Heq.
+  unfold lword_quarter_2.
+  rewrite Heq.
+  reflexivity.
+Qed.
+
+Definition lword_quarter_1
+           (l:  lword)
+  : byte :=
+  lower_word_half (lower_lword_half l).
+
+Add Parametric Morphism
+  : lword_quarter_1 with signature (@mem_eq 32) ==> (@mem_eq 8)
+      as lword_quarter_1_morphism.
+Proof.
+  intros x y Heq.
+  unfold lword_quarter_1.
+  rewrite Heq.
+  reflexivity.
+Qed.
+
+Definition join_bytes_to_lword
+           (b4 b3 b2 b1:  byte)
+  : lword :=
+  join_words_to_lword (join_bytes_to_word b4 b3) (join_bytes_to_word b2 b1).
+
+Add Parametric Morphism
+  : join_bytes_to_lword with signature (@mem_eq 8) ==> (@mem_eq 8) ==> (@mem_eq 8) ==> (@mem_eq 8) ==> (@mem_eq 32)
+      as join_bytes_to_lword_morphism.
+Proof.
+  intros b4 b4' Heq4
+         b3 b3' Heq3
+         b2 b2' Heq2
+         b1 b1' Heq1.
+  unfold join_bytes_to_lword.
+  rewrite Heq1; rewrite Heq2; rewrite Heq3; rewrite Heq4.
+  reflexivity.
+Qed.
+
+Lemma join_bytes_lword_eq
+      (x:  lword)
+  : mem_eq x (join_bytes_to_lword (lword_quarter_4 x)
+                                  (lword_quarter_3 x)
+                                  (lword_quarter_2 x)
+                                  (lword_quarter_1 x)).
+Proof.
+  unfold join_bytes_to_lword, lword_quarter_4, lword_quarter_3, lword_quarter_2, lword_quarter_1.
+  repeat rewrite <- join_bytes_upper_lower_eq.
+  rewrite <- join_word_upper_lower_eq.
+  reflexivity.
+Qed.
