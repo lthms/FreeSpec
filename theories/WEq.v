@@ -29,6 +29,18 @@ Notation "a /= b" :=
     (at level 70, no associativity)
   : free_weq_scope.
 
+Lemma not_weq_sym
+      {A:    Type}
+     `{WEq A}
+      (x y:  A)
+  : ~ weq x y -> ~weq y x.
+Proof.
+  intros Hneq Heq.
+  symmetry in Heq.
+  apply Hneq in Heq.
+  exact Heq.
+Qed.
+
 Local Open Scope free_weq_scope.
 
 (** * Weaker Decidable Equality
@@ -97,6 +109,15 @@ Proof.
        apply Hnweq in Heq.
        destruct Heq.
     ++ reflexivity.
+Qed.
+
+Lemma weq_bool_false_rewrite
+      {A:    Type}
+     `{WEqBool A}
+      (x y:  A)
+  : ~ weq x y -> weq_bool x y = false.
+Proof.
+  apply weq_bool_false.
 Qed.
 
 Infix "?=" :=
