@@ -1,0 +1,12 @@
+.stack-work/
+src/Classes.hs
+src/Compose.hs
+src/Control.hs
+src/Datatypes.hs
+src/MCH.hs
+src/Memory.hs
+src/MemStorage.hs
+src/Program.hs
+src/State.hs
+src/Undefined.hs
+src/WEq.hs

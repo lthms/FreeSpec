@@ -14,8 +14,12 @@ export COQDOCFLAGS
 .PHONY:all clean mrproper docs html tex
 
 all: $(SUBMAKE) $(SRC)
-	@(echo "[*] Compiling the project")
+	@(echo "[*] Compiling the Coq source tree")
 	@(make -f $(SUBMAKE))
+	@(echo "[*] Compiling the Haskell Proof of Concept")
+	@(make -C poc/poc-hs)
+	@(echo "[*] Compiling the x86 emulator")
+	@(make -C specs/x86/x86-hs)
 
 $(SUBMAKE): .make
 	@(echo "[*] Generating $(SUBMAKE)")

@@ -34,6 +34,8 @@ specs/Address.v
 specs/x86/MCH/SMRAMC.v
 specs/x86/MCH/MCH.v
 specs/x86/MCH/MemStorage.v
+specs/x86.v
+specs/x86/extraction.v
 
 oracle/Oracle.v
 
