@@ -53,8 +53,13 @@ Instance mchs_WEq
     cannot find the typeclass instance any longer.
 
  *)
-Notation "'MCHm' A":= (StateT MCHs (Program (MSi 16 <+> Undefined)) A)
-                        (at level 30).
+
+Definition PCIi := MSi 16.
+
+Definition MCHm
+           (A:  Type)
+  : Type :=
+  StateT MCHs (Program (PCIi <+> Undefined)) A.
 
 (* We have to help a little Coq here. See #16 for more information on
    this matter *)
@@ -63,38 +68,44 @@ Definition mch_undefined
   : MCHm A :=
   undef (UndefMonad:=undefmonad_Trans _ _).
 
+Definition pci_do
+           {A:  Type}
+           (i:  PCIi A)
+  : MCHm A :=
+  '[ileft i].
+
 Definition pio_out8
            (x:  word)
            (v:  byte)
   : MCHm unit :=
-   '[ileft (write_byte x v)].
+  pci_do $ write_byte x v.
 
 Definition pio_out16
            (x:  word)
            (v:  word)
   : MCHm unit :=
-  '[ileft (write_word x v)].
+  pci_do $ write_word x v.
 
 Definition pio_out32
            (x:  word)
            (v:  lword)
   : MCHm unit :=
-  '[ileft (write_lword x v)].
+  pci_do $ write_lword x v.
 
 Definition pio_in8
            (x:  word)
   : MCHm byte :=
-   '[ileft (read_byte x)].
+  pci_do $ read_byte x.
 
 Definition pio_in16
            (x:  word)
   : MCHm word :=
-   '[ileft (read_word x)].
+   pci_do $ read_word x.
 
 Definition pio_in32
            (x:  word)
   : MCHm lword :=
-   '[ileft (read_lword x)].
+  pci_do $ read_lword x.
 
 Definition mch_specs
   : StatefulRefinement MCHi (MSi 16 <+> Undefined) MCHs :=
