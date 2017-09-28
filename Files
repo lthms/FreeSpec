@@ -11,6 +11,7 @@ theories/Contract/Constant.v
 theories/TemporalLogic.v
 theories/TemporalLogic/Notations.v
 theories/Contract/Temporal.v
+theories/Contract/Undefined.v
 theories/Control.v
 theories/Control/Classes.v
 theories/Control/Option.v
