@@ -1,15 +1,13 @@
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Logic.Eqdep.
 Require Import Coq.Program.Equality.
+Require Import Coq.NArith.NArith.
 
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Classes.
-Require Import FreeSpec.Control.Identity.
-Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Specs.Memory.
 Require Import FreeSpec.WEq.
 
-Require Import Omega.
+Local Close Scope nat_scope.
+Local Open Scope N_scope.
 
 (** * Definitions
 
@@ -23,9 +21,9 @@ Require Import Omega.
  *)
 
 Definition Bitfield
-           (m: nat)
+           (m: N)
            (A: Type)
-  := nat -> A.
+  := N -> A.
 
 (** To actually perform the computation, that is parsing some kind of
     memory to read the specified bitfield, the prefered way is to use
@@ -36,7 +34,7 @@ Definition Bitfield
 
 Definition parse
            {A: Type}
-           {n:  nat}
+           {n:  N}
            (bf: Bitfield n A)
            (x:  mem n)
   : A :=
@@ -57,22 +55,22 @@ Definition bf_pure
            {A: Type}
            (a: A)
   : Bitfield 0 A :=
-  fun (n: nat)
+  fun (n:  N)
   => a.
 
 Definition bf_bind
-           {m m': nat}
+           {m m': N}
            {A B: Type}
            (bf: Bitfield m A)
            (f: A -> Bitfield m' B)
   : Bitfield (m + m') B :=
-  fun (n: nat)
-  => (f (bf n)) (Nat.shiftr n m).
+  fun (n:  N)
+  => (f (bf n)) (N.shiftr n m).
 
 Definition field
-        (m: nat)
-  : Bitfield m nat :=
-  fun (n: nat)
+        (m: N)
+  : Bitfield m N :=
+  fun (n:  N)
   => n mod 2 ^ m.
 
 (** Indexed Monads are no Monad according to the definition of
@@ -96,7 +94,7 @@ Notation "p :; q" := (p :>>= fun _ => q)
  *)
 
 Definition skip
-        (m: nat)
+        (m: N)
   : Bitfield m unit :=
   field m :;
   bf_pure tt.
@@ -104,7 +102,7 @@ Definition skip
 Definition bit
   : Bitfield 1 bool :=
     x :<- field 1            ;
-    if Nat.eqb x 0
+    if N.eqb x 0
     then bf_pure false
     else bf_pure true.
 
@@ -141,7 +139,7 @@ Definition bit
 
 Definition bf_apply
            {A B: Type}
-           {n m: nat}
+           {n m: N}
            (bff: Bitfield n (A -> B))
            (bf: Bitfield m A)
   : Bitfield (n + m) B :=
@@ -156,7 +154,7 @@ Definition bf_apply
 
 Fact bitfield_applicative_identity
      {A: Type}
-     {m: nat}
+     {m: N}
      (x: Bitfield m A)
   : bf_apply (bf_pure id) x = x.
 Proof.

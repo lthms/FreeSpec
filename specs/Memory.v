@@ -1,10 +1,8 @@
-Require Import Coq.Arith.Arith.
+Require Import Coq.NArith.NArith.
 Require Import Coq.Program.Program.
 Require Import Coq.Setoids.Setoid.
 Require Import Omega.
-Require Import FreeSpec.Control.
 
-Require Import FreeSpec.Libs.OpenNat.OpenNat.
 Require Import FreeSpec.PropBool.
 Require Import FreeSpec.WEq.
 
@@ -12,10 +10,13 @@ Require Import FreeSpec.WEq.
 
  *)
 
+Local Close Scope nat_scope.
+Local Open Scope N_scope.
+
 Record mem
-       (n: nat)
+       (n: N)
   : Type :=
-  mkMem { mem_val: nat
+  mkMem { mem_val: N
         ; mem_bound: mem_val < 2 ^ n
         }.
 
@@ -28,14 +29,14 @@ Definition lword := mem 32.
 Definition qword := mem 64.
 
 Inductive mem_eq
-          {n:     nat}
+          {n:     N}
           (m m':  mem n)
   : Prop :=
 | mem_val_eq (H:  mem_val m = mem_val m')
   : mem_eq m m'.
 
 Lemma mem_eq_refl
-      {n: nat}
+      {n: N}
       (m: mem n)
   : mem_eq m m.
 Proof.
@@ -44,7 +45,7 @@ Proof.
 Qed.
 
 Lemma mem_eq_sym
-      {n: nat}
+      {n: N}
       (m m': mem n)
   : mem_eq m m' -> mem_eq m' m.
 Proof.
@@ -55,7 +56,7 @@ Proof.
 Qed.
 
 Lemma mem_eq_trans
-      {n: nat}
+      {n: N}
       (m m' m'': mem n)
   : mem_eq m m'
     -> mem_eq m' m''
@@ -69,7 +70,7 @@ Proof.
 Qed.
 
 Add Parametric Relation
-    (n: nat)
+    (n: N)
   : (mem n) (@mem_eq n)
     reflexivity proved by mem_eq_refl
     symmetry proved by mem_eq_sym
@@ -77,19 +78,19 @@ Add Parametric Relation
       as mem_eq_rel.
 
 Instance mem_WEq
-         (n: nat)
+         (n: N)
   : WEq (mem n) :=
   { weq := @mem_eq n
   }.
 
 Definition mem_bool
-           {n:     nat}
+           {n:     N}
            (m m':  mem n)
   : bool :=
-  Nat.eqb (mem_val m) (mem_val m').
+  N.eqb (mem_val m) (mem_val m').
 
 Add Parametric Morphism
-    (n:  nat)
+    (n:  N)
   : mem_bool with signature (@mem_eq n) ==> (@mem_eq n) ==> eq
       as mem_bool_morphism.
   intros x x' [Heq] y y' [Heq'].
@@ -99,7 +100,7 @@ Add Parametric Morphism
 Qed.
 
 Instance mem_bool_propbool
-         (n:  nat)
+         (n:  N)
   : PropBool2 (@mem_eq n) (@mem_bool n) :=
   {
   }.
@@ -109,16 +110,16 @@ Proof.
   + intro H.
     constructor.
     unfold mem_bool in H.
-    apply (Nat.eqb_eq (mem_val m) (mem_val m')).
+    apply (N.eqb_eq (mem_val m) (mem_val m')).
     exact H.
   + intros [H].
     unfold mem_bool.
-    apply (Nat.eqb_eq (mem_val m) (mem_val m')).
+    apply (N.eqb_eq (mem_val m) (mem_val m')).
     exact H.
 Defined.
 
 Instance mem_WEqBool
-         (n:  nat)
+         (n:  N)
   : WEqBool (mem n) :=
   { weq_bool := @mem_bool n
   }.
@@ -129,14 +130,14 @@ Instance mem_WEqBool
 
  *)
 Program Definition box
-        (n x: nat)
+        (n x: N)
   : mem n :=
   {| mem_val := x mod (2 ^ n)
    ; mem_bound := _
    |}.
 Next Obligation.
-  apply Nat.mod_upper_bound.
-  apply Nat.pow_nonzero.
+  apply N.mod_upper_bound.
+  apply N.pow_nonzero.
   intro H; discriminate.
 Qed.
 
@@ -145,13 +146,13 @@ Qed.
  *)
 
 Definition unbox
-        {n: nat}
+        {n: N}
         (x: mem n)
-  : nat :=
+  : N :=
   mem_val x.
 
 Add Parametric Morphism
-    (n:  nat)
+    (n:  N)
   : (@unbox n) with signature (@mem_eq n) ==> eq
       as unbox_morphism.
   intros x y [Heq].
@@ -160,15 +161,15 @@ Add Parametric Morphism
 Qed.
 
 Definition cast
-           {n: nat}
-           (m: nat)
+           {n: N}
+           (m: N)
            (x: mem n)
   : mem m :=
   box m (unbox x).
 
 Add Parametric Morphism
-    (n: nat)
-    (m: nat)
+    (n: N)
+    (m: N)
   : (@cast n m)
     with signature (@mem_eq n) ==> eq
       as cast_morphism.
@@ -181,7 +182,7 @@ Proof.
 Defined.
 
 Lemma cast_same_size_eq
-      {n: nat}
+      {n: N}
       (x: mem n)
   : mem_eq (cast n x) x.
 Proof.
@@ -191,12 +192,12 @@ Proof.
   constructor.
   destruct x as [x Hbound].
   cbn.
-  apply Nat.mod_small.
+  apply N.mod_small.
   exact Hbound.
 Qed.
 
 Lemma cast_cast_is_cast
-      {n m:  nat}
+      {n m:  N}
       (x:    mem n)
   : mem_eq (cast m (cast m x)) (cast m x).
 Proof.
@@ -207,8 +208,8 @@ Proof.
   unfold mem_val.
   constructor.
   unfold mem_val.
-  rewrite Nat.mod_mod; [ reflexivity |].
-  apply Nat.pow_nonzero.
+  rewrite N.mod_mod; [ reflexivity |].
+  apply N.pow_nonzero.
   intro H; discriminate.
 Qed.
 
@@ -217,13 +218,13 @@ Qed.
  *)
 
 Definition add
-           {n: nat}
+           {n: N}
            (x y: mem n)
   : mem n :=
   box n (unbox x + unbox y).
 
 Add Parametric Morphism
-    (n: nat)
+    (n: N)
   : (@add n)
     with signature (@mem_eq n) ==> (@mem_eq n) ==> (@mem_eq n)
       as add_morphism.
@@ -236,14 +237,14 @@ Proof.
 Defined.
 
 Definition shiftl
-           {n: nat}
+           {n: N}
            (x: mem n)
-           (b: nat)
+           (b: N)
   : mem n :=
-    box n (Nat.shiftl (unbox x) b).
+    box n (N.shiftl (unbox x) b).
 
 Add Parametric Morphism
-    (n: nat)
+    (n: N)
   : (@shiftl n)
     with signature (@mem_eq n) ==> eq ==> (@mem_eq n)
       as shiftl_morphism.
@@ -255,14 +256,14 @@ Proof.
 Defined.
 
 Definition shiftr
-           {n: nat}
+           {n: N}
            (x: mem n)
-           (b: nat)
+           (b: N)
   : mem n :=
-    box n (Nat.shiftr (unbox x) b).
+    box n (N.shiftr (unbox x) b).
 
 Add Parametric Morphism
-    (n: nat)
+    (n:  N)
   : (@shiftr n)
     with signature (@mem_eq n) ==> eq ==> (@mem_eq n)
       as shiftr_morphism.
@@ -274,7 +275,7 @@ Proof.
 Defined.
 
 Lemma shiftr_0_eq
-      {n: nat}
+      {n: N}
       (x: mem n)
   : mem_eq (shiftr x 0) x.
 Proof.
@@ -285,19 +286,19 @@ Proof.
 Qed.
 
 Definition mle
-           {n: nat}
+           {n: N}
            (x y: mem n)
   : Prop :=
   unbox x <= unbox y.
 
 Definition mleb
-           {n: nat}
+           {n: N}
            (x y: mem n)
   : bool :=
   unbox x <=? unbox y.
 
 Definition mltb
-           {n: nat}
+           {n: N}
            (x y: mem n)
   : bool :=
   unbox x <? unbox y.
@@ -307,7 +308,7 @@ Definition mltb
   *)
 
 Definition append
-           {n m:  nat}
+           {n m:  N}
            (v:    mem n)
            (v':   mem m)
   : mem (n + m) :=
@@ -315,7 +316,7 @@ Definition append
       (cast (n + m) v).
 
 Add Parametric Morphism
-    (n m:  nat)
+    (n m:  N)
   : (@append n m) with signature mem_eq ==> mem_eq ==> mem_eq
       as append_morphism.
   intros x x' [Heq] y y' [Heq'].
@@ -339,13 +340,13 @@ Qed.
  *)
 
 Definition upper_half
-           (n:  nat)
+           (n:  N)
            (x:  mem (2 * n))
   : mem n :=
   cast n (shiftr x n).
 
 Add Parametric Morphism
-    (n:  nat)
+    (n:  N)
   : (upper_half n) with signature (@mem_eq (2*n)) ==> (@mem_eq n)
       as upper_half_morphism.
 Proof.
@@ -359,13 +360,13 @@ Proof.
 Qed.
 
 Definition lower_half
-           (n:  nat)
+           (n:  N)
            (x:  mem (2 * n))
   : mem n :=
   cast n x.
 
 Add Parametric Morphism
-    (n:  nat)
+    (n:  N)
   : (lower_half n) with signature (@mem_eq (2*n)) ==> (@mem_eq n)
       as lower_half_morphism.
 Proof.
@@ -379,13 +380,13 @@ Proof.
 Qed.
 
 Definition join
-           (n:    nat)
+           (n:    N)
            (h l:  mem n)
   : mem (2 * n) :=
   add (cast (2 * n) l) (shiftl (cast (2 * n) h) n).
 
 Add Parametric Morphism
-    (n:  nat)
+    (n:  N)
   : (join n) with signature (@mem_eq n) ==> (@mem_eq n) ==> (@mem_eq (2*n))
       as join_morphism.
 Proof.
@@ -400,113 +401,116 @@ Proof.
 Qed.
 
 Lemma pow_pos
-      (a b:  nat)
+      (a b:  N)
   : 0 < a -> 0 < a ^ b.
 Proof.
   intros H.
-  apply neq_0_lt.
-  apply Nat.neq_sym.
-  eapply Nat.pow_nonzero.
-  apply lt_0_neq in H.
-  apply Nat.neq_sym.
+  apply N.neq_0_lt_0.
+  eapply N.pow_nonzero.
+  apply N.neq_0_lt_0 in H.
   exact H.
 Qed.
 
 Lemma shiftr_reduces
-      {n m:  nat}
-  : Nat.shiftr n m <= n.
+      {n m:  N}
+  : N.shiftr n m <= n.
 Proof.
   revert n.
-  induction m.
+  induction m using N.peano_rect.
   + cbn.
     reflexivity.
   + intros n.
     cbn.
-    apply Nat.div2_decr.
-    transitivity n.
+    rewrite N.shiftr_succ_r.
+    transitivity (N.shiftr n m).
+    ++ rewrite N.div2_div.
+       apply N.div_le_upper_bound.
+       +++ intro False.
+           discriminate.
+       +++ rewrite <- (N.mul_1_r (N.shiftr n m)) at 1.
+           rewrite (N.mul_comm 2 _).
+           apply N.mul_le_mono_nonneg_l; [ apply N.le_0_l
+                                         | firstorder
+                                         ].
+           apply N.le_succ_diag_r.
     ++ apply IHm.
-    ++ constructor.
-       reflexivity.
 Qed.
 
 Lemma div2_prop
-      (x r:  nat)
+      (x r:  N)
       (H:    x < 2 ^ r)
-  : Nat.div2 x < 2 ^ Nat.pred r.
+  : N.div2 x < 2 ^ N.pred r.
 Proof.
-  apply <- (Nat.mul_lt_mono_pos_l 2); [| omega ].
-  apply (Nat.le_lt_trans (2 * Nat.div2 x) x).
-  + transitivity (2 * Nat.div2 x + Nat.b2n (Nat.odd x)).
-    ++ omega.
-    ++ rewrite <- (Nat.div2_odd x).
-       reflexivity.
-  + induction r.
-    ++ cbn in *.
-       omega.
-    ++ cbn.
-       rewrite add_0_r.
-       assert (Heq:  2 ^ r + 2 ^ r = 2 * (2 ^ r)) by omega.
-       rewrite Heq.
-       rewrite <- Nat.pow_succ_r.
-       exact H.
-       omega.
+  apply <- (N.mul_lt_mono_pos_l 2).
+  + apply (N.le_lt_trans (2 * N.div2 x) x).
+    ++ transitivity (2 * N.div2 x + N.b2n (N.odd x)).
+       +++ apply N.le_add_r.
+       +++ rewrite <- (N.div2_odd x).
+           reflexivity.
+    ++ induction r using N.peano_rect.
+       +++ cbn in *.
+           transitivity 1; [ exact H |].
+           apply N.lt_1_2.
+       +++ rewrite N.pred_succ.
+           rewrite <- N.pow_succ_r.
+           exact H.
+           apply N.le_0_l.
+  + exact N.lt_0_2.
 Qed.
 
 Lemma shiftr_reduces'
-      {x n m: nat}
+      {x n m: N}
       (H: x < 2 ^ n)
-  : Nat.shiftr x m < 2 ^ (n - m).
+  : N.shiftr x m < 2 ^ (n - m).
 Proof.
   revert x n H.
-  induction m.
-  + cbn.
-    intros x n H.
-    rewrite sub_0_r.
+  induction m using N.peano_rect.
+  + intros x n H.
+    rewrite N.sub_0_r.
     exact H.
   + intros x n H.
-    cbn.
-    remember (Nat.shiftr x m) as x'.
-    cbn in x'.
-    assert (H':  Nat.shiftr x m < 2 ^ (n - m)). {
+    remember (N.shiftr x m) as x'.
+    assert (H':  N.shiftr x m < 2 ^ (n - m)). {
       apply IHm.
       exact H.
     }
     rewrite <- Heqx' in H'.
-    rewrite Nat.sub_succ_r.
+    rewrite N.sub_succ_r.
     remember (n - m) as r.
+    rewrite N.shiftr_succ_r.
     apply div2_prop.
+    rewrite <- Heqx'.
     exact H'.
 Qed.
 
 Lemma shiftl_shiftr_div
-      (x n:  nat)
-  : Nat.shiftl (Nat.shiftr x n) n = (2 ^ n) * (x / (2 ^ n)).
+      (x n:  N)
+  : N.shiftl (N.shiftr x n) n = (2 ^ n) * (x / (2 ^ n)).
 Proof.
-  rewrite Nat.shiftr_div_pow2.
-  rewrite Nat.shiftl_mul_pow2.
-  apply Nat.mul_comm.
+  rewrite N.shiftr_div_pow2.
+  rewrite N.shiftl_mul_pow2.
+  apply N.mul_comm.
 Qed.
 
 Lemma shiftr_shiftl_le
-      (x n:  nat)
-  : Nat.shiftl (Nat.shiftr x n) n <= x.
+      (x n:  N)
+  : N.shiftl (N.shiftr x n) n <= x.
 Proof.
   rewrite shiftl_shiftr_div.
   remember (2 ^ n) as r.
-  apply Nat.mul_div_le.
-  induction n.
-  + cbn in Heqr.
-    rewrite Heqr.
-    auto.
+  apply N.mul_div_le.
+  induction n using N.peano_rect.
   + rewrite Heqr.
-    apply Nat.neq_sym.
-    apply lt_0_neq.
+    intro F.
+    discriminate F.
+  + rewrite Heqr.
+    apply N.neq_0_lt_0.
     apply pow_pos.
     repeat constructor.
 Qed.
 
 Lemma split_merge_eq
-      (n: nat)
+      (n: N)
       (x: mem (2 * n))
   : mem_eq x (join n (upper_half n x) (lower_half n x)).
 Proof.
@@ -514,52 +518,87 @@ Proof.
   destruct x as [x Hx].
   unfold join, lower_half, upper_half, shiftl, shiftr, add, cast, box, unbox.
   unfold mem_val.
-  rewrite (Nat.mod_small (x mod 2 ^ n) (2 ^ (2 * n))).
-  + rewrite (Nat.mod_small ((Nat.shiftr x n mod 2 ^ (2 * n)) mod 2 ^ n) (2 ^ (2 * n))).
-    ++ rewrite (Nat.mod_small (Nat.shiftr x n) (2 ^ (2 * n))).
-       +++ rewrite (Nat.mod_small (Nat.shiftr x n) (2 ^ n)).
-           ++++ rewrite (Nat.mod_small (Nat.shiftl (Nat.shiftr x n) n) (2 ^ (2 * n))); [| apply (Nat.le_lt_trans _ x); [| exact Hx ];
-                                                                                          apply shiftr_shiftl_le
-                                                                                       ].
+  rewrite (N.mod_small (x mod 2 ^ n) (2 ^ (2 * n))).
+  + rewrite (N.mod_small ((N.shiftr x n mod 2 ^ (2 * n)) mod 2 ^ n) (2 ^ (2 * n))).
+    ++ rewrite (N.mod_small (N.shiftr x n) (2 ^ (2 * n))).
+       +++ rewrite (N.mod_small (N.shiftr x n) (2 ^ n)).
+           ++++ rewrite (N.mod_small (N.shiftl (N.shiftr x n) n) (2 ^ (2 * n))); [| apply (N.le_lt_trans _ x); [| exact Hx ];
+                                                                                    apply shiftr_shiftl_le
+                                                                                 ].
                 rewrite shiftl_shiftr_div.
-                rewrite Nat.add_comm.
-                rewrite <- Nat.div_mod.
-                rewrite (Nat.mod_small _ _ Hx).
+                rewrite N.add_comm.
+                rewrite <- N.div_mod.
+                rewrite (N.mod_small _ _ Hx).
                 reflexivity.
-                apply Nat.neq_sym.
-                apply lt_0_neq.
+                apply N.neq_0_lt_0.
                 apply pow_pos.
-                omega.
-           ++++ assert (Hhelper:  forall (a:  nat), 2 * a - a = a). {
+                repeat constructor.
+           ++++ assert (Hhelper:  forall (a:  N), 2 * a - a = a). {
                   clear Hx x n.
-                  induction a.
+                  induction a using N.peano_rect.
                   + reflexivity.
-                  + cbn.
-                    rewrite add_0_r.
-                    rewrite (Nat.add_comm a (S a)).
-                    rewrite <- Nat.add_sub_assoc.
-                    ++ rewrite Nat.sub_diag.
-                       rewrite add_0_r.
+                  + rewrite <- N.double_spec.
+                    rewrite <- N.add_1_r.
+                    rewrite N.double_add.
+                    cbn.
+                    rewrite N.double_spec.
+                    rewrite (N.add_comm a 1) at 1.
+                    rewrite N.sub_add_distr.
+                    rewrite <- N.add_sub_assoc.
+                    ++ assert (Heq:  2 - 1 = 1). {
+                         reflexivity.
+                       }
+                       rewrite Heq.
+                       rewrite (N.add_comm (2*a) 1).
+                       rewrite <- N.add_sub_assoc.
+                       rewrite IHa.
+                       rewrite N.add_comm.
                        reflexivity.
-                    ++ constructor.
+                       clear IHa Heq.
+                       induction a using N.peano_rect.
+                       reflexivity.
+                       rewrite <- N.add_1_r.
+                       rewrite N.mul_add_distr_l.
+                       apply N.add_le_mono; [ exact IHa |].
+                       cbn.
+                       apply N.le_succ_diag_r.
+                    ++ apply N.le_succ_diag_r.
                 }
                 rewrite <- (Hhelper n) at 2.
                 apply shiftr_reduces'.
                 exact Hx.
-       +++ apply (Nat.le_lt_trans _ x); [| exact Hx ].
+       +++ apply (N.le_lt_trans _ x); [| exact Hx ].
            apply shiftr_reduces.
-    ++ apply (Nat.lt_le_trans _ (2 ^ n)).
-       +++ apply Nat.mod_bound_pos.
-           apply le_0_n.
+    ++ apply (N.lt_le_trans _ (2 ^ n)).
+       +++ apply N.mod_bound_pos.
+           apply N.le_0_l.
            apply pow_pos.
-           auto.
-       +++ apply Nat.pow_le_mono_r; omega.
-  + apply (Nat.lt_le_trans (x mod (2 ^ n)) (2 ^ n)).
-    ++ apply Nat.mod_bound_pos.
-       apply le_0_n.
+           apply N.lt_0_2.
+       +++ apply N.pow_le_mono_r.
+           intro F; discriminate F.
+           clear Hx x.
+           induction n using N.peano_rect.
+           reflexivity.
+           rewrite <- N.add_1_r.
+           rewrite N.mul_add_distr_l.
+           apply N.add_le_mono; [ exact IHn |].
+           cbn.
+           apply N.le_succ_diag_r.
+  + apply (N.lt_le_trans (x mod (2 ^ n)) (2 ^ n)).
+    ++ apply N.mod_bound_pos.
+       apply N.le_0_l.
        apply pow_pos.
-       auto.
-    ++ apply Nat.pow_le_mono_r; omega.
+       apply N.lt_0_2.
+    ++ apply N.pow_le_mono_r.
+       intro F; discriminate F.
+       clear Hx x.
+       induction n using N.peano_rect.
+       reflexivity.
+       rewrite <- N.add_1_r.
+       rewrite N.mul_add_distr_l.
+       apply N.add_le_mono; [ exact IHn |].
+       cbn.
+       apply N.le_succ_diag_r.
 Qed.
 
 Definition upper_word_half
@@ -765,10 +804,10 @@ Qed.
 
  *)
 
-Definition make_byte: nat -> byte := box 8.
-Definition make_word: nat -> word := box 16.
-Definition make_lword: nat -> lword := box 32.
+Definition make_byte: N -> byte := box 8.
+Definition make_word: N -> word := box 16.
+Definition make_lword: N -> lword := box 32.
 
-Coercion make_byte:   nat >-> byte.
-Coercion make_word:   nat >-> word.
-Coercion make_lword:  nat >-> lword.
+Coercion make_byte:   N >-> byte.
+Coercion make_word:   N >-> word.
+Coercion make_lword:  N >-> lword.

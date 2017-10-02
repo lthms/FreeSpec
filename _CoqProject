@@ -1,4 +1,5 @@
 -R libs/coq-open-nat FreeSpec.Libs.OpenNat
+-R libs/nomega FreeSpec.Libs.NOmega
 -R theories FreeSpec
 -R specs FreeSpec.Specs
 -R examples FreeSpec.Examples

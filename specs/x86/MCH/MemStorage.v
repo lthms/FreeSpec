@@ -1,4 +1,5 @@
-Require Import Coq.Arith.Arith.
+Require Import Coq.NArith.NArith.
+
 Require Import FreeSpec.Specs.Memory.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Interp.
@@ -9,13 +10,17 @@ Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Control.Classes.
 Require Import FreeSpec.Control.Identity.
 Require Import FreeSpec.WEq.
-Require Import Omega.
+
+Require Import FreeSpec.Libs.NOmega.NOmega.
+
+Local Close Scope nat_scope.
+Local Open Scope N_scope.
 
 Local Open Scope free_weq_scope.
 Local Open Scope free_control_scope.
 
 Inductive MSi
-          (n:  nat)
+          (n:  N)
   : Interface :=
 | read_byte (addr:  mem n)
   : MSi n byte
@@ -41,36 +46,36 @@ Arguments write_word  {n} (addr val).
 Arguments write_lword {n} (addr val).
 
 Definition MSs
-           (n:  nat)
+           (n:  N)
   := mem n
      -> byte.
 
 Definition MSs_weq
-           {n:             nat}
+           {n:             N}
            (store store':  MSs n)
   : Prop :=
   forall (addr: mem n),
     store addr == store' addr.
 
 Instance MSs_WEq
-         (n:  nat)
+         (n:  N)
   : WEq (MSs n) :=
   { weq := @MSs_weq n
   }.
 
 Definition MSs_init
-           (n:  nat)
+           (n:  N)
   : MSs n :=
   pure (0: byte).
 
 Definition nxt
-           {n:  nat}
+           {n:  N}
            (x:  mem n)
   : mem n :=
   add x (box n 1).
 
 Lemma nxt_neq
-      {n:  nat}
+      {n:  N}
       (x:  mem n)
       (H:  1 < n)
   : ~ weq x (nxt x).
@@ -81,32 +86,36 @@ Proof.
   intros [Heq].
   destruct x as [x Hx].
   unfold mem_val in Heq.
-  rewrite Nat.mod_1_l in Heq.
-  + destruct (Nat.eq_dec (x + 1) (2 ^ n)).
+  rewrite N.mod_1_l in Heq.
+  + destruct (N.eq_dec (x + 1) (2 ^ n)).
     ++ rewrite e in Heq.
-       rewrite Nat.mod_same in Heq.
+       rewrite N.mod_same in Heq.
        subst.
-       rewrite Nat.add_0_l in e.
+       rewrite N.add_0_l in e.
        assert (Hn:  n = 0). {
-         rewrite <- (Nat.pow_0_r 2) in e at 1.
-         apply Nat.pow_inj_r in e.
+         rewrite <- (N.pow_0_r 2) in e at 1.
+         apply N.pow_inj_r in e.
          symmetry; exact e.
-         omega.
+         exact N.lt_1_2.
        }
        subst.
        inversion H.
-       apply Nat.neq_sym.
-       apply lt_0_neq.
+       apply N.neq_0_lt_0.
        apply pow_pos.
-       omega.
-    ++ assert (Hn:  x + 1 < 2 ^ n) by omega.
-       rewrite Nat.mod_small in Heq; [| exact Hn ].
-       omega.
-  + apply Nat.pow_gt_1; omega.
+       apply N.lt_0_2.
+    ++ assert (Hn:  x + 1 < 2 ^ n) by nomega.
+       apply (N.neq_succ_diag_r x).
+       rewrite <- N.add_1_r.
+       rewrite N.mod_small in Heq.
+       exact Heq.
+       exact Hn.
+  + apply N.pow_gt_1.
+    apply N.lt_1_2.
+    nomega.
 Qed.
 
 Definition MS_interp
-           {n:  nat}
+           {n:  N}
            {A:  Type}
            (i:  MSi n A)
   : State (MSs n) A :=
@@ -153,13 +162,13 @@ Definition MS_interp
   end.
 
 Instance memstorage_MonadInterp
-         (n:  nat)
+         (n:  N)
   : MonadInterp (MSi n) (State (MSs n)) :=
   { interpret := @MS_interp n
   }.
 
 Definition MSInterp
-           {n:  nat}
+           {n:  N}
            (x:  MSs n)
   : Interp (MSi n) :=
   monad_state_interp (MSs_init n).
@@ -168,7 +177,7 @@ Require Import FreeSpec.Program.
 Local Open Scope free_prog_scope.
 
 Fact write_then_read
-     {n:  nat}
+     {n:  N}
      (H:  1 < n)
      (x:  MSs n)
      (a:  mem n)

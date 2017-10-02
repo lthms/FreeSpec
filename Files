@@ -27,6 +27,7 @@ theories/Undefined.v
 theories/WEq.v
 
 libs/coq-open-nat/OpenNat.v
+libs/nomega/NOmega.v
 
 specs/Memory.v
 specs/Bitfield.v

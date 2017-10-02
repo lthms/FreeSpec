@@ -1,3 +1,5 @@
+Require Import Coq.NArith.NArith.
+
 Require Import FreeSpec.Specs.x86.MCH.SMRAMC.
 Require Import FreeSpec.Specs.Memory.
 Require Import FreeSpec.Specs.Address.
@@ -15,7 +17,10 @@ Require Import FreeSpec.Specs.Bitfield.
 Require Import FreeSpec.Specs.x86.MCH.SMRAMC.
 Require Import FreeSpec.Specs.x86.MCH.MemStorage.
 Require Import FreeSpec.PropBool.
+Require Import FreeSpec.Specs.Bitfield.
 
+Local Close Scope nat_scope.
+Local Open Scope N_scope.
 Local Open Scope free_scope.
 Local Open Scope free_prog_scope.
 Local Open Scope free_control_scope.
