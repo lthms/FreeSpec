@@ -186,6 +186,16 @@ Definition join
   : m a :=
   x >>= id.
 
+Definition when
+           {m:     Type -> Type}
+          `{Monad m}
+           (cond:  bool)
+           (x:     m unit)
+  : m unit :=
+  if cond
+  then x
+  else pure tt.
+
 Notation "a <- p ; q" :=
   (bind p (fun a => q)) (at level 99, right associativity, p at next level)
   : free_control_scope.

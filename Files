@@ -32,6 +32,10 @@ libs/nomega/NOmega.v
 specs/Memory.v
 specs/Bitfield.v
 specs/Address.v
+specs/Abstract/Abstract.v
+specs/Abstract/Memory.v
+specs/Abstract/MemoryController.v
+specs/Abstract/Cache.v
 specs/x86/MCH/SMRAMC.v
 specs/x86/MCH/MCH.v
 specs/x86/MCH/MemStorage.v
