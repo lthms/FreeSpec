@@ -16,6 +16,7 @@ Require Import FreeSpec.WEq.
 Local Open Scope free_weq_scope.
 Local Open Scope free_prog_scope.
 Local Open Scope free_control_scope.
+Local Open Scope bool_scope.
 
 (** * Interface
 
@@ -307,6 +308,11 @@ Definition reset_cache
   : Cache_monad unit :=
   put empty_cache.
 
+Definition match_smrr
+           (a:  address)
+  : Cache_monad bool :=
+  pure (in_smram a).
+
 Definition Cache_specification
   : StatefulRefinement Cache_interface
                        MemoryController_interface
@@ -318,14 +324,20 @@ Definition Cache_specification
        => do_mc $ read_mc a priv
        (* --------------------------------------------------------- *)
      | read_cache a priv WB (* --- Write-back read ---------------- *)
-       => prepare_line a priv                                       ;;
-          get_val $ address_to_index a
+       => smrr <- match_smrr a                                       ;
+          if negb priv && smrr
+          then pure (box 8 255)
+          else prepare_line a priv                                  ;;
+               get_val $ address_to_index a
        (* --------------------------------------------------------- *)
      | write_cache a priv UC val (* --- Uncachable write ---------- *)
        => do_mc $ write_mc a priv val
        (* --------------------------------------------------------- *)
      | write_cache a priv WB val (* --- Write-back write ---------- *)
-       => prepare_line a priv                                       ;;
-          update_cline a val
+       => smrr <- match_smrr a                                       ;
+          if negb priv && smrr
+          then pure tt
+          else prepare_line a priv                                  ;;
+               update_cline a val
        (* --------------------------------------------------------- *)
      end.
