@@ -47,8 +47,8 @@ Inductive Cache_interface
 
 Record Cache_abstract
   : Type :=
-  { map_view:  Abstract
-  ; strats:    address -> option Strategy
+  { cache_view:  Abstract
+  ; strats:    address -> Strategy
   }.
 
 Definition Cache_abstract_step
@@ -59,11 +59,11 @@ Definition Cache_abstract_step
   : Cache_abstract :=
   match i with
   | write_cache a true st x
-    => {| map_view := update a x (map_view abs)
-        ; strats   := fun (a':  address)
-                      => if a ?= a'
-                         then Some st
-                         else strats abs a'
+    => {| cache_view := update a x (cache_view abs)
+        ; strats     := fun (a':  address)
+                        => if a ?= a'
+                           then st
+                           else strats abs a'
         |}
   | _
     => abs
@@ -76,12 +76,7 @@ Definition Cache_requirements
   : Prop :=
   match i with
   | read_cache a true st
-    => match strats abs a with
-       | Some st'
-         => st = st'
-       | None
-         => True
-       end
+    => strats abs a = st
   | _
     => True
   end.
@@ -98,7 +93,7 @@ Definition Cache_promises
   with
   | read_cache a true _
     => fun (H:  A = byte)
-       => eq_rect _ id ret _ H = map_view abs a
+       => eq_rect _ id ret _ H = cache_view abs a
   | _
     => fun _
        => True
@@ -341,3 +336,30 @@ Definition Cache_specification
                update_cline a val
        (* --------------------------------------------------------- *)
      end.
+
+(** ** Contract Enforcement
+
+ *)
+
+Definition backend_view
+           (st:        Strategy)
+           (a:         address)
+           (cache:     Cache_state)
+           (map_view:  Abstract)
+  : byte :=
+  match st with
+  | UC
+    => map_view a
+  | WB
+    => if _cache_hit a cache
+       then val <<< cache $ address_to_index a
+       else map_view a
+  end.
+
+Definition sync_pred
+  : sync_pred Cache_abstract Abstract Cache_state :=
+  fun (c_abs:  Cache_abstract)
+      (cache:  Cache_state)
+      (m_abs:  Abstract)
+  => forall (a:  address),
+      cache_view c_abs a = backend_view (strats c_abs a) a cache m_abs.
