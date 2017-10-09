@@ -23,7 +23,7 @@ Polymorphic Definition id
 
 Notation "f <<< g" := (compose f g) (at level 50).
 Notation "f >>> g" := (compose g f) (at level 50).
-Notation "f $ x" := (f x) (only parsing, at level 100, right associativity).
+Notation "f $ x" := (f x) (only parsing, at level 99, right associativity).
 
 (** * Functor
 
@@ -198,8 +198,8 @@ Definition when
   else pure tt.
 
 Notation "a <- p ; q" :=
-  (bind p (fun a => q)) (at level 99, right associativity, p at next level)
+  (bind p (fun a => q)) (at level 100, right associativity, p at next level)
   : free_control_scope.
 Notation "p ;; q" :=
-  (bind p (fun _ => q)) (at level 99, right associativity)
+  (bind p (fun _ => q)) (at level 100, right associativity)
   : free_control_scope.

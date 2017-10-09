@@ -212,7 +212,7 @@ Definition _cache_hit
            (a:    address)
            (map:  Cache_state)
   : bool :=
-  (weq_bool a <<< tag) (map (address_to_index a)).
+  weq_bool a <<< tag <<< map $ address_to_index a.
 
 Definition _get_cline
            (i:    index)
@@ -271,13 +271,13 @@ Definition overwrite_cline
            (a:  address)
            (v:  byte)
   : Cache_monad unit :=
-  modify (_overwrite_cline a v).
+  modify $ _overwrite_cline a v.
 
 Definition update_cline
            (a:  address)
            (v:  byte)
   : Cache_monad unit :=
-  modify (_update_cline (address_to_index a) v).
+  modify $ _update_cline (address_to_index a) v.
 
 Definition get_val
            (i:  index)
@@ -300,15 +300,18 @@ Definition prepare_line
            (priv:  bool)
   : Cache_monad unit :=
   miss <- negb <$> cache_hit a                                       ;
-  when miss (d  <- dirty_cline (address_to_index a)                  ;
-             v' <- get_val (address_to_index a)                      ;
-             a' <- get_tag (address_to_index a)                      ;
+  when miss (d  <- dirty_cline $ address_to_index a                  ;
+             v' <- get_val $ address_to_index a                      ;
+             a' <- get_tag $ address_to_index a                      ;
 
-             when d (do_mc (write_mc a' priv v'))                   ;;
+             when d $ do_mc (write_mc a' priv v')                   ;;
 
-             v <- do_mc (read_mc a priv)                             ;
+             v <- do_mc $ read_mc a priv                             ;
              overwrite_cline a v).
 
+Definition reset_cache
+  : Cache_monad unit :=
+  put empty_cache.
 
 Definition Cache_specification
   : StatefulRefinement Cache_interface
@@ -318,17 +321,17 @@ Definition Cache_specification
       (i:  Cache_interface A)
   => match i with
      | flush_cache (* --- Flush the Cache ------------------------- *)
-       => put (empty_cache)
+       => reset_cache
        (* --------------------------------------------------------- *)
      | read_cache a priv UC (* --- Uncachable read ---------------- *)
-       => do_mc (read_mc a priv)
+       => do_mc $ read_mc a priv
        (* --------------------------------------------------------- *)
      | read_cache a priv WB (* --- Write-back read ---------------- *)
        => prepare_line a priv                                       ;;
-          get_val (address_to_index a)
+          get_val $ address_to_index a
        (* --------------------------------------------------------- *)
      | write_cache a priv UC val (* --- Uncachable write ---------- *)
-       => do_mc (write_mc a priv val)
+       => do_mc $ write_mc a priv val
        (* --------------------------------------------------------- *)
      | write_cache a priv WB val (* --- Write-back write ---------- *)
        => prepare_line a priv                                       ;;
