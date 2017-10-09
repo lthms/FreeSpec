@@ -38,8 +38,6 @@ Inductive Cache_interface
               (privileged:  bool)
               (strat:       Strategy)
               (val:         byte)
-  : Cache_interface unit
-| flush_cache
   : Cache_interface unit.
 
 (** * Contract
@@ -65,10 +63,6 @@ Definition Cache_abstract_step
                       => if a ?= a'
                          then Some st
                          else strats abs a'
-        |}
-  | flush_cache
-    => {| map_view := map_view abs
-        ; strats   := pure None
         |}
   | _
     => abs
@@ -320,9 +314,6 @@ Definition Cache_specification
   fun (A:  Type)
       (i:  Cache_interface A)
   => match i with
-     | flush_cache (* --- Flush the Cache ------------------------- *)
-       => reset_cache
-       (* --------------------------------------------------------- *)
      | read_cache a priv UC (* --- Uncachable read ---------------- *)
        => do_mc $ read_mc a priv
        (* --------------------------------------------------------- *)
