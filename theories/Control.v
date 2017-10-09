@@ -23,7 +23,8 @@ Polymorphic Definition id
 
 Notation "f <<< g" := (compose f g) (at level 50).
 Notation "f >>> g" := (compose g f) (at level 50).
-Notation "f $ x" := (f x) (at level 100, right associativity).
+Notation "f $ x" := (f x) (only parsing, at level 100, right associativity).
+
 (** * Functor
 
  *)
