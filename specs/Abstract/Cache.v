@@ -363,3 +363,42 @@ Definition sync_pred
       (m_abs:  Abstract)
   => forall (a:  address),
       cache_view c_abs a = backend_view (strats c_abs a) a cache m_abs.
+
+Ltac next := repeat (try constructor; cbn; trivial).
+
+Lemma cache_specs_compliant_refinement
+  : compliant_refinement Cache_specification
+                         Cache_contract
+                         MemoryController_contract
+                         sync_pred.
+Proof.
+  unfold compliant_refinement.
+  intros si s so A i Hsync Hpred.
+  induction i; induction privileged; induction strat.
+  + next.
+  + next.
+    intros.
+    case_eq (negb (mem_bool addr (tag (s (address_to_index addr))))).
+    ++ next.
+       case_eq (dirty (s (address_to_index addr))); next.
+    ++ next.
+  + next.
+  + next.
+    intros.
+    case_eq (in_smram addr); next.
+    intros.
+    case_eq (negb (mem_bool addr (tag (s (address_to_index addr))))); next.
+    case_eq (dirty (s (address_to_index addr))); next.
+  + next.
+  + next.
+    intros.
+    case_eq (negb (mem_bool addr (tag (s (address_to_index addr))))); next.
+    case_eq (dirty (s (address_to_index addr))); next.
+  + next.
+  + next.
+    intros.
+    case_eq (in_smram addr); next.
+    intros.
+    case_eq (negb (mem_bool addr (tag (s (address_to_index addr))))); next.
+    case_eq (dirty (s (address_to_index addr))); next.
+Qed.
