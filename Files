@@ -25,6 +25,7 @@ theories/Control/IO/ExtrHaskell.v
 theories/PropBool.v
 theories/Undefined.v
 theories/WEq.v
+theories/Tactics.v
 
 libs/coq-open-nat/OpenNat.v
 libs/nomega/NOmega.v
