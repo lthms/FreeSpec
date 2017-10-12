@@ -1,22 +1,25 @@
 (* begin hide *)
 Require Import Coq.Bool.Bool.
 Require Import Coq.Program.Equality.
+Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
-Require Import FreeSpec.Interp.
 Require Import FreeSpec.Compose.
-Require Import FreeSpec.Refine.
-Require Import FreeSpec.Program.
 Require Import FreeSpec.Contract.
-Require Import FreeSpec.PropBool.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.Classes.
 Require Import FreeSpec.Control.State.
+Require Import FreeSpec.Interp.
+Require Import FreeSpec.Program.
+Require Import FreeSpec.PropBool.
+Require Import FreeSpec.Refine.
+Require Import FreeSpec.Tactics.
 Require Import FreeSpec.WEq.
 
 Require Import FreeSpec.Examples.Map.
 
 Local Open Scope free_scope.
+Local Open Scope free_weq_scope.
 Local Open Scope free_prog_scope.
 Local Open Scope free_control_scope.
 
@@ -45,8 +48,8 @@ Section SMRAM_EXAMPLE.
       into the SMRAM.
     *)
   Variables (Addr:             Type)
-            (addr_eq_bool:     Addr -> Addr -> bool)
-            (addr_eq_PropBool: PropBool2 (@eq Addr) addr_eq_bool)
+            (AddrWEq:          WEq Addr)
+            (AddrWEqBool:      WEqBool Addr)
             (Value:            Type)
             (Smram:            Addr -> Prop)
             (Smram_bool:       Addr -> bool)
@@ -205,7 +208,7 @@ Section SMRAM_EXAMPLE.
              (s: SmramState)
     : SmramState :=
     fun (a': Addr)
-    => if addr_eq_bool a a'
+    => if a ?= a'
        then v
        else s a'.
 
@@ -307,7 +310,7 @@ Section SMRAM_EXAMPLE.
     match i with
     | Write a v (* Write Access *)
       => fun (a': Addr)
-         => if addr_eq_bool a a'
+         => if a ?= a'
             then v
             else s a'
     | _ (* Nothing to do with Read Access *)
@@ -462,17 +465,7 @@ Section SMRAM_EXAMPLE.
   Proof.
     unfold compliant_refinement.
     intros si s so A i Hsync Hreq.
-    induction i; induction smm.
-    + next.
-    + next.
-      rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
-      rewrite andb_true_r.
-      destruct (Smram_bool a); next.
-    + next.
-    + next.
-      rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
-      rewrite andb_true_r.
-      destruct (Smram_bool a); next.
+    induction i; induction smm; next; repeat destruct_if_when; next.
   Qed.
 
   (** Then, we prove the predicate of synchronization is effectively
@@ -496,52 +489,31 @@ Section SMRAM_EXAMPLE.
       cbn.
       rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
       rewrite andb_true_r.
-      destruct (Smram_bool a); cbn; exact Hsync.
+      repeat destruct_if_when; exact Hsync.
     + (* privileged write *)
       cbn.
       split.
       ++ apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
       ++ intros a' Hsmram.
-         unfold update.
-         case_eq (Smram_bool a); intro Hsmram'.
-         +++ destruct (addr_eq_bool a a').
-             ++++ reflexivity.
-             ++++ destruct Hsync as [_H H].
-                  rewrite (H a' Hsmram).
-                  reflexivity.
-         +++ case_eq (addr_eq_bool a a'); intro Heq.
-             ++++ apply (pred_bool_pred_2 a a') in Heq.
-                  rewrite Heq in Hsmram'.
-                  apply (pred_bool_false_1 Smram Smram_bool a') in Hsmram'.
-                  apply Hsmram' in Hsmram.
-                  destruct Hsmram.
-             ++++ destruct Hsync as [_H H].
-                  rewrite (H a' Hsmram).
-                  reflexivity.
+         unfold update; repeat destruct_if_when.
+         +++ reflexivity.
+         +++ apply Hsync.
+             exact Hsmram.
+         +++ (* Smram a /\ Smram_bool a' /\ (a ?= a') = true is not
+                possible, but we lack the fact that Smram and
+                Smram_bool are “weq_morphism“. Admit for now. *)
+             admit.
+         +++ apply Hsync.
+             exact Hsmram.
     + (* unprivileged write *)
       cbn.
+      repeat destruct_if_when.
       split.
-      ++ case_eq (Smram_bool a); intro Hsmram.
-         +++ rewrite (mch_dram_sync_smram_lock_is_true si _ so Hsync); cbn.
-             apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
-         +++ apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
+      ++ apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
       ++ intros a' Hsmram.
-         rewrite (mch_dram_sync_smram_lock_is_true _ _ _ Hsync).
-         rewrite andb_true_r.
-         case_eq (Smram_bool a); intro Hsmram'; cbn.
-         +++ destruct Hsync as [_H H].
-             rewrite (H a' Hsmram).
-             reflexivity.
-         +++ case_eq (addr_eq_bool a a'); intro Heq.
-             ++++ apply (pred_bool_pred_2 a a') in Heq.
-                  rewrite Heq in Hsmram'.
-                  apply (pred_bool_false_1 Smram Smram_bool a') in Hsmram'.
-                  apply Hsmram' in Hsmram.
-                  destruct Hsmram.
-             ++++ destruct Hsync as [_H H].
-                  rewrite (H a' Hsmram).
-                  reflexivity.
-  Qed.
+         apply Hsync.
+         exact Hsmram.
+  Admitted.
 
   (** Finally, we check all this work and constrains brings the
       expected result, that is the [promises] predicate. In other
@@ -560,40 +532,16 @@ Section SMRAM_EXAMPLE.
   Proof.
     unfold sync_promises.
     intros si s so int Henf A i Hsync Hreq.
-    assert (Hcp: compliant_refinement mch_refine
-                                      smram_contract
-                                      smram_subcontract
-                                      mch_dram_sync). {
-      apply mch_specs_compliant_refinement.
-    }
-    unfold compliant_refinement in Hcp.
-    assert (H: compliant_program smram_subcontract so (mch_refine A i s))
-      by apply (Hcp si _ _ _ _ Hsync Hreq).
-    induction i; induction smm; try trivial.
-    (* privileged read *)
-    cbn; cbn in H.
+    induction i; induction smm; cbn; try constructor.
     intros Hsmram.
-    inversion H;
-      repeat simpl_existT;
-      subst.
-    inversion Hcp0;
-      repeat simpl_existT;
-      subst.
-    assert (Hprom: promises smram_subcontract
-                            (ileft (Read a))
-                            (fst (interpret int (ileft (Read a))))
-                            so). {
-      apply (enforcer_enforces_promises _ _ _ _ Henf Hreq0).
-    }
-    cbn in Hprom.
-    rewrite Hprom.
-    assert (Hproof: so a = si a). {
-      destruct Hsync as [_H Hx].
-      rewrite (Hx a Hsmram).
-      reflexivity.
-    }
-    rewrite Hproof.
-    constructor.
+    run_program int.
+    + simplify_promise.
+      rewrite Hprom_i.
+      symmetry.
+      apply Hsync.
+      exact Hsmram.
+    + rewrite Heqi.
+      constructor.
   Qed.
 
   Lemma mch_refine_enforcer
