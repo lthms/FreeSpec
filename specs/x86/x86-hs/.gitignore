@@ -1,4 +1,6 @@
 .stack-work/
+src/IO.hs
+src/X86.hs
 src/Classes.hs
 src/Compose.hs
 src/Control.hs
