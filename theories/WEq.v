@@ -111,6 +111,25 @@ Proof.
     ++ reflexivity.
 Qed.
 
+Lemma weq_bool_sym
+      {A:     Type}
+     `{WEqBool A}
+      (a a':  A)
+  : weq_bool a a' = weq_bool a' a.
+Proof.
+  case_eq (weq_bool a a'); intros Heq.
+  + apply weq_bool_weq in Heq.
+    symmetry in Heq.
+    apply weq_bool_weq in Heq.
+    rewrite <- Heq.
+    reflexivity.
+  + apply weq_bool_false in Heq.
+    apply not_weq_sym in Heq.
+    apply weq_bool_false in Heq.
+    rewrite <- Heq.
+    reflexivity.
+Qed.
+
 Lemma weq_bool_false_rewrite
       {A:    Type}
      `{WEqBool A}
@@ -631,3 +650,59 @@ Instance list_WEqBool
   : WEqBool (list a) :=
   {
   }.
+
+(** * Tactics
+
+ *)
+
+Ltac rewrite_weq H :=
+  lazymatch type of H with
+  | (?x ?= ?y) = true
+    => match goal with
+       | [ |- context[x] ]
+         => assert (Heq:  x == y) by (apply weq_bool_weq; exact H);
+            rewrite Heq;
+            clear Heq
+       | [ |- context[y] ]
+         => assert (Heq:  x == y) by (apply weq_bool_weq; exact H);
+            rewrite <- Heq;
+            clear Heq
+       end || fail "nothing to rewrite"
+  | ?x == ?y
+    => match goal with
+       | [ |- context[x] ]
+         => rewrite H
+       | [ |- context[y] ]
+         => rewrite <- H
+       end || fail "nothing to rewrite"
+  | _ => fail "argument should be of the form x == y or x ?= y"
+  end.
+
+Ltac rewrite_weq_bool H :=
+  lazymatch type of H with
+  | (?x ?= ?y) = _
+    => match goal with
+       | [ |- context [x ?= y] ]
+         => rewrite H
+       | [ |- context [y ?= x] ]
+         => rewrite (weq_bool_sym y x);
+            rewrite H
+       end || fail "nothing to rewrite"
+  | ?x == ?y
+    => match goal with
+       | [ |- context[x ?= y] ]
+         => rewrite H; rewrite weq_bool_refl
+       | [ |- context[y ?= x] ]
+         => rewrite (weq_bool_sym y x);
+            rewrite H;
+            rewrite weq_bool_refl
+       end || fail "nothing to rewrite"
+  | ?x /= ?y
+    => match goal with
+       | [ |- context[x ?= y] ]
+         => fail "todo"
+       | [ |- context[y ?= x] ]
+         => fail "todo"
+       end || fail "nothing to rewrite"
+  | _ => fail "argument should be of the form x == y or x ?= y"
+  end.
