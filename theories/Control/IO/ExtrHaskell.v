@@ -1,3 +1,4 @@
+Require Extraction.
 Require Import FreeSpec.Control.IO.
 
 Extract Constant IO "a" => "Prelude.IO a".

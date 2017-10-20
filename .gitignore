@@ -10,3 +10,4 @@ FreeSpec.hs
 OUT.coc
 extraction/hs/*.hs
 docs/freespec.pdf
+Makefile.proj.conf
