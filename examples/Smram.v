@@ -499,8 +499,8 @@ Section SMRAM_EXAMPLE.
          +++ reflexivity.
          +++ apply Hsync.
              exact Hsmram.
-         +++ (* Smram a /\ Smram_bool a' /\ (a ?= a') = true is not
-                possible, but we lack the fact that Smram and
+         +++ (* Smram a /\ Smram_bool a' = false /\ (a ?= a') = true
+                is not possible, but we lack the fact that Smram and
                 Smram_bool are “weq_morphism“. Admit for now. *)
              admit.
          +++ apply Hsync.
