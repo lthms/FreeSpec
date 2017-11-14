@@ -183,18 +183,58 @@ Add Parametric Relation
     transitivity proved by (program_eq_trans)
       as program_equiv.
 
+Instance program_eq_eq
+         (I: Interface)
+         (A: Type)
+  : WEq (Program I A) :=
+  { weq := program_eq
+  }.
+
 (** Also, we can easily show the [program_eq] property is strong
     enough to be used to replace two equivalent programs in several
     cases.
 
  *)
 
+Lemma run_program_bind_assoc
+      {I:    Interface}
+      {A B:  Type}
+      (int:  Interp I)
+      (p:    Program I A)
+      (f:    A -> Program I B)
+  : runProgram int (pbind p f) == runProgram (execProgram int p) (f (evalProgram int p)).
+Proof.
+  reflexivity.
+Qed.
+
+Lemma eval_program_bind_assoc
+      {I:    Interface}
+      {A B:  Type}
+      (int:  Interp I)
+      (p:    Program I A)
+      (f:    A -> Program I B)
+  : evalProgram int (pbind p f) = evalProgram (execProgram int p) (f (evalProgram int p)).
+Proof.
+  reflexivity.
+Qed.
+
+Lemma exec_program_bind_assoc
+      {I:    Interface}
+      {A B:  Type}
+      (int:  Interp I)
+      (p:    Program I A)
+      (f:    A -> Program I B)
+  : execProgram int (pbind p f) == execProgram (execProgram int p) (f (evalProgram int p)).
+Proof.
+  reflexivity.
+Qed.
+
 Add Parametric Morphism
     (I: Interface)
     (A: Type)
   : (runProgram)
-    with signature eq ==> (program_eq) ==> (@run_interp_eq I A)
-  as run_program_morphism.
+    with signature eq ==> (@weq (Program I A) _) ==> (@run_interp_eq I A)
+  as run_program_morphism_1.
 Proof.
   intros y p p' Heq.
   constructor.
@@ -206,13 +246,44 @@ Qed.
 Add Parametric Morphism
     (I: Interface)
     (A: Type)
+  : (runProgram)
+    with signature (@interp_eq I) ==> eq ==> (@run_interp_eq I A)
+  as run_program_morphism_2.
+Proof.
+  intros int int' Heq p.
+  revert int int' Heq.
+  induction p; intros int int' Heq.
+  + cbn.
+    constructor; [ reflexivity
+                 | exact Heq
+                 ].
+  + cbn.
+    destruct Heq as [Hres Hnext].
+    constructor; [ apply Hres
+                 | apply Hnext
+                 ].
+  + repeat rewrite run_program_bind_assoc.
+    assert (rw:  evalProgram int p = evalProgram int' p). {
+      apply IHp.
+      exact Heq.
+    }
+    rewrite rw.
+    apply H.
+    apply IHp.
+    exact Heq.
+Qed.
+
+Add Parametric Morphism
+    (I: Interface)
+    (A: Type)
   : (evalProgram)
-    with signature eq ==> (@program_eq I A) ==> (eq)
+    with signature (@weq (Interp I) _) ==> (@program_eq I A) ==> (eq)
   as eval_program_morphism.
 Proof.
-  intros y p p' Heq.
+  intros int int' Heqi p q Heqp.
   unfold evalProgram.
-  rewrite Heq.
+  rewrite Heqi.
+  rewrite Heqp.
   reflexivity.
 Qed.
 
@@ -220,21 +291,16 @@ Add Parametric Morphism
     (I: Interface)
     (A: Type)
   : (execProgram)
-    with signature eq ==> (@program_eq I A) ==> (@interp_eq I)
+    with signature (@weq (Interp I) _) ==> (@program_eq I A) ==> (@interp_eq I)
   as exec_program_morphism.
 Proof.
-  intros y p p' Heq.
+  intros int int' Heqi p q Heqp.
   unfold execProgram.
-  rewrite Heq.
+  rewrite Heqi.
+  rewrite Heqp.
   reflexivity.
 Qed.
 
-Instance program_eq_eq
-         (I: Interface)
-         (A: Type)
-  : WEq (Program I A) :=
-  { weq := program_eq
-  }.
 
 (** ** Monad Laws
 
@@ -397,7 +463,6 @@ Qed.
 (** * Notations
 
  *)
-
 
 Notation  "[ i ]" := (instr i) (at level 50) : free_prog_scope.
 Notation "'[ i ]" := (lift (instr i)) (at level 50) : free_prog_scope.
