@@ -301,6 +301,24 @@ Proof.
   reflexivity.
 Qed.
 
+Add Parametric Morphism
+    (I:  Interface)
+    (A B C:  Type)
+  : (@pbind I B A)
+    with signature (@weq (Program I A) _)
+                     ==> (@eq (A -> Program I B))
+                     ==> (@weq (Program I B) _)
+      as pbind_morphism.
+Proof.
+  intros p q Heq f.
+  constructor; intros int.
+  + repeat rewrite eval_program_bind_assoc.
+    rewrite Heq.
+    reflexivity.
+  + repeat rewrite exec_program_bind_assoc.
+    rewrite Heq.
+    reflexivity.
+Qed.
 
 (** ** Monad Laws
 
