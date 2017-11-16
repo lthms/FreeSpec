@@ -1,0 +1,244 @@
+Require Import Coq.Program.Equality.
+
+Require Import FreeSpec.Control.
+Require Import FreeSpec.Control.Either.
+Require Import FreeSpec.Interface.
+Require Import FreeSpec.Interp.
+Require Import FreeSpec.Program.
+Require Import FreeSpec.WEq.
+
+Local Open Scope free_control_scope.
+Local Open Scope free_weq_scope.
+
+Inductive FailInterface
+          (Err:  Type)
+          (I:    Interface)
+  : Interface :=
+| instruction_may_fail {R:  Type}
+                       (i:  I R)
+  : FailInterface Err I (Either Err R).
+
+Arguments instruction_may_fail [Err I R] (i).
+
+Inductive FailProgram
+          (Err:  Type)
+          (I:    Interface)
+  : Type -> Type :=
+| program_may_fail {R:  Type}
+                   (p:  Program (FailInterface Err I) (Either Err R))
+  : FailProgram Err I R.
+
+Arguments program_may_fail [Err I R] (p).
+
+Definition runFailProgram
+           {Err:  Type}
+           {I:    Interface}
+           {A:    Type}
+           (p:    FailProgram Err I A)
+  : Program (FailInterface Err I) (Either Err A) :=
+  match p with program_may_fail p => p end.
+
+Definition failProgram_weq
+           {Err:  Type}
+           {I:    Interface}
+           {A:    Type}
+           (p q:  FailProgram Err I A)
+  : Prop :=
+  runFailProgram p == runFailProgram q.
+
+Lemma failProgram_weq_refl
+      {Err:  Type}
+      {I:    Interface}
+      {A:    Type}
+      (p:    FailProgram Err I A)
+  : failProgram_weq p p.
+Proof.
+  induction p.
+  cbn; reflexivity.
+Qed.
+
+Lemma failProgram_weq_sym
+      {Err:  Type}
+      {I:    Interface}
+      {A:    Type}
+      (p q:  FailProgram Err I A)
+  : failProgram_weq p q
+    -> failProgram_weq q p.
+Proof.
+  induction p; induction q.
+  cbn.
+  intros Heq.
+  symmetry.
+  exact Heq.
+Qed.
+
+Lemma failProgram_weq_trans
+      {Err:    Type}
+      {I:      Interface}
+      {A:      Type}
+      (p q r:  FailProgram Err I A)
+  : failProgram_weq p q
+    -> failProgram_weq q r
+    -> failProgram_weq p r.
+Proof.
+  induction p; induction q; induction r.
+  cbn.
+  intros H1 H2.
+  transitivity p0; [ exact H1
+                   | exact H2
+                   ].
+Qed.
+
+Add Parametric Relation
+    (Err:  Type)
+    (I:    Interface)
+    (A:    Type)
+  : (FailProgram Err I A) failProgram_weq
+    reflexivity proved by failProgram_weq_refl
+    symmetry proved by failProgram_weq_sym
+    transitivity proved by failProgram_weq_trans
+      as fail_program_relation.
+
+Instance FailProgram_WEq
+         (Err:  Type)
+         (I:    Interface)
+         (A:    Type)
+  : WEq (FailProgram Err I A) :=
+  { weq := failProgram_weq
+  }.
+
+Definition fail_program_map
+           (Err:  Type) `{WEq Err}
+           (I:    Interface)
+           (A B:  Type)
+           (f:    A -> B)
+           (p:    FailProgram Err I A)
+  : FailProgram Err I B :=
+  program_may_fail (map f <$> runFailProgram p).
+
+Instance FailProgram_Functor
+         (Err:  Type) `{WEq Err}
+         (I:    Interface)
+  : Functor (FailProgram Err I) :=
+  { map := fail_program_map Err I
+  }.
+Proof.
+  + intros A Ha [p].
+    constructor; intro int.
+    ++ cbn.
+       fold (evalProgram int p0).
+       induction (evalProgram int p0); reflexivity.
+    ++ reflexivity.
+  + intros A B C Hc u v x.
+    induction x.
+    constructor; intros int.
+    ++ cbn.
+       fold (evalProgram int p).
+       induction (evalProgram int p); reflexivity.
+    ++ reflexivity.
+Defined.
+
+Definition failProgram_pure
+           (Err:  Type) `{WEq Err}
+           (I:    Interface)
+           (A:    Type)
+           (x:    A)
+  : FailProgram Err I A :=
+  program_may_fail (I:=I) (R:=A) $ pure (pure x:  Either Err A).
+
+Definition failProgram_apply
+           (Err:    Type) `{WEq Err}
+           (I:      Interface)
+           (A B:    Type)
+           (pf:     FailProgram Err I (A -> B))
+           (px:     FailProgram Err I A)
+  : FailProgram Err I B :=
+  program_may_fail (fe <- runFailProgram pf                       ;
+                    xe <- runFailProgram px                       ;
+                    pure (f <- fe                                 ;
+                          x <- xe                                 ;
+                          pure (f x))).
+
+Instance failProgram_applicative
+         (Err:  Type) `{WEq Err}
+         (I:    Interface)
+  : Applicative (FailProgram Err I) :=
+  { apply := failProgram_apply Err I
+  ; pure  := failProgram_pure Err I
+  }.
+Proof.
+  + intros A Ha v.
+    induction v.
+    constructor; intros int.
+    ++ cbn.
+       fold (evalProgram int p);
+         induction (evalProgram int p);
+         reflexivity.
+    ++ reflexivity.
+  + intros A B C Hc u v w.
+    induction w.
+    dependent induction u.
+    dependent induction v.
+    cbn.
+    constructor; intros int.
+    ++ cbn.
+       fold (evalProgram int p).
+       fold (execProgram int p).
+       fold (evalProgram (execProgram int p) p0).
+       fold (execProgram (execProgram int p) p0).
+       fold (evalProgram (execProgram (execProgram int p) p0) p1).
+       induction (evalProgram int p);
+         induction (evalProgram (execProgram int p) p0);
+         induction (evalProgram (execProgram (execProgram int p) p0) p1);
+         reflexivity.
+    ++ reflexivity.
+  + intros A B Hb v x.
+    constructor; intros int; reflexivity.
+  + intros A B Hb u x.
+    constructor; intros int; reflexivity.
+  + intros A B Hb g x.
+    induction x.
+    constructor; intros int.
+    ++ cbn.
+       induction (fst (runProgram int p)); reflexivity.
+    ++ reflexivity.
+Defined.
+
+Definition throw
+           {Err:  Type}
+           {I:    Interface}
+           {A:    Type}
+           (err:  Err)
+  : FailProgram Err I A :=
+  program_may_fail (I:=I) (R:=A) $ pure (left err).
+
+Definition catch
+           {Err:  Type}
+           {I:    Interface}
+           {A:    Type}
+           (p:    FailProgram Err I A)
+           (f:    Err -> FailProgram Err I A)
+  : FailProgram Err I A :=
+  program_may_fail (runFailProgram p >>= fun (x:  Either Err A)
+                                         => match x with
+                                            | right res
+                                              => pure x
+                                            | left err
+                                              => runFailProgram (f err)
+                                            end).
+
+Notation "'try!' p 'catch!' x '=>' q" := (catch p (fun x => q))
+                                          (at level 99, no associativity).
+
+Section TEST_NOTATION.
+  Variables (Err:  Type)
+            (e:    Err)
+            (I:    Interface)
+            (A:    Type).
+
+  Let dummy_catch
+    : FailProgram Err I A :=
+    try! throw e
+    catch! e
+    => throw e.
+End TEST_NOTATION.
