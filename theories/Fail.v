@@ -159,7 +159,7 @@ Definition failProgram_apply
                           x <- xe                                 ;
                           pure (f x))).
 
-Instance failProgram_applicative
+Instance failProgram_Applicative
          (Err:  Type) `{WEq Err}
          (I:    Interface)
   : Applicative (FailProgram Err I) :=
@@ -202,6 +202,110 @@ Proof.
     ++ cbn.
        induction (fst (runProgram int p)); reflexivity.
     ++ reflexivity.
+Defined.
+
+Definition failProgram_bind
+           (Err:  Type) `{WEq Err}
+           (I:    Interface)
+           (A B:  Type)
+           (p:    FailProgram Err I A)
+           (f:    A -> FailProgram Err I B)
+  : FailProgram Err I B :=
+  program_may_fail (xe <- runFailProgram p     ;
+                    match xe with
+                    | right x
+                      => runFailProgram (f x)
+                    | left e
+                      => pure (left e)
+                    end).
+
+Instance FailProgram_Monad
+         (Err:  Type) `{WEq Err}
+         (I:    Interface)
+  : Monad (FailProgram Err I) :=
+  { bind := failProgram_bind Err I
+  }.
+Proof.
+  + intros A B Hb x f.
+    constructor; intros int; reflexivity.
+  + intros A Ha x.
+    induction x.
+    constructor; intros int.
+    ++ cbn.
+       unfold program_bind.
+       rewrite eval_program_bind_assoc.
+       induction (evalProgram int p); reflexivity.
+    ++ cbn.
+       unfold program_bind.
+       rewrite exec_program_bind_assoc.
+       induction (evalProgram int p); reflexivity.
+  + intros A B C Hc f g h.
+    induction f.
+    constructor; intros int.
+    ++ cbn.
+       unfold program_bind.
+       remember (fun (xe:  Either Err R)
+                 =>  match xe with
+                     | left e => program_pure (left e)
+                     | right x => runFailProgram (g x)
+                     end) as f1.
+       remember (fun (xe:  Either Err B)
+                 => match xe with
+                    | left e => program_pure (left e)
+                    | right x => runFailProgram (h x)
+                    end) as f2.
+       assert (pbind (pbind p f1) f2 == pbind p (fun x => pbind (f1 x) f2))
+         by (constructor; reflexivity).
+       rewrite H0.
+       rewrite Heqf1.
+       rewrite Heqf2.
+       repeat rewrite eval_program_bind_assoc.
+       induction (evalProgram int p); reflexivity.
+    ++ cbn.
+       unfold program_bind.
+       remember (fun (xe:  Either Err R)
+                 =>  match xe with
+                     | left e => program_pure (left e)
+                     | right x => runFailProgram (g x)
+                     end) as f1.
+       remember (fun (xe:  Either Err B)
+                 => match xe with
+                    | left e => program_pure (left e)
+                    | right x => runFailProgram (h x)
+                    end) as f2.
+       assert (pbind (pbind p f1) f2 == pbind p (fun x => pbind (f1 x) f2))
+         by (constructor; reflexivity).
+       rewrite H0.
+       rewrite Heqf1.
+       rewrite Heqf2.
+       repeat rewrite exec_program_bind_assoc.
+       induction (evalProgram int p); reflexivity.
+  + intros A B Ha x f f' Heq.
+    induction x.
+    cbn.
+    constructor; intros int.
+    ++ unfold program_bind.
+       repeat rewrite eval_program_bind_assoc.
+       induction (evalProgram int p); try reflexivity.
+       assert (Heq2:  runFailProgram (f y) == runFailProgram (f' y)) by apply Heq.
+       rewrite Heq2.
+       reflexivity.
+    ++ unfold program_bind.
+       repeat rewrite exec_program_bind_assoc.
+       induction (evalProgram int p); try reflexivity.
+       assert (Heq2:  runFailProgram (f y) == runFailProgram (f' y)) by apply Heq.
+       rewrite Heq2.
+       reflexivity.
+  + intros A B Hb x f.
+    induction x.
+    cbn.
+    constructor; intros int.
+    ++ unfold program_map, program_bind.
+       repeat rewrite eval_program_bind_assoc.
+       induction (evalProgram int p); reflexivity.
+    ++ unfold program_map, program_bind.
+       repeat rewrite exec_program_bind_assoc.
+       induction (evalProgram int p); reflexivity.
 Defined.
 
 Definition throw
