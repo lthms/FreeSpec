@@ -1,6 +1,7 @@
 Require Import Coq.Program.Equality.
 
 Require Import FreeSpec.Control.
+Require Import FreeSpec.Contract.
 Require Import FreeSpec.Control.Either.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Interp.
@@ -368,3 +369,65 @@ Section TEST_NOTATION.
     catch! e
     => throw e.
 End TEST_NOTATION.
+
+(** * Contracts
+
+ *)
+
+Definition fail_abstract_step
+           {Err:  Type}
+           {I:    Interface}
+           {W:    Type}
+           (c:    Contract W I)
+           (A:    Type)
+           (i:    FailInterface Err I A)
+           (x:    A)
+           (w:    W) :=
+  match i, x with
+  | instruction_may_fail i, right x
+    => abstract_step c i x w
+  | _, _
+    => w
+  end.
+
+Definition fail_requirements
+           {Err:  Type}
+           {I:    Interface}
+           {W:    Type}
+           (c:    Contract W I)
+           (A:    Type)
+           (i:    FailInterface Err I A)
+           (w:    W)
+  : Prop :=
+  match i with
+  | instruction_may_fail i
+    => requirements c i w
+  end.
+
+Definition fail_promises
+           {Err:  Type}
+           {I:    Interface}
+           {W:    Type}
+           (c:    Contract W I)
+           (A:    Type)
+           (i:    FailInterface Err I A)
+           (x:    A)
+           (w:    W)
+  : Prop :=
+  match i, x with
+  | instruction_may_fail i, right x
+    => promises c i x w
+  | _, _
+    => True
+  end.
+
+Definition FailContract
+           {Err:  Type}
+           {I:    Interface}
+           {W:    Type}
+           (c:    Contract W I)
+  : Contract W (FailInterface Err I) :=
+  {| abstract_step := fail_abstract_step c
+   ; requirements := fail_requirements c
+   ; promises := fail_promises c
+   |}.
