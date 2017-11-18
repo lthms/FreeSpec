@@ -10,6 +10,10 @@ Require Import FreeSpec.WEq.
 Local Open Scope free_control_scope.
 Local Open Scope free_weq_scope.
 
+(** * Interface
+
+ *)
+
 Inductive FailInterface
           (Err:  Type)
           (I:    Interface)
@@ -19,6 +23,12 @@ Inductive FailInterface
   : FailInterface Err I (Either Err R).
 
 Arguments instruction_may_fail [Err I R] (i).
+
+(** * FailProgram Monad
+
+   ** Definition
+
+ *)
 
 Inductive FailProgram
           (Err:  Type)
@@ -37,6 +47,10 @@ Definition runFailProgram
            (p:    FailProgram Err I A)
   : Program (FailInterface Err I) (Either Err A) :=
   match p with program_may_fail p => p end.
+
+(** ** Equality
+
+ *)
 
 Definition failProgram_weq
            {Err:  Type}
@@ -115,6 +129,10 @@ Definition fail_program_map
            (p:    FailProgram Err I A)
   : FailProgram Err I B :=
   program_may_fail (map f <$> runFailProgram p).
+
+(** ** Typeclass Instances
+
+ *)
 
 Instance FailProgram_Functor
          (Err:  Type) `{WEq Err}
@@ -307,6 +325,10 @@ Proof.
        repeat rewrite exec_program_bind_assoc.
        induction (evalProgram int p); reflexivity.
 Defined.
+
+(** ** Monadic Operatinos
+
+ *)
 
 Definition throw
            {Err:  Type}
