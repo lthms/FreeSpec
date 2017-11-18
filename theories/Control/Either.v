@@ -4,7 +4,6 @@ Require Import Coq.Setoids.Setoid.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.Function.
 Require Import FreeSpec.WEq.
-Require Import FreeSpec.Newtype.
 
 Local Open Scope free_weq_scope.
 
