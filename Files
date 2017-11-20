@@ -52,6 +52,7 @@ examples/Smram.v
 
 poc/CoqMain.v
 poc/Db.v
+poc/Nonce.v
 poc/extraction.v
 
 extraction/extraction.v
