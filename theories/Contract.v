@@ -503,6 +503,15 @@ Proof.
        exact He.
 Qed.
 
+Definition no_req
+           {I:  Interface}
+           {W:  Type}
+           (A:  Type)
+           (i:  I A)
+           (w:  W)
+  : Prop :=
+  True.
+
 (** * Strongly Compliant Program
 
     ** Definition
