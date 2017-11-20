@@ -28,6 +28,7 @@ theories/PropBool.v
 theories/Undefined.v
 theories/WEq.v
 theories/Tactics.v
+theories/Concurrent.v
 
 libs/coq-open-nat/OpenNat.v
 libs/nomega/NOmega.v

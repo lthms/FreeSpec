@@ -224,7 +224,7 @@ Lemma exec_program_bind_assoc
       (int:  Interp I)
       (p:    Program I A)
       (f:    A -> Program I B)
-  : execProgram int (pbind p f) == execProgram (execProgram int p) (f (evalProgram int p)).
+  : execProgram int (pbind p f) = execProgram (execProgram int p) (f (evalProgram int p)).
 Proof.
   reflexivity.
 Qed.
