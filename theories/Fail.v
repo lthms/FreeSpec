@@ -390,36 +390,35 @@ Definition fail_abstract_step
     => w
   end.
 
-Definition fail_requirements
-           {Err:  Type}
-           {I:    Interface}
-           {W:    Type}
-           (c:    Contract W I)
-           (A:    Type)
-           (i:    FailInterface Err I A)
-           (w:    W)
-  : Prop :=
-  match i with
-  | instruction_may_fail i
-    => requirements c i w
-  end.
+Inductive fail_requirements
+          {Err:  Type}
+          {I:    Interface}
+          {W:    Type}
+          (c:    Contract W I)
+  : forall (A:  Type), FailInterface Err I A -> W -> Prop :=
+| fail_req (A:  Type)
+           (i:  I A)
+           (w:  W)
+           (H:  requirements c i w)
+  : fail_requirements c (Either Err A) (instruction_may_fail i) w.
 
-Definition fail_promises
-           {Err:  Type}
-           {I:    Interface}
-           {W:    Type}
-           (c:    Contract W I)
-           (A:    Type)
-           (i:    FailInterface Err I A)
-           (x:    A)
-           (w:    W)
-  : Prop :=
-  match i, x with
-  | instruction_may_fail i, right x
-    => promises c i x w
-  | _, _
-    => True
-  end.
+Inductive fail_promises
+          {Err:  Type}
+          {I:    Interface}
+          {W:    Type}
+          (c:    Contract W I)
+  : forall (A:  Type), FailInterface Err I A -> A -> W -> Prop :=
+| fail_right (A:  Type)
+             (i:  I A)
+             (x:  A)
+             (w:  W)
+             (H:  promises c i x w)
+  : fail_promises c (Either Err A) (instruction_may_fail i) (right x) w
+| fail_left (A:    Type)
+            (i:    I A)
+            (err:  Err)
+            (w:    W)
+  : fail_promises c (Either Err A) (instruction_may_fail i) (left err) w.
 
 Definition FailContract
            {Err:  Type}
