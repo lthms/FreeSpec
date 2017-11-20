@@ -51,6 +51,7 @@ examples/Map.v
 examples/Smram.v
 
 poc/CoqMain.v
+poc/Db.v
 poc/extraction.v
 
 extraction/extraction.v
