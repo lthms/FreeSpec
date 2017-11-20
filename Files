@@ -51,8 +51,11 @@ examples/Map.v
 examples/Smram.v
 
 poc/CoqMain.v
+poc/App.v
 poc/Db.v
 poc/Nonce.v
+poc/OAuth.v
+poc/UserDb.v
 poc/extraction.v
 
 extraction/extraction.v
