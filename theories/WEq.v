@@ -1,5 +1,6 @@
 Require Import Coq.Setoids.Setoid.
 Require Import Coq.Arith.PeanoNat.
+Require Import Coq.Strings.String.
 
 Require Import FreeSpec.PropBool.
 
@@ -650,6 +651,40 @@ Instance list_WEqBool
   : WEqBool (list a) :=
   {
   }.
+
+(** ** String
+
+ *)
+
+Instance string_WEq
+  : WEq string :=
+  { weq := eq
+  }.
+
+Instance string_WEqDec
+  : WEqDec string :=
+  { weq_dec := string_dec
+  }.
+
+Instance string_WEqBool
+  : WEqBool string :=
+  { weq_bool := fun s s'
+                => if string_dec s s'
+                   then true
+                   else false
+  }.
+Proof.
+  constructor.
+  intros s s'.
+  split;
+    destruct (string_dec s s');
+    trivial.
+  ++ intros Hf.
+     discriminate.
+  ++ intros Hf.
+     apply n in Hf.
+     destruct Hf.
+Qed.
 
 (** * Tactics
 
