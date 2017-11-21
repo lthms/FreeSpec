@@ -245,3 +245,66 @@ Proof.
        apply correct_pbind_correct_left_operand with (f0 :=  f).
        exact Hp.
 Qed.
+
+Inductive ConcurrentAbstractExecution
+          {I:    Interface}
+          {A W:  Type}
+          (c:    Contract W I)
+          (P:    forall (A:  Type),
+              I A -> Prop)
+  : W -> Program I A -> A -> W -> Prop :=
+| concur_abstract_exec_ret (w:  W)
+                           (x:  A)
+  : ConcurrentAbstractExecution c P w (ret x) x w
+| concur_abstract_exec_instr (w w':     W)
+                             (st:       stream P)
+                             (Hbefore:  AbstractExecution c w (stream_to_prog st) tt w')
+                             (i:        I A)
+                             (Hreq:     requirements c i w')
+                             (x:        A)
+                             (Hprom:    promises c i x w')
+  : ConcurrentAbstractExecution c P w' (instr i) x (abstract_step c i x w')
+| concur_abstract_exec_bind {B:         Type}
+                            (w w' w'':  W)
+                            (p:         Program I B)
+                            (x:         B)
+                            (f:         B -> Program I A)
+                            (y:         A)
+                            (Hright:    ConcurrentAbstractExecution (A:=B) c P w p x w')
+                            (Hleft:     ConcurrentAbstractExecution c P w' (f x) y w'')
+  : ConcurrentAbstractExecution c P w (pbind p f) y w''.
+
+Theorem abstract_execution_is_concurrent_abstract_execution
+        {I:    Interface}
+        {A W:  Type}
+        (c:    Contract W I)
+        (w:    W)
+        (P:    forall (A:  Type), I A -> Prop)
+        (p:    Program I A)
+        (x:    A)
+        (w':   W)
+  : AbstractExecution c w p x w'
+    -> ConcurrentAbstractExecution c P w p x w'.
+Proof.
+  revert w w'.
+  induction p; intros w w'.
+  + intros H; inversion H; subst.
+    constructor.
+  + intros H; inversion H; subst.
+    eapply concur_abstract_exec_instr with (w0 :=  w)
+                                           (st :=  stop).
+    ++ constructor.
+    ++ exact Hreq.
+    ++ exact Hprom.
+  + intros Hbind.
+    inversion Hbind;
+      simplify_eqs;
+      simpl_existTs;
+      subst.
+    apply concur_abstract_exec_bind with (w'1 :=  w'0)
+                                         (x1  :=  x0).
+    ++ apply IHp.
+       exact Hright.
+    ++ apply H.
+       apply Hleft.
+Qed.
