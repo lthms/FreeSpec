@@ -1,3 +1,5 @@
+Require Import Coq.Program.Equality.
+
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Interp.
@@ -53,8 +55,8 @@ Theorem exec_prop_unique_res
     -> Execution int p y int''
     -> x = y /\ int' = int''.
 Proof.
-  revert int.
-  induction p; intros int.
+  revert int int' int''.
+  induction p; intros int int' int''.
   + intros H1 H2.
     inversion H1; subst.
     inversion H2; subst.
@@ -64,7 +66,21 @@ Proof.
     inversion H2; subst.
     split; reflexivity.
   + intros H1 H2.
-Admitted.
+    inversion H1; simplify_eqs; simpl_existTs.
+    inversion H2; simplify_eqs; simpl_existTs.
+    subst.
+    assert (Hx:  x0 = x1 /\ int'0 = int'1). {
+      apply IHp with (int:=int); [ apply Hleft
+                                 | apply Hleft0
+                                 ].
+    }
+    destruct Hx as [Hx Hint].
+    subst.
+    apply H with (b:=x1)
+                 (int:=int'1); [ apply Hright
+                               | apply Hright0
+                               ].
+Qed.
 
 Inductive stream
           {I:  Interface}
