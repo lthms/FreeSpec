@@ -470,6 +470,41 @@ Proof.
        exact He.
 Qed.
 
+Lemma correct_pbind_correct_left_operand
+      {W:    Type}
+      {I:    Interface}
+      {A B:  Type}
+      (w:    W)
+      (c:    Contract W I)
+      (p:    Program I A)
+      (f:    A -> Program I B)
+  : pbind p f =| c[w]
+    -> p =| c[w].
+Proof.
+  intros H.
+  inversion H; simplify_eqs; simpl_existTs; subst.
+  exact Hcp.
+Qed.
+
+Lemma correct_pbind_correct_right_operand
+      {W:    Type}
+      {I:    Interface}
+      {A B:  Type}
+      (w:    W)
+      (c:    Contract W I)
+      (p:    Program I A)
+      (f:    A -> Program I B)
+      (int:  Interp I)
+      (Hint:  int |= c [w])
+  : pbind p f =| c [w]
+    -> f (evalProgram int p) =| c [contract_derive p int c w].
+Proof.
+  intros H.
+  inversion H; simplify_eqs; simpl_existTs; subst.
+  apply Hnext.
+  exact Hint.
+Qed.
+
 Definition no_req
            {I:  Interface}
            {W:  Type}

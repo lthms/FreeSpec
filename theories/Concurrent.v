@@ -1,9 +1,15 @@
 Require Import Coq.Program.Equality.
 
+Require Import FreeSpec.Abstract.
+Require Import FreeSpec.Contract.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Interp.
 Require Import FreeSpec.Program.
+
+(** * Regular Execution
+
+ *)
 
 Inductive Execution
           {I:    Interface}
@@ -162,4 +168,80 @@ Proof.
                               (int'1:=int'0); [ apply Hleft
                                               | apply Hright
                                               ].
+Qed.
+
+Notation "int '-[' p ']->' int'" :=
+  (Execution int (p >>= fun _ => pure tt) tt int')
+    (at level 50, no associativity).
+
+Notation "int '=[' p '||' P ']=>' int'" :=
+  (ConcurrentExecution int P (p >>= fun _ => pure tt) tt int')
+    (at level 50, no associativity).
+
+(** * Abstract Execution
+
+ *)
+
+Inductive AbstractExecution
+          {I:    Interface}
+          {A W:  Type}
+          (c:    Contract W I)
+  : W -> Program I A -> A -> W -> Prop :=
+| abstract_exec_ret (w:  W)
+                    (x:  A)
+  : AbstractExecution c w (ret x) x w
+| abstract_exec_instr (w:      W)
+                      (i:      I A)
+                      (Hreq:   requirements c i w)
+                      (x:      A)
+                      (Hprom:  promises c i x w)
+  : AbstractExecution c w (instr i) x (abstract_step c i x w)
+| abstract_exec_bind {B:         Type}
+                     (w w' w'':  W)
+                     (p:         Program I B)
+                     (x:         B)
+                     (f:         B -> Program I A)
+                     (y:         A)
+                     (Hright:    AbstractExecution (A:=B) c w p x w')
+                     (Hleft:     AbstractExecution c w' (f x) y w'')
+  : AbstractExecution c w (pbind p f) y w''.
+
+Lemma compliant_interpreter_correct_program_abstract_execution
+      {I:     Interface}
+      {A W:   Type}
+      (c:     Contract W I)
+      (w:     W)
+      (int:   Interp I)
+      (p:     Program I A)
+      (Hint:  int |= c[w])
+      (Hp:    p =| c[w])
+  : AbstractExecution c w p (evalProgram int p) (contract_derive p int c w).
+Proof.
+  revert Hp Hint.
+  revert w int.
+  induction p; intros w int Hp Hint.
+  + constructor.
+  + constructor; [| apply Hint ];
+      inversion Hp;
+      simplify_eqs;
+      simpl_existTs;
+      subst;
+      exact Hreq.
+  + rewrite <- contract_derive_pbind.
+    rewrite eval_program_bind_assoc.
+    apply abstract_exec_bind with (w' :=  contract_derive p int c w)
+                                  (x  :=  evalProgram int p).
+    ++ apply IHp; [| apply Hint ].
+       apply correct_pbind_correct_left_operand with (f0:=f).
+       apply Hp.
+    ++ rewrite abstract_exec_exec_program_same.
+       apply H.
+       apply correct_pbind_correct_right_operand; [ exact Hint
+                                                  | exact Hp
+                                                  ].
+       erewrite <- abstract_exec_exec_program_same.
+       apply enforcer_compliant_enforcer.
+       exact Hint.
+       apply correct_pbind_correct_left_operand with (f0 :=  f).
+       exact Hp.
 Qed.
