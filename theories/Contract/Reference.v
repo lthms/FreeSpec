@@ -29,7 +29,7 @@ Theorem interp_eq_reference_contract
         (ref:  Interp I)
         (int:  Interp I)
   : int == ref
-    -> int :> reference_contract [ref].
+    -> int |= reference_contract [ref].
 Proof.
   revert ref int.
   cofix.
@@ -48,7 +48,7 @@ Qed.
 Corollary reference_compliant_reference_contract
           {I:    Interface}
           (ref:  Interp I)
-  : ref :> reference_contract [ref].
+  : ref |= reference_contract [ref].
 Proof.
   apply interp_eq_reference_contract.
   reflexivity.

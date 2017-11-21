@@ -244,7 +244,7 @@ Module DB (Spec:  DbSpec).
           {A:      Type}
           (p:      Program Query A)
           (state:  State)
-      : p :> query_contract[state].
+      : p =| query_contract[state].
     Proof.
       revert state.
       induction p; intros state.
@@ -276,7 +276,7 @@ Module DB (Spec:  DbSpec).
     : Type :=
       { view:                 QuerySemantics.State
       ; interpreter:          Interp Query
-      ; interpreter_complies: interpreter :> QuerySemantics.query_contract [view]
+      ; interpreter_complies: interpreter |= QuerySemantics.query_contract [view]
       }.
 
     (* For the record, an implementation of this function using

@@ -547,17 +547,17 @@ Section SMRAM_EXAMPLE.
   Lemma mch_refine_enforcer
         {dram:     Interp IDRAM}
         {dram_ref: DRAMState}
-        (Henf:     dram :> dram_contract[dram_ref])
+        (Henf:     dram |= dram_contract[dram_ref])
     : forall (vga:       Interp IVGA)
              (smram_ref: SmramState),
       mch_dram_sync smram_ref {| smram_lock := true |} dram_ref
       -> (StatefulInterpret mch_refine
                             {| smram_lock := true |}
                             (dram |+| vga))
-           :> smram_contract [smram_ref].
+           |= smram_contract [smram_ref].
   Proof.
     intros vga smram_ref Hsync.
-    assert (dram |+| vga :> smram_subcontract[dram_ref])
+    assert (dram |+| vga |= smram_subcontract[dram_ref])
       as Henf' by apply (expand_enforcer_left Henf).
     apply (enforcer_refinement mch_refine
                                smram_contract

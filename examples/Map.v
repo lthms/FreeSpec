@@ -170,7 +170,7 @@ Section MAP.
     Corollary MapInterp_enforce_contract
               (s:    State)
               (Hinv: x_free_map s)
-      : MapInterp s :> never_read_x_contract[tt].
+      : MapInterp s |= never_read_x_contract[tt].
     Proof.
       apply (const_contract_enforcement never_read_x_requirements
                                         never_read_x_promises
@@ -189,7 +189,7 @@ Section MAP.
       [Write k' v].
 
     Lemma read_write_contractful
-      : read_write :> never_read_x_contract[tt].
+      : read_write =| never_read_x_contract[tt].
     Proof.
       unfold read_write.
       constructor.

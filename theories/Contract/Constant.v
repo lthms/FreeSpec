@@ -108,7 +108,7 @@ Lemma const_contract_enforcement
       (Henf:         requirements_brings_promises requirements promises step inv)
   : forall (s: State),
     inv s
-    -> (mkInterp step s) :> (constant_contract requirements promises)[tt].
+    -> (mkInterp step s) |= (constant_contract requirements promises)[tt].
 Proof.
   intros s Hinv.
   apply (stateful_contract_enforcement (constant_contract requirements promises)
@@ -135,9 +135,9 @@ Lemma compliant_program_enforcer_enforcer_exec
       (p:   Program I A)
       (c:   Contract unit I)
       (int: Interp I)
-  : p :> c[tt]
-    -> int :> c[tt]
-    -> (execProgram int p) :> c[tt].
+  : p =| c[tt]
+    -> int |= c[tt]
+    -> (execProgram int p) |= c[tt].
 Proof.
   intros Hc Henf.
   apply (enforcer_compliant_enforcer p c tt int) in Henf.
@@ -145,19 +145,4 @@ Proof.
      rewrite (tt_singleton (contract_derive p int c tt) tt) in Henf.
      exact Henf.
   ++ exact Hc.
-Qed.
-
-Lemma const_compliant_is_strongly_compliant
-      {I: Interface}
-      {A: Type}
-      (p: Program I A)
-      (c: Contract unit I)
-  : p :> c[tt]
-    -> strongly_compliant_program c tt p.
-Proof.
-  intro Hp.
-  split.
-  + exact Hp.
-  + intros int Henf.
-    apply (compliant_program_enforcer_enforcer_exec p c int Hp Henf).
 Qed.

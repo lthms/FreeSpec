@@ -45,7 +45,7 @@ Definition escape_undefined_hell
 
 Lemma escape_undefined_hell_compliance
       (int:  Interp Undefined)
-  : int :> escape_undefined_hell [tt].
+  : int |= escape_undefined_hell [tt].
 Proof.
   constructor.
   + intros A i Hreq.

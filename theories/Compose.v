@@ -299,9 +299,9 @@ Lemma compliant_interpreters_compose_compliant_interpreter
            (c':   Contract S' I')
            (s:    S)
            (s':   S'),
-    int :> c[s]
-    -> int' :> c'[s']
-    -> int |+| int' :> (c :+: c')[(s, s')].
+    int |= c[s]
+    -> int' |= c'[s']
+    -> int |+| int' |= (c :+: c')[(s, s')].
 Proof.
   cofix.
   intros int int' c c' s s' Hint Hint'.
@@ -401,13 +401,13 @@ Lemma expand_enforcer_left
            {c:    Contract S I}
            {s:    S}
            {int:  Interp I}
-           (Henf: int :> c[s])
+           (Henf: int |= c[s])
            (int': Interp I'),
-    int |+| int' :> (expand_contract_left c I')[s].
+    int |+| int' |= (expand_contract_left c I')[s].
 Proof.
   cofix.
   intros S I I' c s int Henf int'.
-  assert (Henf': int :> c[s]) by apply Henf.
+  assert (Henf': int |= c[s]) by apply Henf.
   destruct Henf.
   constructor.
   + intros A i; induction i; cbn; [| trivial].
@@ -492,13 +492,13 @@ Lemma expand_enforcer_right
            {c:    Contract S I}
            {s:    S}
            {int:  Interp I}
-           (Henf: int :> c[s])
+           (Henf: int |= c[s])
            (int': Interp I'),
-    int' |+| int :> (expand_contract_right c I')[s].
+    int' |+| int |= (expand_contract_right c I')[s].
 Proof.
   cofix.
   intros S I I' c s int Henf int'.
-  assert (Henf': int :> c[s]) by apply Henf.
+  assert (Henf': int |= c[s]) by apply Henf.
   destruct Henf.
   constructor.
   + intros A i; induction i; cbn; [trivial |].

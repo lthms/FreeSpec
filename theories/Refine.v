@@ -60,7 +60,7 @@ Definition compliant_refinement
          (i:  Ii A),
     sync si s so
     -> requirements master i si
-    -> (sr A i s) :> slave[so].
+    -> (sr A i s) =| slave[so].
 
 Definition sync_preservation
            {Si So:  Type}
@@ -74,7 +74,7 @@ Definition sync_preservation
          (s:    S)
          (so:   So)
          (int:  Interp Io)
-         (Henf: int :> slave[so])
+         (Henf: int |= slave[so])
          {A:    Type}
          (i:    Ii A),
   sync si s so
@@ -95,7 +95,7 @@ Definition sync_promises
          (s:    S)
          (so:   So)
          (int:  Interp Io)
-         (Henf: int :> slave[so])
+         (Henf: int |= slave[so])
          {A:    Type}
          (i:    Ii A),
   sync si s so
@@ -117,9 +117,9 @@ Theorem enforcer_refinement
            (s:    S)
            (so:   So)
            (int:  Interp Io)
-           (Henf: int :> slave[so]),
+           (Henf: int |= slave[so]),
     sync si s so
-    -> StatefulInterpret sr s int :> master[si].
+    -> StatefulInterpret sr s int |= master[si].
 Proof.
   cofix.
   intros si s so int Henf Hsync.
@@ -133,7 +133,7 @@ Proof.
     apply (Hsyncp si s so int Henf A i Hsync Hreq).
   + intros A i Hreq.
     unfold compliant_refinement in Hcompliant.
-    assert ((sr A i s) :> slave[so])
+    assert ((sr A i s) =| slave[so])
       as Hcp
         by  apply (Hcompliant si s so A i Hsync Hreq).
     assert (execInstruction (StatefulInterpret sr s int) i

@@ -25,7 +25,7 @@ Ltac destruct_if_when :=
 
 Ltac run_program interp :=
   match goal with
-  | [ H : interp :> ?contract [ ?state ] |- context[interpret interp ?instr] ]
+  | [ H : interp |= ?contract [ ?state ] |- context[interpret interp ?instr] ]
     =>  let i := fresh "i" in
         let Hreq_i    := fresh "Hreq_i"    in
         let Hprom_i   := fresh "Hprom_i"   in
@@ -44,7 +44,7 @@ Ltac run_program interp :=
             by (rewrite Heq_res; apply H; exact Hreq_i);
           remember (snd (interpret interp i)) as int eqn: Heq_int;
           remember (abstract_step contract i res state) as abs eqn: Heq_abs;
-          assert (Henf_int:  int :> contract [abs])
+          assert (Henf_int:  int |= contract [abs])
             by (rewrite Heq_abs;
                 rewrite Heq_int;
                 apply H;
