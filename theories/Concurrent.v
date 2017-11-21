@@ -132,3 +132,34 @@ Inductive ConcurrentExecution
                  (Hleft:       @ConcurrentExecution I B int P p x int')
                  (Hright:      ConcurrentExecution int' P (f x) y int'')
   : ConcurrentExecution int P (pbind p f) y int''.
+
+Theorem execution_is_concurrent_execution
+        {I:         Interface}
+        {A:         Type}
+        (int int':  Interp I)
+        (p:         Program I A)
+        (x:         A)
+  : forall (P:  forall (A:  Type),
+               I A -> Prop),
+    Execution int p x int'
+    -> ConcurrentExecution int P p x int'.
+Proof.
+  intros P.
+  revert int int' x; induction p; intros int int' x.
+  + intros H.
+    inversion H; subst.
+    constructor.
+  + intros H.
+    inversion H; subst.
+    apply conc_exec_instr with (st:=stop).
+    constructor.
+  + intros Hbind.
+    inversion Hbind; simplify_eqs; simpl_existTs.
+    subst.
+    apply IHp in Hleft.
+    apply H in Hright.
+    apply conc_exec_bind with (x1:=x0)
+                              (int'1:=int'0); [ apply Hleft
+                                              | apply Hright
+                                              ].
+Qed.
