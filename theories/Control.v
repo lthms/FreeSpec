@@ -187,14 +187,21 @@ Definition join
   : m a :=
   x >>= id.
 
+Definition void
+           {m:  Type -> Type} `{Monad m}
+           {a:  Type}
+           (x:  m a)
+  : m unit :=
+  x >>= fun _ => pure tt.
+
 Definition when
-           {m:     Type -> Type}
-          `{Monad m}
+           {m:     Type -> Type} `{Monad m}
+           {a:     Type}
            (cond:  bool)
-           (x:     m unit)
+           (x:     m a)
   : m unit :=
   if cond
-  then x
+  then void x
   else pure tt.
 
 Notation "a <- p ; q" :=
