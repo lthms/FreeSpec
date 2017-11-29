@@ -164,3 +164,18 @@ Definition PureRefinement
            (Io: Type -> Type)
   := forall (A: Type),
     Ii A -> Program Io A.
+
+Fixpoint refine
+         {I I':   Interface}
+         {A:      Type}
+         (p:      Program I A)
+         (ref:    PureRefinement I I')
+  : Program I' A :=
+  match p with
+  | ret x
+    => ret x
+  | instr i
+    => ref _ i
+  | pbind q f
+    => pbind (refine q ref) (fun x => refine (f x) ref)
+  end.
