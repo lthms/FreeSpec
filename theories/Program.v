@@ -478,6 +478,21 @@ Proof.
   induction p; reflexivity.
 Qed.
 
+Fixpoint interface_map
+         {I I':  Interface}
+         {A:     Type}
+         (p:     Program I A)
+         (map:   forall (A:  Type), I A -> I' A)
+  : Program I' A :=
+  match p with
+  | ret x
+    => ret x
+  | instr i
+    => instr (map A i)
+  | pbind q f
+    => pbind (interface_map q map) (fun x => interface_map (f x) map)
+  end.
+
 (** * Notations
 
  *)

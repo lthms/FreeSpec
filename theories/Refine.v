@@ -179,3 +179,14 @@ Fixpoint refine
   | pbind q f
     => pbind (refine q ref) (fun x => refine (f x) ref)
   end.
+
+Definition adapt
+           {I I' I'':  Interface}
+           {S:         Type}
+           (sref:      StatefulRefinement I I' S)
+           (pref:      PureRefinement I' I'')
+  : StatefulRefinement I I'' S :=
+  fun (A:  Type)
+      (i:  I A)
+      (s:  S)
+  => refine (sref A i s) pref.

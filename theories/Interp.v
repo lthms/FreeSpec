@@ -59,6 +59,15 @@ Definition execInstruction
     : Interp I :=
     snd (interpret int i).
 
+CoFixpoint coerce_interp
+           {I I':  Interface}
+           (f:     forall (A:  Type), I A -> I' A)
+           (int:   Interp I')
+  : Interp I :=
+  interp (fun (A:  Type)
+              (i:  I A)
+          => (evalInstruction int (f _ i), coerce_interp f (execInstruction int (f _ i)))).
+
 (** ** Interpreters Equivalence
 
     Two Interpreters are said to be equivalent when they always return
