@@ -11,7 +11,15 @@ COQDOCFLAGS :=                                      \
 
 export COQDOCFLAGS
 
-.PHONY:all clean mrproper docs html tex
+.PHONY:all clean mrproper docs html tex coq poc
+
+coq: $(SUBMAKE) $(SRC)
+	@(echo "[*] Compiling the Coq source tree")
+	@(make -f $(SUBMAKE))
+
+poc:
+	@(echo "[*] Compiling the Haskell Proof of Concept")
+	@(make -C poc/poc-hs)
 
 all: $(SUBMAKE) $(SRC)
 	@(echo "[*] Compiling the Coq source tree")
