@@ -2,10 +2,10 @@ Require Import Coq.NArith.NArith.
 
 Require Import FreeSpec.Specs.Memory.
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.Interp.
+Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.Function.
-Require Import FreeSpec.MonadInterp.
+Require Import FreeSpec.MonadSemantics.
 Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Control.Classes.
 Require Import FreeSpec.Control.Identity.
@@ -114,7 +114,7 @@ Proof.
     nomega.
 Qed.
 
-Definition MS_interp
+Definition MS_handle
            {n:  N}
            {A:  Type}
            (i:  MSi n A)
@@ -161,17 +161,17 @@ Definition MS_interp
                                     else store addr')
   end.
 
-Instance memstorage_MonadInterp
+Instance memstorage_MonadSemantics
          (n:  N)
-  : MonadInterp (MSi n) (State (MSs n)) :=
-  { interpret := @MS_interp n
+  : MonadSemantics (MSi n) (State (MSs n)) :=
+  { handle := @MS_handle n
   }.
 
-Definition MSInterp
+Definition MSSemantics
            {n:  N}
            (x:  MSs n)
-  : Interp (MSi n) :=
-  monad_state_interp (MSs_init n).
+  : Semantics (MSi n) :=
+  monad_state_semantics (MSs_init n).
 
 Require Import FreeSpec.Program.
 Local Open Scope free_prog_scope.
@@ -182,7 +182,7 @@ Fact write_then_read
      (x:  MSs n)
      (a:  mem n)
      (v:  word)
-  : evalProgram (MSInterp x) ([write_word a v] ;; [read_word a]) == v.
+  : evalProgram (MSSemantics x) ([write_word a v] ;; [read_word a]) == v.
 Proof.
   Opaque weq_bool.
   cbn.

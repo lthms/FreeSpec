@@ -77,7 +77,7 @@ Definition pci_do
            {A:  Type}
            (i:  PCIi A)
   : MCHm A :=
-  '[ileft i].
+  '[InL i].
 
 Definition pio_out8
            (x:  word)

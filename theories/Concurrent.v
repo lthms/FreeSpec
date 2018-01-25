@@ -1,11 +1,11 @@
 Require Import Coq.Program.Equality.
 
 Require Import FreeSpec.Abstract.
-Require Import FreeSpec.Contract.
-Require Import FreeSpec.Contract.Constant.
+Require Import FreeSpec.Specification.
+Require Import FreeSpec.Specification.Constant.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.Interp.
+Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Refine.
 Require Import FreeSpec.WEq.
@@ -18,12 +18,12 @@ Inductive sequence
 | sequence_nil
   : sequence I
 | sequence_cons {A:     Type}
-                (i:     I A)
+                (e:     I A)
                 (rest:  sequence I)
   : sequence I.
 
 Arguments sequence_nil [I].
-Arguments sequence_cons [I A] (i rest).
+Arguments sequence_cons [I A] (e rest).
 
 Inductive correct_sequence
           {I:    Interface}
@@ -31,11 +31,11 @@ Inductive correct_sequence
               I A -> Prop)
   : sequence I -> Prop :=
 | correct_sequence_cons {A:      Type}
-                        (i:      I A)
-                        (Hreq:   req A i)
+                        (e:      I A)
+                        (Hreq:   req A e)
                         (rest:   sequence I)
                         (H:      correct_sequence req rest)
-  : correct_sequence req (sequence_cons i rest)
+  : correct_sequence req (sequence_cons e rest)
 | correct_sequence_nil
   : correct_sequence req sequence_nil.
 
@@ -51,7 +51,7 @@ Fixpoint sequence_to_prog
   | sequence_nil
     => pure tt
   | sequence_cons i rest
-    => instr i >>= fun _ => sequence_to_prog rest
+    => Request i >>= fun _ => sequence_to_prog rest
   end.
 
 CoInductive stream
@@ -118,34 +118,34 @@ Proof.
   exact Hnext.
 Qed.
 
-CoFixpoint concurrent_interp
+CoFixpoint concurrent_semantics
          {I:    Interface}
-         (int:  Interp I)
+         (sig:  Semantics I)
          (st:   stream I)
-  : Interp I :=
-  interp (fun {A:  Type}
-              (i:  I A)
-          => (evalInstruction (execProgram int (sequence_to_prog (pick st))) i,
-              concurrent_interp (execInstruction (execProgram int
-                                                              (sequence_to_prog (pick st))
-                                                 ) i)
-                                (consume st))).
+  : Semantics I :=
+  handler (fun {A:  Type}
+               (e:  I A)
+           => (evalEffect (execProgram sig (sequence_to_prog (pick st))) e,
+               concurrent_semantics (execEffect (execProgram sig
+                                                             (sequence_to_prog (pick st))
+                                                ) e)
+                                    (consume st))).
 
 Inductive non_interference_requirement
           {W:    Type}
           {I:    Interface}
-          (c:    Contract W I)
+          (c:    Specification W I)
           (req:  forall (A:  Type), I A -> Prop)
   : Prop :=
-| concurrent_contracts_req (Hreq: forall {A:  Type}
+| concurrent_semanticss_req (Hreq: forall {A:  Type}
+                                          (i:  I A)
+                                          (w:  W),
+                                req A i -> precondition c i w)
+                            (Hni: forall {A:  Type}
                                          (i:  I A)
+                                         (x:  A)
                                          (w:  W),
-                               req A i -> requirements c i w)
-                           (Hni: forall {A:  Type}
-                                        (i:  I A)
-                                        (x:  A)
-                                        (w:  W),
-                               req A i -> abstract_step c i x w = w)
+                                req A i -> abstract_step c i x w = w)
   : non_interference_requirement c req.
 
 Notation "c \\ req" :=
@@ -156,28 +156,28 @@ Lemma correct_sequence_rewrite_abstract_state
       {I:     Interface}
       {W:     Type}
       (w:     W)
-      (c:     Contract W I)
+      (c:     Specification W I)
       (req:   forall (A:  Type),
           I A -> Prop)
       (seq:   sequence I)
       (Hseq:  seq =¦ req)
-      (int:   Interp I)
-      (Hint:  int |= c[w])
+      (sig:   Semantics I)
+      (Hsig:  sig |= c[w])
       (Hni:   c \\ req)
-  : contract_derive (sequence_to_prog seq) int c w = w.
+  : specification_derive (sequence_to_prog seq) sig c w = w.
 Proof.
-  revert Hint; revert int w.
-  induction seq; intros int w Hint.
+  revert Hsig; revert sig w.
+  induction seq; intros sig w Hsig.
   + reflexivity.
   + cbn.
     unfold program_bind.
-    rewrite <- contract_derive_pbind.
+    rewrite <- specification_derive_bind.
     inversion Hseq; simplify_eqs; simpl_existTs; subst.
     rewrite IHseq.
     ++ apply Hni.
        apply Hreq.
     ++ apply H0.
-    ++ apply enforcer_compliant_enforcer; [ exact Hint |].
+    ++ apply compliant_correct_compliant; [ exact Hsig |].
        constructor.
        destruct Hni.
        apply Hreq0.
@@ -188,7 +188,7 @@ Lemma correct_sequence_correct_program
       {I:     Interface}
       {W:     Type}
       (w:     W)
-      (c:     Contract W I)
+      (c:     Specification W I)
       (req:   forall (A:  Type),
           I A -> Prop)
       (seq:   sequence I)
@@ -209,7 +209,7 @@ Proof.
        exact Hreq.
     ++ intros int Hint.
        inversion Hseq; simplify_eqs; simpl_existTs; subst.
-       assert (Heq:  contract_derive (instr i) int c w = w). {
+       assert (Heq:  specification_derive (Request e) int c w = w). {
          cbn.
          destruct Hni.
          apply Hni.
@@ -224,20 +224,20 @@ Theorem concurrence_is_possible
         {I:     Interface}
         {W:     Type}
         (w:     W)
-        (c:     Contract W I)
+        (c:     Specification W I)
         (req:   forall (A:  Type),
             I A -> Prop)
         (st:    stream I)
         (Hst:   st *=¦ req)
-        (int:   Interp I)
-        (Hint:  int |= c[w])
+        (sig:   Semantics I)
+        (Hsig:  sig |= c[w])
         (Hni:   c \\ req)
-  : concurrent_interp int st |= c[w].
+  : concurrent_semantics sig st |= c[w].
 Proof.
-  revert Hint.
+  revert Hsig.
   revert Hst.
-  revert int st w.
-  cofix; intros int st w Hst Hint.
+  revert sig st w.
+  cofix; intros sig st w Hst Hsig.
   constructor.
   + cbn.
     assert (pick st =¦ req)
@@ -246,27 +246,27 @@ Proof.
       by (apply correct_stream_consume_correct_stream; assumption).
     inversion Hst; subst.
     cbn.
-    intros A i Hreq.
+    intros A e Hpre.
     erewrite <- correct_sequence_rewrite_abstract_state; [ idtac
                                                          | exact Hseq
-                                                         | exact Hint
+                                                         | exact Hsig
                                                          | exact Hni
                                                          ].
-    erewrite <- correct_sequence_rewrite_abstract_state in Hreq; [ idtac
+    erewrite <- correct_sequence_rewrite_abstract_state in Hpre; [ idtac
                                                          | exact Hseq
-                                                         | exact Hint
+                                                         | exact Hsig
                                                          | exact Hni
                                                          ].
-    assert (Hint': execProgram int (sequence_to_prog seq) |= c[contract_derive (sequence_to_prog seq) int c w]). {
+    assert (Hsig': execProgram sig (sequence_to_prog seq) |= c[specification_derive (sequence_to_prog seq) sig c w]). {
       erewrite <- abstract_exec_exec_program_same.
-      apply enforcer_compliant_enforcer.
-      exact Hint.
+      apply compliant_correct_compliant.
+      exact Hsig.
       apply correct_sequence_correct_program with (req0 :=  req).
       + exact Hseq.
       + exact Hni.
     }
-    apply Hint'.
-    apply Hreq.
+    apply Hsig'.
+    apply Hpre.
   + cbn.
     assert (pick st =¦ req)
       by (apply correct_stream_pick_correct_sequence; assumption).
@@ -274,25 +274,25 @@ Proof.
       by (apply correct_stream_consume_correct_stream; assumption).
     inversion Hst; subst.
     cbn.
-    intros A i Hreq.
-    remember (execProgram int (sequence_to_prog seq)) as int'.
-    remember (evalInstruction int' i) as x.
+    intros A e Hpre.
+    remember (execProgram sig (sequence_to_prog seq)) as sig'.
+    remember (evalEffect sig' e) as x.
     assert (Hp:  sequence_to_prog seq =| c[w]). {
       apply correct_sequence_correct_program with (req0 :=  req).
       exact Hseq.
       exact Hni.
     }
-    assert (Hint':  int' |= c[w]). {
-      rewrite <- (correct_sequence_rewrite_abstract_state w c req seq Hseq int Hint Hni).
-      rewrite Heqint'.
+    assert (Hsig':  sig' |= c[w]). {
+      rewrite <- (correct_sequence_rewrite_abstract_state w c req seq Hseq sig Hsig Hni).
+      rewrite Heqsig'.
       erewrite <- abstract_exec_exec_program_same.
-      apply enforcer_compliant_enforcer.
-      + exact Hint.
+      apply compliant_correct_compliant.
+      + exact Hsig.
       + exact Hp.
     }
     apply concurrence_is_possible.
     apply Hnext.
     rewrite Heqx.
-    apply Hint'.
-    apply Hreq.
+    apply Hsig'.
+    apply Hpre.
 Qed.

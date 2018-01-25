@@ -4,10 +4,10 @@ Require Import FreeSpec.PropBool.
 Require Import FreeSpec.TemporalLogic.
 Require Import FreeSpec.TemporalLogic.Notations.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Interp.
+Require Import FreeSpec.Semantics.
 Require Import FreeSpec.WEq.
-Require Import FreeSpec.Contract.
-Require Import FreeSpec.Contract.Constant.
+Require Import FreeSpec.Specification.
+Require Import FreeSpec.Specification.Constant.
 Require Import FreeSpec.Control.
 
 Require Import Sumbool.
@@ -62,10 +62,10 @@ Section MAP.
                  else map k')
     end.
 
-  Definition MapInterp
+  Definition MapSemantics
              (s: State)
-    : Interp IMap
-    := mkInterp map_program_step s.
+    : Semantics IMap
+    := mkSemantics map_program_step s.
 
   Definition MapProgram := Program IMap.
 
@@ -80,7 +80,7 @@ Section MAP.
         (s: State)
         (k: Key)
         (v: Value)
-    : evalProgram (MapInterp s) (read_then_write k v) == v.
+    : evalProgram (MapSemantics s) (read_then_write k v) == v.
   Proof.
     cbn.
     rewrite weq_bool_refl.
@@ -92,10 +92,10 @@ Section MAP.
         (k k': Key)
         (v:    Value)
         (Hneq: k' /= k)
-    : evalProgram (MapInterp s)
+    : evalProgram (MapSemantics s)
                   (_ <- [Write k' v];
                      [Read k])
-       == evalProgram (MapInterp s) ([Read k]) .
+       == evalProgram (MapSemantics s) ([Read k]) .
   Proof.
     cbn.
     apply weq_bool_false in Hneq.
@@ -103,10 +103,10 @@ Section MAP.
     reflexivity.
   Qed.
 
-  Section CONTRACT.
+  Section SPECIFICATION.
     Variable (x: Value).
 
-    Definition never_read_x_requirements
+    Definition never_read_x_precondition
                (A: Type)
                (i: IMap A) :=
       match i with
@@ -114,7 +114,7 @@ Section MAP.
       | Write k v => v /= x
       end.
 
-    Definition never_read_x_promises
+    Definition never_read_x_postcondition
                (A: Type)
                (i: IMap A)
       : A -> Prop :=
@@ -125,22 +125,22 @@ Section MAP.
         => fun x => True
       end.
 
-    Definition never_read_x_contract :=
-      constant_contract never_read_x_requirements
-                        never_read_x_promises.
+    Definition never_read_x_specification :=
+      constant_specification never_read_x_precondition
+                             never_read_x_postcondition.
 
     Definition x_free_map
                (s: State)
       : Prop :=
       forall k, (s k) /= x.
 
-    Lemma map_interp_preserves_inv
-      : requirements_preserves_inv never_read_x_requirements
+    Lemma map_semantics_preserves_inv
+      : precondition_preserves_inv never_read_x_precondition
                                    map_program_step
                                    x_free_map.
     Proof.
-      unfold requirements_preserves_inv.
-      induction i.
+      unfold precondition_preserves_inv.
+      induction e.
       + intros s Hinv Hreq.
         exact Hinv.
       + intros s Hinv Hreq.
@@ -153,13 +153,13 @@ Section MAP.
            apply (Hinv k').
     Qed.
 
-    Lemma map_interp_enforces_promises
-      : requirements_brings_promises never_read_x_requirements
-                                     never_read_x_promises
-                                     map_program_step x_free_map.
+    Lemma map_semantics_enforces_postcondition
+      : precondition_enforces_postcondition never_read_x_precondition
+                                            never_read_x_postcondition
+                                            map_program_step x_free_map.
     Proof.
-      unfold requirements_brings_promises.
-      induction i.
+      unfold precondition_enforces_postcondition.
+      induction e.
       + intros s Hinv Hreq.
         apply (Hinv k).
       + intros s Hinv Hreq.
@@ -167,17 +167,17 @@ Section MAP.
         trivial.
     Qed.
 
-    Corollary MapInterp_enforce_contract
+    Corollary MapSemantics_complies_with_specification
               (s:    State)
               (Hinv: x_free_map s)
-      : MapInterp s |= never_read_x_contract[tt].
+      : MapSemantics s |= never_read_x_specification[tt].
     Proof.
-      apply (const_contract_enforcement never_read_x_requirements
-                                        never_read_x_promises
+      apply (const_specification_enforcement never_read_x_precondition
+                                        never_read_x_postcondition
                                         map_program_step
                                         x_free_map
-                                        map_interp_preserves_inv
-                                        map_interp_enforces_promises).
+                                        map_semantics_preserves_inv
+                                        map_semantics_enforces_postcondition).
       exact Hinv.
     Qed.
 
@@ -188,8 +188,8 @@ Section MAP.
       v <- [Read k];
       [Write k' v].
 
-    Lemma read_write_contractful
-      : read_write =| never_read_x_contract[tt].
+    Lemma read_write_specificationful
+      : read_write =| never_read_x_specification[tt].
     Proof.
       unfold read_write.
       constructor.
@@ -198,11 +198,11 @@ Section MAP.
         trivial.
       + intros int Henf.
         rewrite (tt_singleton
-                   (contract_derive ([Read k]) int never_read_x_contract tt)
+                   (specification_derive ([Read k]) int never_read_x_specification tt)
                    tt).
-        unfold never_read_x_contract in Henf.
+        unfold never_read_x_specification in Henf.
         inversion Henf as [Hprom Hreq].
-        assert (never_read_x_promises Value (Read k) (evalInstruction int (Read k)))
+        assert (never_read_x_postcondition Value (Read k) (evalEffect int (Read k)))
           as Hnext
             by (apply Hprom; cbn; trivial).
         constructor.
@@ -213,7 +213,7 @@ Section MAP.
                (i: ISet IMap)
       : Prop :=
       match i with
-      | instruction (Write k' v')
+      | effect (Write k' v')
         => k == k' /\ x == v'
       | _
         => False
@@ -223,7 +223,7 @@ Section MAP.
                (i: ISet IMap)
       : bool :=
       match i with
-      | instruction (Write k' v')
+      | effect (Write k' v')
         => andb (k ?= k') (x ?= v')
       | _
         => false
@@ -271,7 +271,7 @@ Section MAP.
                (i: ISet IMap)
       : Prop :=
       match i with
-      | instruction (Read k')
+      | effect (Read k')
         => k /= k'
       | _
         => False
@@ -281,7 +281,7 @@ Section MAP.
                (i: ISet IMap)
       : bool :=
       match i with
-      | instruction (Read k')
+      | effect (Read k')
         => negb (k ?= k')
       | _
         => false
@@ -329,7 +329,7 @@ Section MAP.
       _ <- [Read k']                                                 ;
       [Write k v'].
 
-    Variables (int: Interp IMap).
+    Variables (int: Semantics IMap).
 
     Lemma enforces_policy
           (s: State)
@@ -356,9 +356,9 @@ Section MAP.
       : invar s (globally not_read_k_inst).
 
     (*
-    Definition tl_never_read_x_contract :=
-      {| tl_requirements := policy_step
-       ; tl_promises     := never_read_x_promises
+    Definition tl_never_read_x_specification :=
+      {| tl_precondition := policy_step
+       ; tl_postcondition     := never_read_x_postcondition
        |}.
 
     Lemma enforcing_policy_step_invar
@@ -376,9 +376,8 @@ Section MAP.
         apply invar_1.
         exact H.
       + cbn in *.
-    Admitted.
      *)
-  End CONTRACT.
+  End SPECIFICATION.
 End MAP.
 
 Arguments Write [Key Value].

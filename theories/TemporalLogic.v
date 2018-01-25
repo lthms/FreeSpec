@@ -6,7 +6,7 @@ Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
 Require Import FreeSpec.PropBool.
-Require Import FreeSpec.Interp.
+Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.WEq.
 Require Import FreeSpec.Abstract.
@@ -185,7 +185,7 @@ Arguments switch_steps_before [_] (_ _ _ _ _).
 Arguments switch_step_after_small [_] (_ _ _).
 Arguments switch_can_fail [_] (_ _ _).
 
-Fixpoint instruction_satisfies
+Fixpoint effect_satisfies
          {A: Type}
          (a: A)
          (tl: Formula A)
@@ -198,12 +198,12 @@ Fixpoint instruction_satisfies
   | next _
     => True
   | switch before prop after
-    => (prop.? a -> instruction_satisfies a after
+    => (prop.? a -> effect_satisfies a after
                     /\ halt_satisfies before)
-       /\ (~prop.? a -> instruction_satisfies a before)
+       /\ (~prop.? a -> effect_satisfies a before)
   end.
 
-Fixpoint instruction_satisfies_bool
+Fixpoint effect_satisfies_bool
          {A: Type}
          (a: A)
          (tl: Formula A)
@@ -221,14 +221,14 @@ Fixpoint instruction_satisfies_bool
     => true
   | switch before p after
     => if p? a
-       then (andb (instruction_satisfies_bool a after)
+       then (andb (effect_satisfies_bool a after)
                   (halt_satisfies_bool before))
-       else (instruction_satisfies_bool a before)
+       else (effect_satisfies_bool a before)
   end.
 
-Instance instruction_satisfies_PropBool
+Instance effect_satisfies_PropBool
          (A: Type)
-  : PropBool2 (@instruction_satisfies A) (@instruction_satisfies_bool A).
+  : PropBool2 (@effect_satisfies A) (@effect_satisfies_bool A).
 Proof.
   constructor.
   intros a tl.
@@ -301,7 +301,7 @@ Fixpoint tl_step
          (a: A)
          (tl: Formula A)
   : Formula A :=
-  if instruction_satisfies_bool a tl
+  if effect_satisfies_bool a tl
   then match tl with
        | next tl
          => tl
@@ -332,14 +332,14 @@ Proof.
   + cbn; constructor.
   + cbn.
     destruct (prop0 ? a).
-    ++ destruct (instruction_satisfies_bool a tl2);
+    ++ destruct (effect_satisfies_bool a tl2);
          destruct (halt_satisfies_bool tl1);
          cbn.
        +++ constructor.
        +++ constructor.
        +++ constructor.
        +++ constructor.
-    ++ destruct (instruction_satisfies_bool a tl1).
+    ++ destruct (effect_satisfies_bool a tl1).
        +++ constructor.
            exact IHtl1.
        +++ constructor.
@@ -348,11 +348,11 @@ Qed.
 Inductive ISet
           (I: Type -> Type)
   : Type :=
-  | instruction {A: Type}
+  | effect {A: Type}
                 (i: I A)
     : ISet I.
 
-Arguments instruction [_ _].
+Arguments effect [_ _].
 
 Inductive Formula_run
           {A: Type}
@@ -460,42 +460,42 @@ Qed.
 Definition deriveFormula
            {I: Interface}
            {A: Type}
-           (int: Interp I)
+           (sig: Semantics I)
            (p: Program I A)
            (tl: Formula (ISet I)) :=
-    deriveAbstraction tl (fun (R: Type) (i: I R) (_: R) => tl_step (instruction i)) int p.
+    deriveAbstraction tl (fun (R: Type) (e: I R) (_: R) => tl_step (effect e)) sig p.
 
 Definition runFormula
            {I: Interface}
            {A: Type}
-           (int: Interp I)
+           (sig: Semantics I)
            (p: Program I A)
            (tl: Formula (ISet I)) :=
-    abstractRun tl (fun (R: Type) (i: I R) (_: R) => tl_step (instruction i)) int p.
+    abstractRun tl (fun (R: Type) (e: I R) (_: R) => tl_step (effect e)) sig p.
 
 Lemma Formula_run_is_runFormula
   : forall {I: Type -> Type}
            {A: Type}
            (p: Program I A)
            (tl: Formula (ISet I))
-           (int: Interp I),
-    Formula_run tl (deriveFormula int p tl).
+           (sig: Semantics I),
+    Formula_run tl (deriveFormula sig p tl).
 Proof.
   induction p.
-  + intros tl int.
+  + intros tl sig.
     cbn.
     apply tl_run_refl.
-  + intros tl int.
+  + intros tl sig.
     cbn.
     constructor.
     apply Formula_step_is_tl_step.
-  + intros tl int.
+  + intros tl sig.
     cbn.
     apply (tl_run_trans tl
-                        (snd (runFormula int p tl))
+                        (snd (runFormula sig p tl))
                         (snd
-                           (runFormula (snd (fst (runFormula int p tl))) (f (fst (fst (runFormula int p tl))))
-                                  (snd (runFormula int p tl))))).
+                           (runFormula (snd (fst (runFormula sig p tl))) (f (fst (fst (runFormula sig p tl))))
+                                  (snd (runFormula sig p tl))))).
     ++ apply IHp.
     ++ apply H.
 Qed.
@@ -702,10 +702,10 @@ Corollary Formula_derive_is_runFormula
            {A: Type}
            (p: Program I A)
            (tl: Formula (ISet I))
-           (int: Interp I),
-    Formula_derive tl (deriveFormula int p tl).
+           (sig: Semantics I),
+    Formula_derive tl (deriveFormula sig p tl).
 Proof.
-  intros I A p tl int.
+  intros I A p tl sig.
   apply tl_derive_implies_tl_run.
   apply Formula_run_is_runFormula.
 Qed.

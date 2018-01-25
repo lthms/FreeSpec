@@ -1,5 +1,5 @@
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.Interp.
+Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Oracle.Oracle.
 
@@ -27,6 +27,6 @@ Extract Inlined Constant Datatypes.fst => "fst".
 Extract Inlined Constant Datatypes.snd => "snd".
 
 Cd "extraction/hs".
-Separate Extraction FreeSpec.MonadInterp FreeSpec.Specs.x86.MCH.MCH
+Separate Extraction FreeSpec.MonadSemantics FreeSpec.Specs.x86.MCH.MCH
          FreeSpec.Control.Option.
 Cd "../..".

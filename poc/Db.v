@@ -1,10 +1,10 @@
-Require Import FreeSpec.Contract.
+Require Import FreeSpec.Specification.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.Either.
 Require Import FreeSpec.Abstract.
 Require Import FreeSpec.Fail.
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.Interp.
+Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.WEq.
 
@@ -46,26 +46,26 @@ Module DB (Spec:  DbSpec).
     Definition select
                (sel:  Entity -> bool)
     : Program Query (list Entity) :=
-      instr (select sel).
+      Request (select sel).
 
     Definition update
                (sel:  Entity -> bool)
                (up:   Spec.Res -> Spec.Res)
     : Program Query unit :=
-      instr (update sel up).
+      Request (update sel up).
 
     Definition delete
                (sel:  Entity -> bool)
       : Program Query unit :=
-      instr (delete sel).
+      Request (delete sel).
 
     Definition insert
                (v:  Spec.Res)
       : Program Query Entity :=
-      instr (insert v).
+      Request (insert v).
   End DSL.
 
-  (** ** Functional Contract
+  (** ** Functional Specification
 
    *)
 
@@ -137,7 +137,7 @@ Module DB (Spec:  DbSpec).
         => state
       end.
 
-    Definition query_requirements
+    Definition query_precondition
                (A:  Type)
                (q:  Query A)
                (s:  State)
@@ -177,14 +177,14 @@ Module DB (Spec:  DbSpec).
         => 0
       end.
 
-    Definition query_select_promises_res_wf
+    Definition query_select_postcondition_res_wf
               `{WEqBool Spec.K}
                (res:       list Entity)
       : Prop :=
       forall (k:  Spec.K),
         key_count k res < 2.
 
-    Definition query_select_promises_state_to_res
+    Definition query_select_postcondition_state_to_res
                (selector:  Entity -> bool)
                (res:       list Entity)
                (state:     State)
@@ -195,7 +195,7 @@ Module DB (Spec:  DbSpec).
         -> selector {| key := k; val := v |} = true
         -> is_key_of_l k v res.
 
-    Definition query_select_promises_res_to_state
+    Definition query_select_postcondition_res_to_state
                (selector:  Entity -> bool)
                (res:       list Entity)
                (state:     State)
@@ -206,45 +206,45 @@ Module DB (Spec:  DbSpec).
         -> selector {| key := k; val := v |} = true
            /\ is_key_of k v state.
 
-    Inductive query_promises
+    Inductive query_postcondition
              `{WEqBool Spec.K}
       : forall (A:  Type),
         Query A -> A -> State -> Prop :=
-    | insert_promises (state:  State)
+    | insert_postcondition (state:  State)
                       (v:      Spec.Res)
                       (res:    Entity)
                       (Hval:   val res = v)
                       (Hkey:   state (key res) = None)
-      : query_promises (insert v) res state
-    | select_promises (selector:  Entity -> bool)
+      : query_postcondition (insert v) res state
+    | select_postcondition (selector:  Entity -> bool)
                       (res:       list Entity)
                       (state:     State)
-                      (Hwf:       query_select_promises_res_wf res)
-                      (Hrs:       query_select_promises_res_to_state selector res state)
-                      (Hsr:       query_select_promises_state_to_res selector res state)
-      : query_promises (select selector) res state
-    | update_promises (state:     State)
+                      (Hwf:       query_select_postcondition_res_wf res)
+                      (Hrs:       query_select_postcondition_res_to_state selector res state)
+                      (Hsr:       query_select_postcondition_state_to_res selector res state)
+      : query_postcondition (select selector) res state
+    | update_postcondition (state:     State)
                       (selector:  Entity -> bool)
                       (up:        Spec.Res -> Spec.Res)
-      : query_promises (update selector up) tt state
-    | delete_promises (state:     State)
+      : query_postcondition (update selector up) tt state
+    | delete_postcondition (state:     State)
                       (selector:  Entity -> bool)
-      : query_promises (delete selector) tt state.
+      : query_postcondition (delete selector) tt state.
 
-    Definition query_contract
+    Definition query_specs
               `{WEqBool Spec.K}
-      : Contract State Query :=
+      : Specification State Query :=
       {| abstract_step := query_step
-         ; requirements := query_requirements
-         ; promises := query_promises
+         ; precondition := query_precondition
+         ; postcondition := query_postcondition
       |}.
 
-    Lemma query_contract_compliance
+    Lemma query_specs_compliance
          `{WEqBool Spec.K}
           {A:      Type}
           (p:      Program Query A)
           (state:  State)
-      : p =| query_contract[state].
+      : p =| query_specs[state].
     Proof.
       revert state.
       induction p; intros state.
@@ -274,9 +274,9 @@ Module DB (Spec:  DbSpec).
     Record State
           `{WEqBool Spec.K}
     : Type :=
-      { view:                 QuerySemantics.State
-      ; interpreter:          Interp Query
-      ; interpreter_complies: interpreter |= QuerySemantics.query_contract [view]
+      { view:                QuerySemantics.State
+      ; semantics:           Semantics Query
+      ; semantics_complies:  semantics |= QuerySemantics.query_specs [view]
       }.
 
     (* For the record, an implementation of this function using
@@ -292,17 +292,17 @@ Module DB (Spec:  DbSpec).
       refine (
           match instr with
           | transaction p
-            => {| view := contract_derive p (interpreter state) QuerySemantics.query_contract (view state)
-                ; interpreter := execProgram (interpreter state) p
-                ; interpreter_complies := _
+            => {| view                := specification_derive p (semantics state) QuerySemantics.query_specs (view state)
+                ; semantics           := execProgram (semantics state) p
+                ; semantics_complies  := _
                |}
       end
         ).
-      rewrite <- abstract_exec_exec_program_same with (abs:=view state)
-                                                      (abs_step:=abstract_step QuerySemantics.query_contract).
-      apply enforcer_compliant_enforcer.
-      + exact (interpreter_complies state).
-      + apply QuerySemantics.query_contract_compliance.
+      rewrite <- abstract_exec_exec_program_same with (w:=view state)
+                                                      (abs_step:=abstract_step QuerySemantics.query_specs).
+      apply compliant_correct_compliant.
+      + exact (semantics_complies state).
+      + apply QuerySemantics.query_specs_compliance.
     Qed.
 
     Definition transaction_req
@@ -313,7 +313,7 @@ Module DB (Spec:  DbSpec).
       : Prop :=
       True.
 
-    Definition transaction_promises
+    Definition transaction_postcondition
               `{WEqBool Spec.K}
                (A:      Type)
                (instr:  i A)
@@ -322,15 +322,15 @@ Module DB (Spec:  DbSpec).
       : Prop :=
       match instr, x with
       | transaction p, x
-        => evalProgram (interpreter state) p = x
+        => evalProgram (semantics state) p = x
       end.
 
-    Definition transaction_contract
+    Definition transaction_specs
                `{WEqBool Spec.K}
-      : Contract State i :=
+      : Specification State i :=
       {| abstract_step := transaction_step
-       ; requirements := transaction_req
-       ; promises := transaction_promises
+       ; precondition := transaction_req
+       ; postcondition := transaction_postcondition
        |}.
   End TransactionSemantics.
 End DB.

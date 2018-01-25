@@ -1,5 +1,5 @@
 Require Import FreeSpec.Compose.
-Require Import FreeSpec.Contract.
+Require Import FreeSpec.Specification.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.Classes.
 Require Import FreeSpec.Control.Function.
@@ -88,13 +88,13 @@ Definition do_dram
            {A:  Type}
            (i:  Memory_interface A)
   : MemoryController_monad A :=
-  '[ileft i].
+  '[InL i].
 
 Definition do_vga
            {A:  Type}
            (i:  Memory_interface A)
   : MemoryController_monad A :=
-  '[iright i].
+  '[InR i].
 
 (* Here we need to explicit MemoryController_monad is an alias to
    StateT. If we don’t, Coq gets lost and says it cannot find an
@@ -147,7 +147,7 @@ Definition MemoryController_specification
           else do_vga (write_mem x v)
      end.
 
-(** * Contract
+(** * Specification
 
     ** Abstract State
 
@@ -167,14 +167,14 @@ Definition MemoryController_abstract_step
     => map
   end.
 
-Definition MemoryController_requirements
+Definition MemoryController_precondition
            (A:    Type)
            (i:    MemoryController_interface A)
            (map:  Abstract)
   : Prop :=
   True.
 
-Definition MemoryController_promises
+Definition MemoryController_postcondition
            (A:    Type)
            (i:    MemoryController_interface A)
            (ret:  A)
@@ -192,9 +192,9 @@ Definition MemoryController_promises
        => True
   end (eq_refl A).
 
-Definition MemoryController_contract
-  : Contract Abstract MemoryController_interface :=
+Definition MemoryController_specs
+  : Specification Abstract MemoryController_interface :=
   {| abstract_step := MemoryController_abstract_step
-   ; requirements  := MemoryController_requirements
-   ; promises      := MemoryController_promises
+   ; precondition  := MemoryController_precondition
+   ; postcondition := MemoryController_postcondition
    |}.

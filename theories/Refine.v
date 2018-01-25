@@ -1,6 +1,7 @@
+Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Interp.
-Require Import FreeSpec.Contract.
+Require Import FreeSpec.Semantics.
+Require Import FreeSpec.Specification.
 Require Import FreeSpec.Abstract.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.State.
@@ -11,29 +12,30 @@ Require Import FreeSpec.Control.State.
  *)
 
 Definition StatefulRefinement
-           (Ii: Type -> Type)
-           (Io: Type -> Type)
-           (S:  Type) :=
+           (I J:  Interface)
+           (S:    Type) :=
   forall (A: Type),
-    Ii A -> StateT S (Program Io) A.
+    I A -> StateT S (Program J) A.
 
-Definition StatefulInterpret
-           {Ii:  Type -> Type}
-           {Io:  Type -> Type}
-           {S:   Type}
-           (sr:  StatefulRefinement Ii Io S)
-           (s:   S)
-           (int: Interp Io)
-  : Interp Ii :=
-    mkInterp (fun {A: Type}
-                  (st: (S * Interp Io))
-                  (i: Ii A)
-              => (fst (evalProgram (snd st) (sr A i (fst st))),
-                  (snd (evalProgram (snd st) (sr A i (fst st))),
-                   (execProgram (snd st) (sr A i (fst st))))))
-             (s, int).
+Definition StatefulSemantics
+           {I J:  Interface}
+           {S:    Type}
+           (sr:   StatefulRefinement I J S)
+           (s:    S)
+           (sig:  Semantics J)
+  : Semantics I :=
+    mkSemantics (fun {A:   Type}
+                     (st:  (S * Semantics J))
+                     (e:   I A)
+                 => ( fst (evalProgram (snd st) (sr A e (fst st)))
+                    , ( snd (evalProgram (snd st) (sr A e (fst st)))
+                      , (execProgram (snd st) (sr A e (fst st)))
+                      )
+                    )
+                )
+                (s, sig).
 
-(** ** Contract Enforcement
+(** ** Specification Compliance
 
     We consider so-called “predicates of synchronization” between two
     abstract States [Si] (input) and [So] (output) linked by a
@@ -41,118 +43,118 @@ Definition StatefulInterpret
  *)
 
 Definition sync_pred
-           (Si So: Type)
+           (W_I W_J: Type)
            (S: Type)
-  := Si -> S -> So -> Prop.
+  := W_I -> S -> W_J -> Prop.
 
-Definition compliant_refinement
-           {Si So:  Type}
-           {Ii Io:  Interface}
-           {S:      Type}
-           (sr:     StatefulRefinement Ii Io S)
-           (master: Contract Si Ii)
-           (slave:  Contract So Io)
-           (sync:   sync_pred Si So S) :=
-  forall (si: Si)
-         (s:  S)
-         (so: So)
-         {A:  Type}
-         (i:  Ii A),
-    sync si s so
-    -> requirements master i si
-    -> (sr A i s) =| slave[so].
+Definition correct_refinement
+           {W_I W_J:  Type}
+           {I J:      Interface}
+           {S:        Type}
+           (sr:       StatefulRefinement I J S)
+           (master:   Specification W_I I)
+           (slave:    Specification W_J J)
+           (sync:     sync_pred W_I W_J S) :=
+  forall (w_i:  W_I)
+         (s:    S)
+         (w_j:  W_J)
+         {A:    Type}
+         (e:    I A),
+    sync w_i s w_j
+    -> precondition master e w_i
+    -> (sr A e s) =| slave[w_j].
 
 Definition sync_preservation
-           {Si So:  Type}
-           {Ii Io:  Interface}
-           {S:      Type}
-           (sr:     StatefulRefinement Ii Io S)
-           (master: Contract Si Ii)
-           (slave:  Contract So Io)
-           (sync:   sync_pred Si So S) :=
-  forall (si:   Si)
-         (s:    S)
-         (so:   So)
-         (int:  Interp Io)
-         (Henf: int |= slave[so])
-         {A:    Type}
-         (i:    Ii A),
-  sync si s so
-  -> requirements master i si
-  -> sync (abstract_step master i (fst (evalProgram int (sr A i s))) si)
-          (snd (evalProgram int (sr A i s)))
-          (contract_derive (sr A i s) int slave so).
+           {W_I W_J:  Type}
+           {I J:      Interface}
+           {S:        Type}
+           (sr:       StatefulRefinement I J S)
+           (master:   Specification W_I I)
+           (slave:    Specification W_J J)
+           (sync:     sync_pred W_I W_J S) :=
+  forall (w_i:    W_I)
+         (s:      S)
+         (w_j:    W_J)
+         (sig:    Semantics J)
+         (Hcomp:  sig |= slave[w_j])
+         {A:      Type}
+         (e:      I A),
+  sync w_i s w_j
+  -> precondition master e w_i
+  -> sync (abstract_step master e (fst (evalProgram sig (sr A e s))) w_i)
+          (snd (evalProgram sig (sr A e s)))
+          (specification_derive (sr A e s) sig slave w_j).
 
-Definition sync_promises
-           {Si So:  Type}
-           {Ii Io:  Interface}
-           {S:      Type}
-           (sr:     StatefulRefinement Ii Io S)
-           (master: Contract Si Ii)
-           (slave:  Contract So Io)
-           (sync:   sync_pred Si So S) :=
-  forall (si:   Si)
-         (s:    S)
-         (so:   So)
-         (int:  Interp Io)
-         (Henf: int |= slave[so])
-         {A:    Type}
-         (i:    Ii A),
-  sync si s so
-  -> requirements master i si
-  -> promises master i (fst (evalProgram int (sr A i s))) si.
+Definition sync_postcondition
+           {W_I W_J:  Type}
+           {I J:      Interface}
+           {S:        Type}
+           (sr:       StatefulRefinement I J S)
+           (master:   Specification W_I I)
+           (slave:    Specification W_J J)
+           (sync:     sync_pred W_I W_J S) :=
+  forall (w_i:    W_I)
+         (s:      S)
+         (w_j:    W_J)
+         (sig:    Semantics J)
+         (Hcomp:  sig |= slave[w_j])
+         {A:      Type}
+         (e:      I A),
+  sync w_i s w_j
+  -> precondition master e w_i
+  -> postcondition master e (fst (evalProgram sig (sr A e s))) w_i.
 
-Theorem enforcer_refinement
-        {Si So:      Type}
-        {Ii Io:      Interface}
+Theorem compliant_refinement
+        {W_I W_J:    Type}
+        {I J:        Interface}
         {S:          Type}
-        (sr:         StatefulRefinement Ii Io S)
-        (master:     Contract Si Ii)
-        (slave:      Contract So Io)
-        (sync:       sync_pred Si So S)
+        (sr:         StatefulRefinement I J S)
+        (master:     Specification W_I I)
+        (slave:      Specification W_J J)
+        (sync:       sync_pred W_I W_J S)
         (Hsyncpres:  sync_preservation sr master slave sync)
-        (Hsyncp:     sync_promises sr master slave sync)
-        (Hcompliant: compliant_refinement sr master slave sync)
-  : forall (si:   Si)
+        (Hsyncp:     sync_postcondition sr master slave sync)
+        (Hcorrect:   correct_refinement sr master slave sync)
+  : forall (w_i:   W_I)
            (s:    S)
-           (so:   So)
-           (int:  Interp Io)
-           (Henf: int |= slave[so]),
-    sync si s so
-    -> StatefulInterpret sr s int |= master[si].
+           (w_j:   W_J)
+           (sig:  Semantics J)
+           (Hcomp: sig |= slave[w_j]),
+    sync w_i s w_j
+    -> StatefulSemantics sr s sig |= master[w_i].
 Proof.
   cofix.
-  intros si s so int Henf Hsync.
+  intros w_i s w_j sig Hcomp Hsync.
   constructor.
-  + intros A i Hreq.
-    unfold sync_promises in Hsyncp.
-    assert (evalInstruction (StatefulInterpret sr s int) i
-            = fst (evalProgram int (sr A i s)))
+  + intros A e Hpre.
+    unfold sync_postcondition in Hsyncp.
+    assert (evalEffect (StatefulSemantics sr s sig) e
+            = fst (evalProgram sig (sr A e s)))
       as Heq by reflexivity.
     rewrite Heq.
-    apply (Hsyncp si s so int Henf A i Hsync Hreq).
-  + intros A i Hreq.
-    unfold compliant_refinement in Hcompliant.
-    assert ((sr A i s) =| slave[so])
+    apply (Hsyncp w_i s w_j sig Hcomp A e Hsync Hpre).
+  + intros A e Hpre.
+    unfold correct_refinement in Hcorrect.
+    assert ((sr A e s) =| slave[w_j])
       as Hcp
-        by  apply (Hcompliant si s so A i Hsync Hreq).
-    assert (execInstruction (StatefulInterpret sr s int) i
-            = StatefulInterpret sr
-                                (snd (evalProgram int (sr A i s)))
-                                (execProgram int (sr A i s)))
+        by  apply (Hcorrect w_i s w_j A e Hsync Hpre).
+    assert (execEffect (StatefulSemantics sr s sig) e
+            = StatefulSemantics sr
+                                (snd (evalProgram sig (sr A e s)))
+                                (execProgram sig (sr A e s)))
       as Hassoc
         by reflexivity.
     rewrite Hassoc.
-    apply (enforcer_refinement _ _ (contract_derive (sr A i s) int slave so)).
-    ++ rewrite <- (abstract_exec_exec_program_same (sr A i s)
-                                                   so
+    apply (compliant_refinement _ _ (specification_derive (sr A e s) sig slave w_j)).
+    ++ rewrite <- (abstract_exec_exec_program_same (sr A e s)
+                                                   w_j
                                                    (abstract_step slave)
-                                                   int).
-       apply (enforcer_compliant_enforcer _ _ _ int Henf Hcp).
+                                                   sig).
+       apply (compliant_correct_compliant _ _ _ sig Hcomp Hcp).
     ++ apply Hsyncpres.
-       +++ exact Henf.
+       +++ exact Hcomp.
        +++ exact Hsync.
-       +++ exact Hreq.
+       +++ exact Hpre.
 Qed.
 
 (** * Pure Refinement
@@ -160,33 +162,32 @@ Qed.
  *)
 
 Definition PureRefinement
-           (Ii: Type -> Type)
-           (Io: Type -> Type)
-  := forall (A: Type),
-    Ii A -> Program Io A.
+           (I J:  Interface)
+  := forall (A:  Type),
+    I A -> Program J A.
 
 Fixpoint refine
-         {I I':   Interface}
-         {A:      Type}
-         (p:      Program I A)
-         (ref:    PureRefinement I I')
-  : Program I' A :=
+         {I J:   Interface}
+         {A:     Type}
+         (p:     Program I A)
+         (ref:   PureRefinement I J)
+  : Program J A :=
   match p with
-  | ret x
-    => ret x
-  | instr i
-    => ref _ i
-  | pbind q f
-    => pbind (refine q ref) (fun x => refine (f x) ref)
+  | Pure x
+    => Pure x
+  | Request e
+    => ref _ e
+  | Bind q f
+    => Bind (refine q ref) (fun x => refine (f x) ref)
   end.
 
 Definition adapt
-           {I I' I'':  Interface}
-           {S:         Type}
-           (sref:      StatefulRefinement I I' S)
-           (pref:      PureRefinement I' I'')
-  : StatefulRefinement I I'' S :=
+           {I J K:  Interface}
+           {S:      Type}
+           (sref:      StatefulRefinement I J S)
+           (pref:      PureRefinement J K)
+  : StatefulRefinement I K S :=
   fun (A:  Type)
-      (i:  I A)
+      (e:  I A)
       (s:  S)
-  => refine (sref A i s) pref.
+  => refine (sref A e s) pref.

@@ -23,10 +23,10 @@ Inductive Undefined
     We use an Interface to deal with Undefined Behaviour for at least
     two reasons:
 
-      * It makes obvious that a given Interpreter uses the undefined
-        primitive
-      * It is easier to write a contract to check if [undefined] is
-        called
+      * It makes obvious that a given Semantics uses the [undefined]
+        effect
+      * It is easier to write a specification to check if [undefined]
+        is called
 
     * [UndefMonad] Typeclass
 
@@ -56,7 +56,7 @@ Instance undefmonad_Trans
 
 Instance undefprogram_UndefMonad
   : UndefMonad (Program Undefined) :=
-  { undef := fun {a: Type} => instr (undefined (A:=a))
+  { undef := fun {a: Type} => Request (undefined (A:=a))
   }.
 
 Local Open Scope free_scope.

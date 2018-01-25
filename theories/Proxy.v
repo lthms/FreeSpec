@@ -1,10 +1,10 @@
 Require Import FreeSpec.Concurrent.
-Require Import FreeSpec.Contract.
+Require Import FreeSpec.Specification.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.Classes.
 Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.Interp.
+Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Refine.
 Require Import FreeSpec.WEq.
@@ -19,36 +19,36 @@ Section PROXY.
             (from_proxy:  forall (A:  Type), Io A -> I A).
 
   Definition proxy_aux
-             {A:           Type}
-             (int:         Interp I)
-             (s:           S)
-             (i:           I A)
-    : (A * S * Interp I) :=
-    match to_proxy i with
+             {A:    Type}
+             (sig:  Semantics I)
+             (s:    S)
+             (e:    I A)
+    : (A * S * Semantics I) :=
+    match to_proxy e with
     | None
-      => (evalInstruction int i, s, execInstruction int i)
+      => (evalEffect sig e, s, execEffect sig e)
     | Some i
-      => runProgram int (interface_map (proxy i s) from_proxy)
+      => runProgram sig (interface_map (proxy i s) from_proxy)
     end.
 
   CoFixpoint proxify
-             (int:  Interp I)
+             (sig:  Semantics I)
              (s:    S)
-    : Interp I :=
-    interp (fun (A:  Type)
-                (i:  I A)
-            => ( fst (fst (proxy_aux int s i))
-               , proxify (snd (proxy_aux int s i))
-                         (snd (fst (proxy_aux int s i)))
-               )
-           ).
+    : Semantics I :=
+    handler (fun (A:  Type)
+                 (e:  I A)
+             => ( fst (fst (proxy_aux sig s e))
+                , proxify (snd (proxy_aux sig s e))
+                          (snd (fst (proxy_aux sig s e)))
+                )
+            ).
 
   Section ABSTRACTSPEC.
     Variables (W:      Type)
               (Wi Wo:  Type)
-              (c:      Contract W I)
-              (ci:     Contract Wi Ii)
-              (co:     Contract Wo Io)
+              (c:      Specification W I)
+              (ci:     Specification Wi Ii)
+              (co:     Specification Wo Io)
               (fi:     W -> Wi)
               (fo:     W -> Wo)
               (sync:   sync_pred W W S).
@@ -56,71 +56,71 @@ Section PROXY.
     Definition out_req_sync
       : Prop :=
       forall (A:  Type)
-             (i:  Io A)
+             (e:  Io A)
              (w:  W),
-        requirements co i (fo w)
-        -> requirements c (from_proxy i) w.
+        precondition co e (fo w)
+        -> precondition c (from_proxy e) w.
 
     Definition in_req_sync
       : Prop :=
       forall (A:   Type)
-             (i:   I A)
-             (i':  Ii A)
+             (e:   I A)
+             (e':  Ii A)
              (w:   W),
-        to_proxy i = Some i'
-        -> requirements c i w
-        -> requirements ci i' (fi w).
+        to_proxy e = Some e'
+        -> precondition c e w
+        -> precondition ci e' (fi w).
 
     Definition out_prom_sync
       : Prop :=
       forall (A:  Type)
-             (i:  Io A)
+             (e:  Io A)
              (x:  A)
              (w:  W),
-        requirements co i (fo w)
-        -> promises c (from_proxy i) x w
-        -> promises co i x (fo w).
+        precondition co e (fo w)
+        -> postcondition c (from_proxy e) x w
+        -> postcondition co e x (fo w).
 
     Definition in_prom_sync
       : Prop :=
       forall (A:   Type)
-             (i:   I A)
-             (i':  Ii A)
+             (e:   I A)
+             (e':  Ii A)
              (x:   A)
              (w:   W),
-        to_proxy i = Some i'
-        -> requirements c i w
-        -> promises ci i' x (fi w)
-        -> promises c i x w.
+        to_proxy e = Some e'
+        -> precondition c e w
+        -> postcondition ci e' x (fi w)
+        -> postcondition c e x w.
 
     Definition in_unproxy_sync
       : Prop :=
       forall (A:   Type)
-             (i:   I A)
+             (e:   I A)
              (x:   A)
              (w:   W),
-        to_proxy i = None
-        -> requirements c i w
-        -> promises c i x w
-        -> fi w = fi (abstract_step c i x w).
+        to_proxy e = None
+        -> precondition c e w
+        -> postcondition c e x w
+        -> fi w = fi (abstract_step c e x w).
 
     Definition out_unproxy_sync
       : Prop :=
       forall (A:   Type)
-             (i:   I A)
+             (e:   I A)
              (x:   A)
              (w:   W),
-        to_proxy i = None
-        -> requirements c i w
-        -> promises c i x w
-        -> fo w = fo (abstract_step c i x w).
+        to_proxy e = None
+        -> precondition c e w
+        -> postcondition c e x w
+        -> fo w = fo (abstract_step c e x w).
 
     (** Our goal is to be able to prove something like that:
 
         Theorem proxy_compliant
                 (w:  W)
                 (s:  S)
-                (int:  Interp I)
+                (int:  Semantics I)
                 (Hint:  int |= c[w])
           : proxify int s |= c[w].
 

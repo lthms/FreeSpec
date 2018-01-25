@@ -1,10 +1,10 @@
 Require Import Coq.Program.Equality.
 
 Require Import FreeSpec.Control.
-Require Import FreeSpec.Contract.
+Require Import FreeSpec.Specification.
 Require Import FreeSpec.Control.Either.
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.Interp.
+Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.WEq.
 
@@ -19,11 +19,11 @@ Inductive FailInterface
           (Err:  Type)
           (I:    Interface)
   : Interface :=
-| instruction_may_fail {R:  Type}
-                       (i:  I R)
+| effect_may_fail {R:  Type}
+                  (e:  I R)
   : FailInterface Err I (Either Err R).
 
-Arguments instruction_may_fail [Err I R] (i).
+Arguments effect_may_fail [Err I R] (e).
 
 (** * FailProgram Monad
 
@@ -273,7 +273,7 @@ Proof.
                     | left e => program_pure (left e)
                     | right x => runFailProgram (h x)
                     end) as f2.
-       assert (pbind (pbind p f1) f2 == pbind p (fun x => pbind (f1 x) f2))
+       assert (Bind (Bind p f1) f2 == Bind p (fun x => Bind (f1 x) f2))
          by (constructor; reflexivity).
        rewrite H0.
        rewrite Heqf1.
@@ -292,7 +292,7 @@ Proof.
                     | left e => program_pure (left e)
                     | right x => runFailProgram (h x)
                     end) as f2.
-       assert (pbind (pbind p f1) f2 == pbind p (fun x => pbind (f1 x) f2))
+       assert (Bind (Bind p f1) f2 == Bind p (fun x => Bind (f1 x) f2))
          by (constructor; reflexivity).
        rewrite H0.
        rewrite Heqf1.
@@ -359,18 +359,18 @@ Notation "'try!' p 'catch!' x '=>' q" := (catch p (fun x => q))
 
 Section TEST_NOTATION.
   Variables (Err:  Type)
-            (e:    Err)
+            (err:  Err)
             (I:    Interface)
             (A:    Type).
 
   Let dummy_catch
     : FailProgram Err I A :=
-    try! throw e
-    catch! e
-    => throw e.
+    try! throw err
+    catch! err
+    => throw err.
 End TEST_NOTATION.
 
-(** * Contracts
+(** * Specification
 
  *)
 
@@ -378,55 +378,55 @@ Definition fail_abstract_step
            {Err:  Type}
            {I:    Interface}
            {W:    Type}
-           (c:    Contract W I)
+           (c:    Specification W I)
            (A:    Type)
-           (i:    FailInterface Err I A)
+           (e:    FailInterface Err I A)
            (x:    A)
            (w:    W) :=
-  match i, x with
-  | instruction_may_fail i, right x
-    => abstract_step c i x w
+  match e, x with
+  | effect_may_fail e, right x
+    => abstract_step c e x w
   | _, _
     => w
   end.
 
-Inductive fail_requirements
+Inductive fail_precondition
           {Err:  Type}
           {I:    Interface}
           {W:    Type}
-          (c:    Contract W I)
+          (c:    Specification W I)
   : forall (A:  Type), FailInterface Err I A -> W -> Prop :=
 | fail_req (A:  Type)
-           (i:  I A)
+           (e:  I A)
            (w:  W)
-           (H:  requirements c i w)
-  : fail_requirements c (Either Err A) (instruction_may_fail i) w.
+           (H:  precondition c e w)
+  : fail_precondition c (Either Err A) (effect_may_fail e) w.
 
-Inductive fail_promises
+Inductive fail_postcondition
           {Err:  Type}
           {I:    Interface}
           {W:    Type}
-          (c:    Contract W I)
+          (c:    Specification W I)
   : forall (A:  Type), FailInterface Err I A -> A -> W -> Prop :=
 | fail_right (A:  Type)
-             (i:  I A)
+             (e:  I A)
              (x:  A)
              (w:  W)
-             (H:  promises c i x w)
-  : fail_promises c (Either Err A) (instruction_may_fail i) (right x) w
+             (H:  postcondition c e x w)
+  : fail_postcondition c (Either Err A) (effect_may_fail e) (right x) w
 | fail_left (A:    Type)
             (i:    I A)
             (err:  Err)
             (w:    W)
-  : fail_promises c (Either Err A) (instruction_may_fail i) (left err) w.
+  : fail_postcondition c (Either Err A) (effect_may_fail i) (left err) w.
 
-Definition FailContract
+Definition FailSpecs
            {Err:  Type}
            {I:    Interface}
            {W:    Type}
-           (c:    Contract W I)
-  : Contract W (FailInterface Err I) :=
+           (c:    Specification W I)
+  : Specification W (FailInterface Err I) :=
   {| abstract_step := fail_abstract_step c
-   ; requirements := fail_requirements c
-   ; promises := fail_promises c
+   ; precondition := fail_precondition c
+   ; postcondition := fail_postcondition c
    |}.

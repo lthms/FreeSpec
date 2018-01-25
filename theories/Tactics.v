@@ -1,7 +1,7 @@
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Interp.
-Require Import FreeSpec.Contract.
+Require Import FreeSpec.Semantics.
+Require Import FreeSpec.Specification.
 
 Ltac next := repeat (try constructor; cbn; trivial).
 
@@ -23,9 +23,9 @@ Ltac destruct_if_when :=
     => idtac
   end.
 
-Ltac run_program interp :=
+Ltac run_program sig :=
   match goal with
-  | [ H : interp |= ?contract [ ?state ] |- context[interpret interp ?instr] ]
+  | [ H : sig |= ?spec [ ?state ] |- context[handle sig ?eff] ]
     =>  let i := fresh "i" in
         let Hreq_i    := fresh "Hreq_i"    in
         let Hprom_i   := fresh "Hprom_i"   in
@@ -36,15 +36,15 @@ Ltac run_program interp :=
         let Heq_abs   := fresh "Heq_abs"   in
         let res       := fresh "res"       in
         let Heq_res   := fresh "Heq_res"   in
-        remember (instr) as i;
-        cut (requirements contract i state); [
+        remember (eff) as i;
+        cut (precondition spec i state); [
           intro Hreq_i;
-          remember (fst (interpret interp i)) as res eqn: Heq_res;
-          assert (Hprom_i:  promises contract i res state)
+          remember (fst (handle sig i)) as res eqn: Heq_res;
+          assert (Hprom_i:  postcondition spec i res state)
             by (rewrite Heq_res; apply H; exact Hreq_i);
-          remember (snd (interpret interp i)) as int eqn: Heq_int;
-          remember (abstract_step contract i res state) as abs eqn: Heq_abs;
-          assert (Henf_int:  int |= contract [abs])
+          remember (snd (handle sig i)) as int eqn: Heq_int;
+          remember (abstract_step spec i res state) as abs eqn: Heq_abs;
+          assert (Henf_int:  int |= spec [abs])
             by (rewrite Heq_abs;
                 rewrite Heq_int;
                 apply H;
@@ -55,14 +55,14 @@ Ltac run_program interp :=
     => idtac
   end.
 
-Ltac simplify_promise :=
+Ltac simplify_postcondition :=
   match goal with
-  | [ Hres:  ?res = fst (interpret _ ?instr) |- _]
+  | [ Hres:  ?res = fst (handle _ ?eff) |- _]
     => match goal with
-       | [ Hinstr:  instr = _ |- _ ]
+       | [ Heff:  eff = _ |- _ ]
          => match goal with
-            | [ Hprom:  promises _ instr _ _ |- _ ]
-              => rewrite Hinstr in Hprom;
+            | [ Hprom:  postcondition _ eff _ _ |- _ ]
+              => rewrite Heff in Hprom;
                  cbn in Hprom
             end
        end

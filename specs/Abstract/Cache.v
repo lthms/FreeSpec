@@ -1,4 +1,4 @@
-Require Import FreeSpec.Contract.
+Require Import FreeSpec.Specification.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.Classes.
 Require Import FreeSpec.Control.Function.
@@ -41,7 +41,7 @@ Inductive Cache_interface
               (val:         byte)
   : Cache_interface unit.
 
-(** * Contract
+(** * Specification
 
  *)
 
@@ -69,7 +69,7 @@ Definition Cache_abstract_step
     => abs
   end.
 
-Definition Cache_requirements
+Definition Cache_precondition
            (A:    Type)
            (i:    Cache_interface A)
            (abs:  Cache_abstract)
@@ -81,7 +81,7 @@ Definition Cache_requirements
     => True
   end.
 
-Definition Cache_promises
+Definition Cache_postcondition
            (A:    Type)
            (i:    Cache_interface A)
            (ret:  A)
@@ -99,11 +99,11 @@ Definition Cache_promises
        => True
   end (eq_refl A).
 
-Definition Cache_contract
-  : Contract Cache_abstract Cache_interface :=
+Definition Cache_specs
+  : Specification Cache_abstract Cache_interface :=
   {| abstract_step := Cache_abstract_step
-   ; requirements  := Cache_requirements
-   ; promises      := Cache_promises
+   ; precondition  := Cache_precondition
+   ; postcondition := Cache_postcondition
    |}.
 
 (** * Refinement
@@ -337,7 +337,7 @@ Definition Cache_specification
        (* --------------------------------------------------------- *)
      end.
 
-(** ** Contract Enforcement
+(** ** Specification Enforcement
 
  *)
 
@@ -367,14 +367,14 @@ Definition sync_pred
 Ltac next := repeat (try constructor; cbn; trivial).
 
 Lemma cache_specs_compliant_refinement
-  : compliant_refinement Cache_specification
-                         Cache_contract
-                         MemoryController_contract
-                         sync_pred.
+  : correct_refinement Cache_specification
+                       Cache_specs
+                       MemoryController_specs
+                       sync_pred.
 Proof.
-  unfold compliant_refinement.
-  intros si s so A i Hsync Hpred.
-  induction i; induction privileged; induction strat.
+  unfold correct_refinement.
+  intros w_i s w_o A e Hsync Hpred.
+  induction e; induction privileged; induction strat.
   + next.
   + next.
     intros.

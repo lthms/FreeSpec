@@ -121,17 +121,3 @@ Proof.
   + cbn.
     exact IHf.
 Qed.
-
-Instance list_Applicative
-  : Applicative list :=
-  { pure := @list_pure
-  ; apply := @list_app
-  }.
-+ intros a Ha v.
-  induction v.
-  ++ reflexivity.
-  ++ constructor.
-     reflexivity.
-     exact IHv.
-+ intros a b c Hc u v w.
-Admitted.

@@ -13,7 +13,7 @@
 Definition Interface := Type -> Type.
 
 (** That is, if [I] is an interface, [i : I A] is an instruction which
-    returns an element of [A] once interpreted.
+    returns an element of [A] once handled.
 
     * Labeled [Interface]s
 

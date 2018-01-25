@@ -185,7 +185,7 @@ Defined.
     It is not clear how hard it would be to fix that, so for now we
     have an ad-hoc solution. See the [FreeSpec.Fail] library for more
     information about that. It basically provides the necessary tools
-    to promote an Interface so that the Interpreter may fail. It also
-    provides a specific monad called [FailProgram] to deal with the
-    errors in a transparent manner.
+    to promote an Interface so that the operational Semantics may
+    fail. It also provides a specific monad called [FailProgram] to
+    deal with the errors in a transparent manner.
  *)

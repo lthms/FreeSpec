@@ -1,10 +1,10 @@
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Interp.
+Require Import FreeSpec.Semantics.
 
 (** In this library, we provide an alternative to [runProgram] we can
     use to derive a so-called abstract state through the executed
-    primitives of the underlying [Interface]. Using this feature, we
-    can verify some properties of a given [Program] _without modifying
+    effects of the underlying [Interface]. Using this feature, we can
+    verify some properties of a given [Program] _without modifying
     it_.
 
  *)
@@ -14,26 +14,26 @@ Require Import FreeSpec.Interp.
  *)
 
 Fixpoint abstractRun
-         {S:        Type}
-         {I:        Type -> Type}
-         {A:        Type}
-         (abs:      S)
-         (abs_step: forall (R:Type), I R -> R -> S -> S)
-         (int:      Interp I)
-         (p:        Program I A)
-  : (A * (Interp I) * S) :=
+         {W:         Type}
+         {I:         Type -> Type}
+         {A:         Type}
+         (w:         W)
+         (abs_step:  forall (R:Type), I R -> R -> W -> W)
+         (sig:       Semantics I)
+         (p:         Program I A)
+  : (A * (Semantics I) * W) :=
   match p with
-  | ret a
-    => (a, int, abs)
-  | instr i
-    => (evalInstruction int i,
-        execInstruction int i,
-        abs_step _ i (evalInstruction int i) abs)
-  | pbind p' f
-    => abstractRun (snd (abstractRun abs abs_step int p'))
+  | Pure a
+    => (a, sig, w)
+  | Request e
+    => (evalEffect sig e,
+        execEffect sig e,
+        abs_step _ e (evalEffect sig e) w)
+  | Bind q f
+    => abstractRun (snd (abstractRun w abs_step sig q))
                    abs_step
-                   (snd (fst (abstractRun abs abs_step int p')))
-                   (f (fst (fst (abstractRun abs abs_step int p' ))))
+                   (snd (fst (abstractRun w abs_step sig q)))
+                   (f (fst (fst (abstractRun w abs_step sig q))))
   end.
 
 (** Similary to [FreeSpec.Program.runProgram], we define several
@@ -43,37 +43,37 @@ Fixpoint abstractRun
  *)
 
 Definition abstractExec
-           {S:        Type}
-           {I:        Type -> Type}
-           {A:        Type}
-           (abs:      S)
-           (abs_step: forall (R:Type), I R -> R -> S -> S)
-           (int:      Interp I)
-           (p:        Program I A)
-  : Interp I :=
-  snd (fst (abstractRun abs abs_step int p)).
+           {W:         Type}
+           {I:         Type -> Type}
+           {A:         Type}
+           (w:         W)
+           (abs_step:  forall (R:Type), I R -> R -> W -> W)
+           (sig:       Semantics I)
+           (p:         Program I A)
+  : Semantics I :=
+  snd (fst (abstractRun w abs_step sig p)).
 
 Definition abstractEval
-           {S:        Type}
-           {I:        Type -> Type}
-           {A:        Type}
-           (abs:      S)
-           (abs_step: forall (R:Type), I R -> R -> S -> S)
-           (int:      Interp I)
-           (p:        Program I A)
+           {W:         Type}
+           {I:         Type -> Type}
+           {A:         Type}
+           (w:         W)
+           (abs_step:  forall (R:Type), I R -> R -> W -> W)
+           (sig:       Semantics I)
+           (p:         Program I A)
   : A :=
-  fst (fst (abstractRun abs abs_step int p)).
+  fst (fst (abstractRun w abs_step sig p)).
 
 Definition deriveAbstraction
-           {S:        Type}
+           {W:        Type}
            {I:        Type -> Type}
            {A:        Type}
-           (abs:      S)
-           (abs_step: forall (R: Type), I R -> R -> S -> S)
-           (int:      Interp I)
+           (w:        W)
+           (abs_step: forall (R: Type), I R -> R -> W -> W)
+           (sig:      Semantics I)
            (p:        Program I A)
-  : S :=
-  snd (abstractRun abs abs_step int p).
+  : W :=
+  snd (abstractRun w abs_step sig p).
 
 (** * Equality Proofs
 
@@ -85,48 +85,48 @@ Definition deriveAbstraction
  *)
 
 Lemma abstract_run_run_program_same
-      {S: Type}
+      {W: Type}
       {I: Type -> Type}
       {A: Type}
   : forall (p:        Program I A)
-           (abs:      S)
-           (abs_step: forall (R: Type), I R -> R -> S -> S)
-           (int:      Interp I),
-    fst (abstractRun abs abs_step int p) = runProgram int p.
+           (w:        W)
+           (abs_step: forall (R: Type), I R -> R -> W -> W)
+           (sig:      Semantics I),
+    fst (abstractRun w abs_step sig p) = runProgram sig p.
 Proof.
-  induction p; intros abs abs_step int; cbn.
+  induction p; intros w abs_step sig; cbn.
   + reflexivity.
   + apply injective_projections; reflexivity.
   + rewrite H; rewrite IHp; reflexivity.
 Qed.
 
 Lemma abstract_eval_eval_program_same
-      {S: Type}
+      {W: Type}
       {I: Type -> Type}
       {A: Type}
   : forall (p:        Program I A)
-           (abs:      S)
-           (abs_step: forall (R: Type), I R -> R -> S -> S)
-           (int:      Interp I),
-    abstractEval abs abs_step int p = evalProgram int p.
+           (w:        W)
+           (abs_step: forall (R: Type), I R -> R -> W -> W)
+           (sig:      Semantics I),
+    abstractEval w abs_step sig p = evalProgram sig p.
 Proof.
-  intros p abs abs_step int.
+  intros p w abs_step sig.
   unfold abstractEval, evalProgram.
   rewrite abstract_run_run_program_same.
   reflexivity.
 Qed.
 
 Lemma abstract_exec_exec_program_same
-      {S: Type}
+      {W: Type}
       {I: Type -> Type}
       {A: Type}
   : forall (p:        Program I A)
-           (abs:      S)
-           (abs_step: forall (R: Type), I R -> R -> S -> S)
-           (int:      Interp I),
-    abstractExec abs abs_step int p = execProgram int p.
+           (w:        W)
+           (abs_step: forall (R: Type), I R -> R -> W -> W)
+           (sig:      Semantics I),
+    abstractExec w abs_step sig p = execProgram sig p.
 Proof.
-  intros p abs abs_step int.
+  intros p w abs_step sig.
   unfold abstractExec, execProgram.
   rewrite abstract_run_run_program_same.
   reflexivity.

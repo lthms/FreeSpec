@@ -5,11 +5,11 @@ Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
 Require Import FreeSpec.Compose.
-Require Import FreeSpec.Contract.
+Require Import FreeSpec.Specification.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.Classes.
 Require Import FreeSpec.Control.State.
-Require Import FreeSpec.Interp.
+Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.PropBool.
 Require Import FreeSpec.Refine.
@@ -47,13 +47,15 @@ Section SMRAM_EXAMPLE.
       consider. However, we really want to know when one address falls
       into the SMRAM.
     *)
-  Variables (Addr:             Type)
-            (AddrWEq:          WEq Addr)
-            (AddrWEqBool:      WEqBool Addr)
-            (Value:            Type)
-            (Smram:            Addr -> Prop)
-            (Smram_bool:       Addr -> bool)
-            (smram_PropBool:   PropBool1 Smram Smram_bool).
+  Variables (Addr:                Type)
+            (AddrWEq:             WEq Addr)
+            (AddrWEqBool:         WEqBool Addr)
+            (Value:               Type)
+            (Smram:               Addr -> Prop)
+            (Smram_weq_morphism:  forall (a a': Addr),
+                a == a' -> Smram a -> Smram a')
+            (Smram_bool:          Addr -> bool)
+            (smram_PropBool:      PropBool1 Smram Smram_bool).
 
   (** * Memory Controller
 
@@ -124,24 +126,24 @@ Section SMRAM_EXAMPLE.
   Definition read_dram
              (a: Addr)
     : StateT MCH (Program (IDRAM <+> IVGA)) Value :=
-    '[ileft (Read a)].
+    '[InL (Read a)].
 
   Definition read_vga
              (a: Addr)
     : StateT MCH (Program (IDRAM <+> IVGA)) Value :=
-    '[iright (Read a)].
+    '[InR (Read a)].
 
   Definition write_dram
              (a: Addr)
              (v: Value)
     : StateT MCH (Program (IDRAM <+> IVGA)) unit :=
-    '[ileft (Write a v)].
+    '[InL (Write a v)].
 
   Definition write_vga
              (a: Addr)
              (v: Value)
     : StateT MCH (Program (IDRAM <+> IVGA)) unit :=
-    '[iright (Write a v)].
+    '[InR (Write a v)].
 
   (** Then, we define a [StatefulRefinement] from [IMCH] to [IDRAM <+>
       IVGA].
@@ -181,10 +183,10 @@ Section SMRAM_EXAMPLE.
         (* -------------------------------------------------------- *)
         end.
 
-  (** * Contract
+  (** * Specification
 
       Now here comes the section where FreeSpec is supposed to shine.
-      We want to define a Contract which basically says: “Privileged
+      We want to define a Specification which basically says: “Privileged
       read accesses only fetch value written by privileged write
       accesses.”
 
@@ -227,7 +229,7 @@ Section SMRAM_EXAMPLE.
       => s
     end.
 
-  (** ** Requirements
+  (** ** Precondition
 
       Because we do not allow anyone to modify the [smram_lock]
       register, we do not have any requirement the Memory Controller
@@ -235,14 +237,14 @@ Section SMRAM_EXAMPLE.
 
    *)
 
-  Definition Smram_requirements
+  Definition Smram_precondition
              (A: Type)
              (i: IMCH A)
              (S: SmramState)
     : Prop :=
     True.
 
-  (** ** Promises
+  (** ** Postcondition
 
       An Enforcer Component needs to stay syncronize with the abstract
       state of the Smram, that is deliver the value written by a
@@ -250,7 +252,7 @@ Section SMRAM_EXAMPLE.
 
    *)
 
-  Definition Smram_promises
+  Definition Smram_postcondition
              (A:   Type)
              (i:   IMCH A)
              (ret: A)
@@ -273,22 +275,22 @@ Section SMRAM_EXAMPLE.
 
    *)
 
-  Definition smram_contract
-    : Contract SmramState IMCH :=
-    {| abstract_step := Smram_step
-     ; requirements  := Smram_requirements
-     ; promises      := Smram_promises
+  Definition smram_specification
+    : Specification SmramState IMCH :=
+    {| abstract_step  := Smram_step
+     ; precondition   := Smram_precondition
+     ; postcondition  := Smram_postcondition
      |}.
 
-  (** * Contract Enforcement
+  (** * Specification Enforcement
 
-      ** Sub-Contracts
+      ** Sub-Specifications
 
       We acknowledge that, in order for our Memory Controler to
-      enforce the [smram_contract], the DRAM controller needs to work
-      in a correct manner. To specify this correct manner, we need a
-      sub-contract, which will basically describe who it is supposed
-      to work.
+      enforce the [smram_specification], the DRAM controller needs to
+      work in a correct manner. To specify this correct manner, we
+      need a sub-specification, which will basically describe who it
+      is supposed to work.
 
       The state is a simple map from addresses to values. This is a
       very straightforward and natural (but inefficient, but we really
@@ -317,12 +319,12 @@ Section SMRAM_EXAMPLE.
       => s
     end.
 
-  (** We do not need any requirements on the DRAM Interface. This is
+  (** We do not need any precondition on the DRAM Interface. This is
       mostly because we only describe how it works.
 
    *)
 
-  Definition DRAM_requirements
+  Definition DRAM_precondition
              (A: Type)
              (i: IDRAM A)
              (s: DRAMState)
@@ -336,7 +338,7 @@ Section SMRAM_EXAMPLE.
 
    *)
 
-  Definition DRAM_promises
+  Definition DRAM_postcondition
              (A:   Type)
              (i:   IDRAM A)
              (ret: A)
@@ -353,16 +355,16 @@ Section SMRAM_EXAMPLE.
       => fun _ => True
     end (eq_refl A).
 
-  (** We then put all the pieces together to build a contract for the
+  (** We then put all the pieces together to build a specification for the
       DRAM Controller.
 
    *)
 
-  Definition dram_contract
-    : Contract DRAMState IDRAM :=
-    {| abstract_step := DRAM_step
-     ; requirements  := DRAM_requirements
-     ; promises      := DRAM_promises
+  Definition dram_specification
+    : Specification DRAMState IDRAM :=
+    {| abstract_step  := DRAM_step
+     ; precondition   := DRAM_precondition
+     ; postcondition  := DRAM_postcondition
      |}.
 
   (** But, remember, the MCH is a proxy and roots memory accesses to
@@ -380,7 +382,7 @@ Section SMRAM_EXAMPLE.
           interfaces).
 
       The [FreeSpec.Compose] library provides a convenient helper to
-      expand a contract of a given contract to make it usable to check
+      expand a specification of a given specification to make it usable to check
       against more complex specifications that rely on other
       Interfaces as well: [expand_contact_left]. It also provides
       other helpers, see the module documentation for more
@@ -388,9 +390,9 @@ Section SMRAM_EXAMPLE.
 
    *)
 
-  Definition smram_subcontract
-    : Contract DRAMState (IDRAM <+> IVGA) :=
-    expand_contract_left (dram_contract) IVGA.
+  Definition smram_subspecification
+    : Specification DRAMState (IDRAM <+> IVGA) :=
+    expand_specification_left (dram_specification) IVGA.
 
   (** ** Predicate of Synchronization
 
@@ -400,16 +402,16 @@ Section SMRAM_EXAMPLE.
       (see [sync_pred]). This predicate is specific to each refinement
       and it allows to reason by induction. Basically, you show that
       if all the considered states (the abstract state of your main
-      contract, the concrete state of your specifications and the
-      abstract states of the subcontracts) are “synchronized“, if you
+      specification, the concrete state of your specifications and the
+      abstract states of the subspecifications) are “synchronized“, if you
       have to handle an instruction that is allowed by the main
-      contract ([requirements]), then
+      specification ([precondition]), then
 
         - The states stay synchronized after the instruction has been
           executed.
         - You only uses instructions that are allowed by the
-          subcontracts when interacting with the subcomponents
-        - The instuction result matches the contract [promises]
+          subspecifications when interacting with the subcomponents
+        - The instuction result matches the specification [postcondition]
 
 
       Here, our predicate of synchronization is two-folded:
@@ -450,34 +452,34 @@ Section SMRAM_EXAMPLE.
       introduction of this section.
 
       First, we only use the underlying interfaces in a way that
-      respect the subcontracts. As a reminder, a refinement is
+      respect the subspecifications. As a reminder, a refinement is
       basically a translation from one interface into a program of
       sub-interfaces. We therefore check these programs comply with
-      the subcontract previously introduced.
+      the subspecification previously introduced.
 
    *)
 
   Lemma mch_specs_compliant_refinement
-    : compliant_refinement mch_refine
-                           smram_contract
-                           smram_subcontract
-                           mch_dram_sync.
+    : correct_refinement mch_refine
+                         smram_specification
+                         smram_subspecification
+                         mch_dram_sync.
   Proof.
-    unfold compliant_refinement.
+    unfold correct_refinement.
     intros si s so A i Hsync Hreq.
     induction i; induction smm; next; repeat destruct_if_when; next.
   Qed.
 
   (** Then, we prove the predicate of synchronization is effectively
-      an invariant preserved by the [requirements] predicate of the
-      main contract.
+      an invariant preserved by the [precondition] predicate of the
+      main specification.
 
    *)
 
   Lemma mch_specs_sync_preservation
     : sync_preservation mch_refine
-                        smram_contract
-                        smram_subcontract
+                        smram_specification
+                        smram_subspecification
                         mch_dram_sync.
   Proof.
     unfold sync_preservation.
@@ -499,43 +501,75 @@ Section SMRAM_EXAMPLE.
          +++ reflexivity.
          +++ apply Hsync.
              exact Hsmram.
-         +++ (* Smram a /\ Smram_bool a' = false /\ (a ?= a') = true
-                is not possible, but we lack the fact that Smram and
-                Smram_bool are “weq_morphism“. Admit for now. *)
-             admit.
+         +++ apply (pred_bool_false_1 _ Smram_bool) in Heq_cond.
+             apply weq_bool_weq in Heq_cond0.
+             apply (Smram_weq_morphism a' a) in Hsmram.
+             apply Heq_cond in Hsmram.
+             destruct Hsmram.
+             symmetry.
+             apply Heq_cond0.
          +++ apply Hsync.
              exact Hsmram.
     + (* unprivileged write *)
       cbn.
       repeat destruct_if_when.
-      split.
-      ++ apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
-      ++ intros a' Hsmram.
+      ++ split.
+         +++ apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
+         +++ intros a' Hsmram.
+             apply Hsync.
+             exact Hsmram.
+      ++ assert (Heq: smram_lock s = true)
+          by apply (mch_dram_sync_smram_lock_is_true si _ so Hsync).
+         rewrite Heq in Heq_cond.
+         assert (Handb: forall (b:  bool), b && true = false -> b = false). {
+           intros b.
+           induction b.
+           + cbn.
+             intros False; destruct False.
+             reflexivity.
+           + reflexivity.
+         }
+         apply Handb in Heq_cond.
+         unfold mch_dram_sync.
+         split; [exact Heq |].
+         intros a'.
+         intros Hsmram.
+         assert (Hneq: a ?= a' = false). {
+           apply <- weq_bool_false.
+           intros Hfalse.
+           apply (pred_bool_false_1 _ Smram_bool) in Heq_cond.
+           apply (Smram_weq_morphism a' a) in Hsmram.
+           + apply Heq_cond in Hsmram.
+             exact Hsmram.
+           + symmetry.
+             exact Hfalse.
+         }
+         rewrite Hneq.
          apply Hsync.
-         exact Hsmram.
-  Admitted.
+         apply Hsmram.
+  Qed.
 
   (** Finally, we check all this work and constrains brings the
-      expected result, that is the [promises] predicate. In other
+      expected result, that is the [postcondition] predicate. In other
       word, if the caller does its job, then the component (here, the
-      MCH) does its job too. In this example, the promises is that an
+      MCH) does its job too. In this example, the postcondition is that an
       unprivileged write cannot tamper with the SMRAM content as seen
       by the privileged reads.
 
  *)
 
-  Lemma mch_specs_sync_promises
-    : sync_promises mch_refine
-                    smram_contract
-                    smram_subcontract
-                    mch_dram_sync.
+  Lemma mch_specs_sync_postcondition
+    : sync_postcondition mch_refine
+                         smram_specification
+                         smram_subspecification
+                         mch_dram_sync.
   Proof.
-    unfold sync_promises.
+    unfold sync_postcondition.
     intros si s so int Henf A i Hsync Hreq.
     induction i; induction smm; cbn; try constructor.
     intros Hsmram.
     run_program int.
-    + simplify_promise.
+    + simplify_postcondition.
       rewrite Hprom_i.
       symmetry.
       apply Hsync.
@@ -545,33 +579,33 @@ Section SMRAM_EXAMPLE.
   Qed.
 
   Lemma mch_refine_enforcer
-        {dram:     Interp IDRAM}
-        {dram_ref: DRAMState}
-        (Henf:     dram |= dram_contract[dram_ref])
-    : forall (vga:       Interp IVGA)
-             (smram_ref: SmramState),
+        {dram:      Semantics IDRAM}
+        {dram_ref:  DRAMState}
+        (Hcomp:     dram |= dram_specification[dram_ref])
+    : forall (vga:        Semantics IVGA)
+             (smram_ref:  SmramState),
       mch_dram_sync smram_ref {| smram_lock := true |} dram_ref
-      -> (StatefulInterpret mch_refine
+      -> (StatefulSemantics mch_refine
                             {| smram_lock := true |}
-                            (dram |+| vga))
-           |= smram_contract [smram_ref].
+                            (dram <x> vga))
+           |= smram_specification [smram_ref].
   Proof.
     intros vga smram_ref Hsync.
-    assert (dram |+| vga |= smram_subcontract[dram_ref])
-      as Henf' by apply (expand_enforcer_left Henf).
-    apply (enforcer_refinement mch_refine
-                               smram_contract
-                               smram_subcontract
-                               mch_dram_sync
-                               mch_specs_sync_preservation
-                               mch_specs_sync_promises
-                               mch_specs_compliant_refinement
-                               smram_ref
-                               {| smram_lock := true |}
-                               dram_ref
-                               (dram |+| vga)
-                               Henf'
-                               Hsync).
+    assert (dram <x> vga |= smram_subspecification[dram_ref])
+      as Hcomp' by apply (expand_compliant_left Hcomp).
+    apply (compliant_refinement mch_refine
+                                smram_specification
+                                smram_subspecification
+                                mch_dram_sync
+                                mch_specs_sync_preservation
+                                mch_specs_sync_postcondition
+                                mch_specs_compliant_refinement
+                                smram_ref
+                                {| smram_lock := true |}
+                                dram_ref
+                                (dram <x> vga)
+                                Hcomp'
+                                Hsync).
   Qed.
 
 (* begin hide *)

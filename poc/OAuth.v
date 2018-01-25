@@ -17,6 +17,6 @@ Module OAuth (Spec:  OAuthSpec).
     Definition check_token
                (tok:  Spec.Token)
     : Program OAuthInterface (option Spec.ID) :=
-      instr (check_token tok).
+      Request (check_token tok).
   End DSL.
 End OAuth.

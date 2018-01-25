@@ -29,12 +29,12 @@ Definition Effects
 
 Definition gen_token
   : Program Effects string :=
-  liftl (liftl (instr gen_nonce)).
+  liftl (liftl (Request gen_nonce)).
 
 Definition mastodon_id_from_token
            (token:  MastodonOAuthSpec.Token)
   : Program Effects (option MastodonOAuthSpec.ID) :=
-  instr (ileft (iright (MastodonOAuth.check_token token))).
+  Request (InL (InR (MastodonOAuth.check_token token))).
 
 Definition entity_from_mastodon_id
            (id:  MastodonOAuthSpec.ID)
@@ -45,7 +45,7 @@ Definition assign_token
            (tok:  string)
            (id:   MastodonOAuthSpec.ID)
   : Program Effects unit :=
-  liftr (instr (update (fun ent
+  liftr (Request (update (fun ent
                         => email (val ent) ?= id)
                        (fun user
                         => {| email := email user
