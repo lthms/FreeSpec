@@ -2,6 +2,7 @@ Require Import Coq.Lists.List.
 Require Import Coq.Arith.PeanoNat.
 Require Import Omega.
 Require Import FreeSpec.Control.Either.
+Require Import Coq.Program.Equality.
 
 Import ListNotations.
 Local Open Scope list_scope.
@@ -35,16 +36,54 @@ Polymorphic Inductive oneOf
 
 Arguments OneOf [set t] (n H x).
 
+Polymorphic Inductive allOf
+  : list Type -> Type :=
+| Acons (a:    Type)
+        (x:    a)
+        (set:  list Type)
+        (rst:  allOf set)
+  : allOf (a :: set)
+| Anil
+  : allOf [].
+
+Arguments Acons [a] (x) [set] (rst).
+
+Polymorphic Fixpoint fetch
+            {set:  list Type}
+            (x:    allOf set)
+            (n:    nat)
+  : option (get set n) :=
+  match x, n with
+  | Acons x _, 0
+    => Some x
+  | Acons _ rst, S n
+    => fetch rst n
+  | _, _
+    => None
+  end.
+
 Polymorphic Class Contains
             (t:    Type)
             (set:  list Type)
-  := { rank:         nat
-     ; rank_get_t:   get set rank = t
-     ; small_set:    list Type
+  := { rank:            nat
+     ; rank_get_t:      get set rank = t
+     ; small_set:       list Type
      ; small_set_lt_p:  forall (m:  nat),
-         m < rank -> get small_set m = get set m
+         m < rank
+         -> get small_set m = get set m
      ; small_set_gt_p:  forall (m:  nat),
-         rank <= m -> get small_set m = get set (S m)
+         rank <= m
+         -> get small_set m = get set (S m)
+     ; get_v:           allOf set -> t
+     ; set_v:           t -> allOf set -> allOf set
+     ; get_set_p:       forall (v:  t)
+                               (x:  allOf set),
+         get_v (set_v v x) = v
+     ; get_set_np:      forall (v:  t)
+                               (x:  allOf set)
+                               (n:  nat),
+         n <> rank
+         -> fetch x n = fetch (set_v v x) n
      }.
 
 Arguments rank (t set) [_].
@@ -65,6 +104,21 @@ Polymorphic Instance Contains_head
   apply PeanoNat.Nat.nlt_0_r in H.
   destruct H.
 + intros m H.
+  reflexivity.
++ intros x.
+  dependent induction x.
+  exact x.
++ intros v x.
+  apply Acons.
+  ++ exact v.
+  ++ dependent induction x.
+     exact x0.
++ reflexivity.
++ intros v x n H.
+  dependent induction n; [ omega |].
+  clear IHn.
+  dependent induction x.
+  clear IHx.
   reflexivity.
 Defined.
 
@@ -98,6 +152,24 @@ Polymorphic Instance Contains_tail
      rewrite R.
      rewrite Hgt.
      reflexivity.
++ intros x.
+  dependent induction x.
+  exact (get_v x0).
++ intros v x.
+  dependent induction x.
+  exact (Acons x (set_v v x0)).
++ intros v x.
+  dependent induction x.
+  apply get_set_p.
++ intros v x n H'.
+  dependent induction x.
+  clear IHx.
+  induction n.
+  ++ reflexivity.
+  ++ clear IHn.
+     cbn.
+     apply get_set_np.
+     omega.
 Defined.
 
 Polymorphic Definition inj
@@ -162,3 +234,22 @@ Ltac inj v :=
   | [ |- oneOf ?set]
     => evaluate_exact (@inj _ set _ v)
   end.
+
+Section DoesItWork.
+  Definition test_bool
+    : oneOf [bool; nat] :=
+    inj true.
+
+  Definition test_nat
+    : oneOf [bool; nat] :=
+    inj 0.
+End DoesItWork.
+
+Fixpoint visit
+         {t:    Type}
+         {set:  list Type} `{Contains t set}
+         {a:    Type}
+         (x:    allOf set)
+         (f:    t -> t * a)
+  : allOf set * a :=
+  (set_v (fst (f (get_v x))) x, snd (f (get_v x))).

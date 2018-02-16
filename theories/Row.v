@@ -20,9 +20,9 @@ Fixpoint specialize
 
 Inductive row
           (set:  list (Type -> Type))
-  : Interface :=
-| Row (a:  Type)
-      (e:  oneOf (specialize a set))
+          (a:    Type)
+  : Type :=
+| Row (e:  oneOf (specialize a set))
   : row set a.
 
 Class HasEffect
