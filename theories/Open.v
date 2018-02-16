@@ -9,7 +9,8 @@ Local Open Scope list_scope.
 
 (* Set Universe Polymorphism. *)
 
-Inductive inhabited : Type.
+Inductive inhabited
+  : Type.
 
 Polymorphic Fixpoint get
             (set:  list Type)
@@ -250,6 +251,6 @@ Fixpoint visit
          {set:  list Type} `{Contains t set}
          {a:    Type}
          (x:    product set)
-         (f:    t -> t * a)
-  : product set * a :=
-  (set_v (fst (f (get_v x))) x, snd (f (get_v x))).
+         (f:    t -> a * t)
+  : a * product set :=
+  (fst (f (get_v x)), set_v (snd (f (get_v x))) x).
