@@ -4,6 +4,7 @@ Require Import FreeSpec.Control.
 Require Import FreeSpec.Control.Option.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
+Require Import Omega.
 
 Require Import Coq.Lists.List.
 
@@ -34,6 +35,18 @@ Fixpoint specialize
     => nil
   end.
 
+Lemma specialize_length
+      (x:    Type)
+      (row:  list (Type -> Type))
+  : length row = length (specialize x row).
+Proof.
+  induction row.
+  + reflexivity.
+  + cbn.
+    rewrite IHrow.
+    reflexivity.
+Qed.
+
 Fixpoint generalize
          (x:    (Type -> Type) -> Type)
          (row:  list (Type -> Type))
@@ -44,6 +57,18 @@ Fixpoint generalize
   | nil
     => nil
   end.
+
+Lemma generalize_length
+      (x:    (Type -> Type) -> Type)
+      (row:  list (Type -> Type))
+  : length row = length (generalize x row).
+Proof.
+  induction row.
+  + reflexivity.
+  + cbn.
+    rewrite IHrow.
+    reflexivity.
+Qed.
 
 Inductive row
           (set:  list (Type -> Type))
@@ -105,6 +130,27 @@ Section EXAMPLE.
     inj_effect (e2 x).
 End EXAMPLE.
 
+Fact get_gen_getr_eq
+     (set:  list (Type -> Type))
+     (f:    (Type -> Type) -> Type)
+     (n:    nat)
+     (H:    n < length set)
+  : get (generalize f set) n = f (getr set n).
+Proof.
+  revert H.
+  revert n.
+  induction set; intros n H.
+  + cbn in H.
+    omega.
+  + induction n.
+    ++ reflexivity.
+    ++ cbn.
+       cbn in IHn.
+       rewrite IHset; [ reflexivity |].
+       cbn in H.
+       omega.
+Defined.
+
 Fact get_spec_getr_eq
      (set:  list (Type -> Type))
      (a:    Type)
@@ -123,9 +169,20 @@ Qed.
 Instance HasEffect_indexed
          (set:  list (Type -> Type))
          (n:    nat)
+         (H:    n < length set)
   : HasEffect set (getr set n) :=
   {}.
-Admitted.
++ intros r.
+  rewrite <- get_spec_getr_eq.
+  apply Contains_nat.
+  rewrite <- specialize_length.
+  exact H.
++ intros f.
+  rewrite <- get_gen_getr_eq; [| apply H ].
+  apply Contains_nat.
+  rewrite <- generalize_length.
+  exact H.
+Defined.
 
 Definition semanticsRowSteps
            (set:   list (Type -> Type))
@@ -134,13 +191,16 @@ Definition semanticsRowSteps
   intros a sems e.
   refine (
       match e with
-      | Row (OneOf n Ht x)
+      | Row (OneOf n Ht Hb x)
         => _
       end
     ).
+  rewrite <- specialize_length in Hb.
   rewrite get_spec_getr_eq in Ht.
   subst.
-  exact (visit sems (fun s => handle s x)).
+  refine (visit sems (fun s => handle s x)).
+  apply HasEffect_indexed.
+  exact Hb.
 Defined.
 
 Definition mkSemanticsForRow

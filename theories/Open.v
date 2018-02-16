@@ -29,13 +29,14 @@ Polymorphic Fixpoint get
 Polymorphic Inductive union
             (set:  list Type)
   : Type :=
-| OneOf {t:  Type}
-        (n:  nat)
-        (H:  get set n = t)
-        (x:  t)
+| OneOf {t:   Type}
+        (n:   nat)
+        (H:   get set n = t)
+        (H':  n < length set)
+        (x:   t)
   : union set.
 
-Arguments OneOf [set t] (n H x).
+Arguments OneOf [set t] (n H H' x).
 
 Polymorphic Inductive product
   : list Type -> Type :=
@@ -53,74 +54,93 @@ Polymorphic Fixpoint fetch
             {set:  list Type}
             (x:    product set)
             (n:    nat)
-  : option (get set n) :=
-  match x, n with
-  | Acons x _, 0
-    => Some x
-  | Acons _ rst, S n
-    => fetch rst n
-  | _, _
-    => None
-  end.
+            (H:    n < length set)
+  : get set n.
+case_eq set.
++ intros Heq.
+  subst.
+  cbn in H.
+  omega.
++ intros T l Heq.
+  subst.
+  dependent induction x.
+  induction n.
+  exact x.
+  cbn.
+  apply fetch.
+  ++ exact x0.
+  ++ cbn in H.
+     omega.
+Defined.
+
+Polymorphic Fixpoint swap
+            {set:  list Type}
+            (x:    product set)
+            (n:    nat)
+            (H:    n < length set)
+            (v:    get set n)
+            {struct x}
+  : product set.
+case_eq set.
++ intros Heq.
+  subst.
+  cbn in H.
+  omega.
++ intros T l Heq.
+  subst.
+  dependent induction x.
+  induction n.
+  ++ exact (Acons v x0).
+  ++ refine (Acons x _).
+     apply (swap l x0 n).
+     +++ cbn in H.
+         omega.
+     +++ exact v.
+Defined.
 
 Polymorphic Class Contains
             (t:    Type)
             (set:  list Type)
   := { rank:            nat
      ; rank_get_t:      get set rank = t
-     ; small_set:       list Type
-     ; small_set_lt_p:  forall (m:  nat),
-         m < rank
-         -> get small_set m = get set m
-     ; small_set_gt_p:  forall (m:  nat),
-         rank <= m
-         -> get small_set m = get set (S m)
-     ; get_v:           product set -> t
-     ; set_v:           t -> product set -> product set
-     ; get_set_p:       forall (v:  t)
-                               (x:  product set),
-         get_v (set_v v x) = v
-     ; get_set_np:      forall (v:  t)
-                               (x:  product set)
-                               (n:  nat),
-         n <> rank
-         -> fetch x n = fetch (set_v v x) n
+     ; rank_bound:      rank < length set
      }.
 
 Arguments rank (t set) [_].
-Arguments small_set (t set) [_].
 Arguments rank_get_t (t set) [_].
-Arguments small_set_lt_p (t set) [_] (m _).
-Arguments small_set_gt_p (t set) [_] (m _).
+Arguments rank_bound (t set) [_].
+
+Polymorphic Fixpoint remove
+            (set:  list Type)
+            (n:    nat)
+  : list Type :=
+  match set, n with
+  | _ :: rst, 0
+    => rst
+  | x :: rst, S n
+    => x :: remove rst n
+  | _, _
+    => []
+  end.
+
+Polymorphic Instance Contains_nat
+            (set:  list Type)
+            (n:    nat)
+            (H:    n < length set)
+  : Contains (get set n) set :=
+  { rank        := n
+  ; rank_get_t  := eq_refl
+  ; rank_bound  := H
+  }.
 
 Polymorphic Instance Contains_head
             (t:    Type)
             (set:  list Type)
   : Contains t (cons t set) :=
-  { rank       := 0
-  ; small_set  := set
+  { rank        := 0
+  ; rank_get_t  := eq_refl
   }.
-+ reflexivity.
-+ intros m H.
-  apply PeanoNat.Nat.nlt_0_r in H.
-  destruct H.
-+ intros m H.
-  reflexivity.
-+ intros x.
-  dependent induction x.
-  exact x.
-+ intros v x.
-  apply Acons.
-  ++ exact v.
-  ++ dependent induction x.
-     exact x0.
-+ reflexivity.
-+ intros v x n H.
-  dependent induction n; [ omega |].
-  clear IHn.
-  dependent induction x.
-  clear IHx.
-  reflexivity.
++ apply Nat.lt_0_succ.
 Defined.
 
 Polymorphic Instance Contains_tail
@@ -128,49 +148,12 @@ Polymorphic Instance Contains_tail
             (set:    list Type)
             (H:      Contains t set)
   : Contains t (cons any set) :=
-  { small_set  := any :: small_set t set
-  ; rank       := S (rank t set)
+  { rank       := S (rank t set)
   }.
++ apply rank_get_t.
 + cbn.
-  apply rank_get_t.
-+ intros m Hlt.
-  induction m.
-  ++ reflexivity.
-  ++ clear IHm.
-     cbn.
-     apply small_set_lt_p.
-     apply Lt.lt_S_n in Hlt.
-     exact Hlt.
-+ intros m Hgt.
-  induction m.
-  ++ apply PeanoNat.Nat.nlt_0_r in Hgt.
-     destruct Hgt.
-  ++ clear IHm.
-     apply Le.le_S_n in Hgt.
-     apply small_set_gt_p in Hgt.
-     assert (R: get (any :: small_set t set) (S m) = get (small_set t set) m)
-       by reflexivity.
-     rewrite R.
-     rewrite Hgt.
-     reflexivity.
-+ intros x.
-  dependent induction x.
-  exact (get_v x0).
-+ intros v x.
-  dependent induction x.
-  exact (Acons x (set_v v x0)).
-+ intros v x.
-  dependent induction x.
-  apply get_set_p.
-+ intros v x n H'.
-  dependent induction x.
-  clear IHx.
-  induction n.
-  ++ reflexivity.
-  ++ clear IHn.
-     cbn.
-     apply get_set_np.
-     omega.
+  apply lt_n_S.
+  apply rank_bound.
 Defined.
 
 Polymorphic Definition inj
@@ -178,48 +161,7 @@ Polymorphic Definition inj
             {set:  list Type} `{Contains t set}
             (x:    t)
   : union set :=
-  OneOf (rank t set) (rank_get_t t set) x.
-
-Polymorphic Definition remove
-           {set:  list Type}
-           (x:    union set)
-           (t:    Type) `{Contains t set}
-  : Either t (union (small_set t set)).
-  refine (
-  match x with
-  | OneOf n H x
-    => _
-  end
-    ).
-  + case_eq (n =? (rank t set));
-      intro Heq.
-    ++ apply PeanoNat.Nat.eqb_eq in Heq.
-       assert (Ht: T = t). {
-         rewrite <- H.
-         rewrite Heq.
-         apply rank_get_t.
-       }
-       refine (left (eq_rect T id x t Ht)).
-    ++ refine (right _).
-       case_eq (n <? rank t set).
-       +++ intros Hlt.
-           apply Nat.ltb_lt in Hlt.
-           refine (OneOf n _ x).
-           rewrite <- H.
-           apply small_set_lt_p.
-           apply Hlt.
-       +++ intros Hgt.
-           apply Nat.ltb_ge in Hgt.
-           apply Nat.eqb_neq in Heq.
-           assert (Hr: rank t set < n) by omega.
-           induction n; [ omega |].
-           clear IHn.
-           refine (OneOf n _ x).
-           rewrite <- H.
-           apply small_set_gt_p.
-           apply lt_n_Sm_le in Hr.
-           exact Hr.
-Defined.
+  OneOf (rank t set) (rank_get_t t set) (rank_bound t set) x.
 
 Ltac evaluate_exact v :=
   let x := fresh "x" in
@@ -246,11 +188,26 @@ Section DoesItWork.
     inj 0.
 End DoesItWork.
 
-Fixpoint visit
-         {t:    Type}
-         {set:  list Type} `{Contains t set}
-         {a:    Type}
-         (x:    product set)
-         (f:    t -> a * t)
-  : a * product set :=
-  (fst (f (get_v x)), set_v (snd (f (get_v x))) x).
+Definition visit
+           {t:    Type}
+           {set:  list Type} `{Contains t set}
+           {a:    Type}
+           (x:    product set)
+           (f:    t -> a * t)
+  : a * product set.
+  refine (
+  match fetch x (rank t set) (rank_bound t set)
+        return get set (rank t set) = t -> a * product set
+  with
+  | v
+    => fun (H: get set (rank t set) = t)
+       => _
+  end (rank_get_t t set)
+    ).
+  remember (f (eq_rect (get set (rank t set)) (fun X => X) v t H)) as p.
+  induction p as [v' u].
+  refine (v', swap x (rank t set) (rank_bound t set) _).
+  refine (eq_rect t (fun X => X) u (get set (rank t set)) _).
+  symmetry.
+  exact H.
+Defined.
