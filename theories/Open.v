@@ -25,32 +25,32 @@ Polymorphic Fixpoint get
     => inhabited
   end.
 
-Polymorphic Inductive oneOf
+Polymorphic Inductive union
             (set:  list Type)
   : Type :=
 | OneOf {t:  Type}
         (n:  nat)
         (H:  get set n = t)
         (x:  t)
-  : oneOf set.
+  : union set.
 
 Arguments OneOf [set t] (n H x).
 
-Polymorphic Inductive allOf
+Polymorphic Inductive product
   : list Type -> Type :=
 | Acons (a:    Type)
         (x:    a)
         (set:  list Type)
-        (rst:  allOf set)
-  : allOf (a :: set)
+        (rst:  product set)
+  : product (a :: set)
 | Anil
-  : allOf [].
+  : product [].
 
 Arguments Acons [a] (x) [set] (rst).
 
 Polymorphic Fixpoint fetch
             {set:  list Type}
-            (x:    allOf set)
+            (x:    product set)
             (n:    nat)
   : option (get set n) :=
   match x, n with
@@ -74,13 +74,13 @@ Polymorphic Class Contains
      ; small_set_gt_p:  forall (m:  nat),
          rank <= m
          -> get small_set m = get set (S m)
-     ; get_v:           allOf set -> t
-     ; set_v:           t -> allOf set -> allOf set
+     ; get_v:           product set -> t
+     ; set_v:           t -> product set -> product set
      ; get_set_p:       forall (v:  t)
-                               (x:  allOf set),
+                               (x:  product set),
          get_v (set_v v x) = v
      ; get_set_np:      forall (v:  t)
-                               (x:  allOf set)
+                               (x:  product set)
                                (n:  nat),
          n <> rank
          -> fetch x n = fetch (set_v v x) n
@@ -176,14 +176,14 @@ Polymorphic Definition inj
             {t:    Type}
             {set:  list Type} `{Contains t set}
             (x:    t)
-  : oneOf set :=
+  : union set :=
   OneOf (rank t set) (rank_get_t t set) x.
 
 Polymorphic Definition remove
            {set:  list Type}
-           (x:    oneOf set)
+           (x:    union set)
            (t:    Type) `{Contains t set}
-  : Either t (oneOf (small_set t set)).
+  : Either t (union (small_set t set)).
   refine (
   match x with
   | OneOf n H x
@@ -231,17 +231,17 @@ Ltac evaluate_exact v :=
 
 Ltac inj v :=
   match goal with
-  | [ |- oneOf ?set]
+  | [ |- union ?set]
     => evaluate_exact (@inj _ set _ v)
   end.
 
 Section DoesItWork.
   Definition test_bool
-    : oneOf [bool; nat] :=
+    : union [bool; nat] :=
     inj true.
 
   Definition test_nat
-    : oneOf [bool; nat] :=
+    : union [bool; nat] :=
     inj 0.
 End DoesItWork.
 
@@ -249,7 +249,7 @@ Fixpoint visit
          {t:    Type}
          {set:  list Type} `{Contains t set}
          {a:    Type}
-         (x:    allOf set)
+         (x:    product set)
          (f:    t -> t * a)
-  : allOf set * a :=
+  : product set * a :=
   (set_v (fst (f (get_v x))) x, snd (f (get_v x))).

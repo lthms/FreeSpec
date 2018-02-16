@@ -31,7 +31,7 @@ theories/Tactics.v
 theories/Concurrent.v
 theories/Proxy.v
 
-theories/OneOf.v
+theories/Open.v
 theories/Row.v
 
 libs/coq-open-nat/OpenNat.v

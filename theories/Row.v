@@ -1,5 +1,5 @@
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.OneOf.
+Require Import FreeSpec.Open.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Program.
 
@@ -22,7 +22,7 @@ Inductive row
           (set:  list (Type -> Type))
           (a:    Type)
   : Type :=
-| Row (e:  oneOf (specialize a set))
+| Row (e:  union (specialize a set))
   : row set a.
 
 Class HasEffect
