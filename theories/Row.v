@@ -110,26 +110,6 @@ Definition inj_effect
   : Program (row set) a :=
   Request (Row (inj (set := specialize a set) x)).
 
-Section EXAMPLE.
-  Inductive E1
-  : Type -> Type :=
-  | e1
-    : E1 nat.
-
-  Inductive E2
-    : Type -> Type :=
-  | e2 (x:  nat)
-    : E2 unit.
-
-  Definition my_program
-             {set:  list (Type -> Type)}
-            `{HasEffect set E1}
-            `{HasEffect set E2}
-    : Program (row set) unit :=
-    x <- inj_effect e1;
-    inj_effect (e2 x).
-End EXAMPLE.
-
 Fact get_gen_getr_eq
      (set:  list (Type -> Type))
      (f:    (Type -> Type) -> Type)
@@ -208,3 +188,64 @@ Definition mkSemanticsForRow
            (sems:  product (generalize Semantics set))
   : Semantics (row set) :=
   mkSemantics (semanticsRowSteps set) sems.
+
+Section EXAMPLE.
+  Inductive NatStack
+  : Type -> Type :=
+  | Push (x: nat)
+    : NatStack unit
+  | Pop
+    : NatStack nat.
+
+  Definition push_nat
+             {eff:  list (Type -> Type)} `{HasEffect eff NatStack}
+             (x:    nat)
+    : Program (row eff) unit :=
+    inj_effect (Push x).
+
+  Definition pop_nat
+             {eff:  list (Type -> Type)} `{HasEffect eff NatStack}
+    : Program (row eff) nat :=
+    inj_effect Pop.
+
+  Inductive LogNat
+    : Type -> Type :=
+  | Log (x:  nat)
+    : LogNat unit.
+
+  Definition log_nat
+             {eff:  list (Type -> Type)} `{HasEffect eff LogNat}
+             (n:    nat)
+    : Program (row eff) unit :=
+    inj_effect (Log n).
+
+  Definition my_program
+             {eff:  list (Type -> Type)} `{HasEffect eff NatStack}
+                                         `{HasEffect eff LogNat}
+             (x:    nat)
+    : Program (row eff) unit :=
+    y <- pop_nat;
+    push_nat x;;
+    log_nat y.
+
+  Axioms (pop_sem: Semantics NatStack)
+         (log_sem: Semantics LogNat).
+
+  Definition push_sem
+             {eff:   list (Type -> Type)}
+             {I:     Type -> Type}
+             (sem:   Semantics I)
+             (sems:  product (generalize Semantics eff))
+    : product (generalize Semantics (I :: eff)) :=
+    Acons sem sems.
+
+  Definition sem_nil
+    : product (generalize Semantics nil) :=
+    Anil.
+
+  Definition example_semantics :=
+    mkSemanticsForRow (push_sem pop_sem (push_sem log_sem sem_nil)).
+
+  Definition test :=
+    runProgram example_semantics (my_program 0).
+End EXAMPLE.
