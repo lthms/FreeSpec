@@ -189,6 +189,30 @@ Definition mkSemanticsForRow
   : Semantics (row set) :=
   mkSemantics (semanticsRowSteps set) sems.
 
+Definition push_sem
+           {eff:   list (Type -> Type)}
+           {I:     Type -> Type}
+           (sem:   Semantics I)
+           (sems:  product (generalize Semantics eff))
+  : product (generalize Semantics (I :: eff)) :=
+  Acons sem sems.
+
+Definition sem_nil
+  : product (generalize Semantics nil) :=
+  Anil.
+
+Notation "<< x >>" :=
+  (Acons x Anil)
+  : free_row_scope.
+Notation "<< x ; y ; .. ; z >>" :=
+  (Acons x (Acons y .. (Acons z Anil) ..))
+  : free_row_scope.
+
+Notation "<| x |>" := (push_sem x sem_nil) (only parsing) : free_row_scope.
+Notation "<| x ; y ; .. ; z |>" := (push_sem x (push_sem y .. (push_sem z sem_nil) ..)) (only parsing) : free_row_scope.
+
+Local Open Scope free_row_scope.
+
 Section EXAMPLE.
   Inductive NatStack
   : Type -> Type :=
@@ -255,20 +279,8 @@ Section EXAMPLE.
                       => (tt, x :: l)
                     end) nil.
 
-  Definition push_sem
-             {eff:   list (Type -> Type)}
-             {I:     Type -> Type}
-             (sem:   Semantics I)
-             (sems:  product (generalize Semantics eff))
-    : product (generalize Semantics (I :: eff)) :=
-    Acons sem sems.
-
-  Definition sem_nil
-    : product (generalize Semantics nil) :=
-    Anil.
-
   Definition example_semantics :=
-    mkSemanticsForRow (push_sem stack_sem (push_sem log_sem sem_nil)).
+   mkSemanticsForRow <| stack_sem; log_sem |>.
 
   Definition test :=
     evalProgram example_semantics (my_program 0).
