@@ -54,6 +54,7 @@ oracle/Oracle.v
 
 examples/Map.v
 examples/Smram.v
+examples/Row.v
 
 poc/CoqMain.v
 poc/App.v

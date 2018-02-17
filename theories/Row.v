@@ -1,7 +1,6 @@
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Open.
 Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Option.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
 Require Import Omega.
@@ -208,84 +207,5 @@ Notation "<< x ; y ; .. ; z >>" :=
   (Acons x (Acons y .. (Acons z Anil) ..))
   : free_row_scope.
 
-Notation "<| x |>" := (push_sem x sem_nil) (only parsing) : free_row_scope.
-Notation "<| x ; y ; .. ; z |>" := (push_sem x (push_sem y .. (push_sem z sem_nil) ..)) (only parsing) : free_row_scope.
-
-Local Open Scope free_row_scope.
-
-Section EXAMPLE.
-  Inductive NatStack
-  : Type -> Type :=
-  | Push (x: nat)
-    : NatStack unit
-  | Pop
-    : NatStack nat.
-
-  Definition push_nat
-             {eff:  list (Type -> Type)} `{HasEffect eff NatStack}
-             (x:    nat)
-    : Program (row eff) unit :=
-    inj_effect (Push x).
-
-  Definition pop_nat
-             {eff:  list (Type -> Type)} `{HasEffect eff NatStack}
-    : Program (row eff) nat :=
-    inj_effect Pop.
-
-  Inductive LogNat
-    : Type -> Type :=
-  | Log (x:  nat)
-    : LogNat unit.
-
-  Definition log_nat
-             {eff:  list (Type -> Type)} `{HasEffect eff LogNat}
-             (n:    nat)
-    : Program (row eff) unit :=
-    inj_effect (Log n).
-
-  Definition my_program
-             {eff:  list (Type -> Type)} `{HasEffect eff NatStack}
-                                         `{HasEffect eff LogNat}
-             (x:    nat)
-    : Program (row eff) unit :=
-    y <- pop_nat;
-    push_nat x;;
-    log_nat y.
-
-  Definition stack_sem
-    : Semantics NatStack :=
-    mkSemantics (fun (A:  Type)
-                     (l:  list nat)
-                     (e:  NatStack A)
-                 => match e with
-                    | Push x
-                      => (tt, x :: l)
-                    | Pop
-                      => match l with
-                         | x :: r
-                           => (x, r)
-                         | _
-                           => (0, nil)
-                         end
-                    end) nil.
-
-  Definition log_sem
-    : Semantics LogNat :=
-    mkSemantics (fun (A:  Type)
-                     (l:  list nat)
-                     (e:  LogNat A)
-                 => match e with
-                    | Log x
-                      => (tt, x :: l)
-                    end) nil.
-
-  Definition example_semantics :=
-   mkSemanticsForRow <| stack_sem; log_sem |>.
-
-  Definition test :=
-    evalProgram example_semantics (my_program 0).
-
-  Goal (test = tt).
-    reflexivity.
-  Qed.
-End EXAMPLE.
+Notation "<| x |>" := (mkSemanticsForRow (push_sem x sem_nil)) (only parsing) : free_row_scope.
+Notation "<| x ; y ; .. ; z |>" := (mkSemanticsForRow (push_sem x (push_sem y .. (push_sem z sem_nil) ..))) (only parsing) : free_row_scope.
