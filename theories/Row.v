@@ -45,7 +45,7 @@ Proof.
   + cbn.
     rewrite IHrow.
     reflexivity.
-Qed.
+Defined.
 
 Fixpoint generalize
          (x:    (Type -> Type) -> Type)
@@ -68,7 +68,7 @@ Proof.
   + cbn.
     rewrite IHrow.
     reflexivity.
-Qed.
+Defined.
 
 Inductive row
           (set:  list (Type -> Type))
@@ -144,7 +144,7 @@ Proof.
   + induction n; [ reflexivity |].
     cbn in *.
     apply IHset.
-Qed.
+Defined.
 
 Instance HasEffect_indexed
          (set:  list (Type -> Type))
@@ -228,8 +228,32 @@ Section EXAMPLE.
     push_nat x;;
     log_nat y.
 
-  Axioms (pop_sem: Semantics NatStack)
-         (log_sem: Semantics LogNat).
+  Definition stack_sem
+    : Semantics NatStack :=
+    mkSemantics (fun (A:  Type)
+                     (l:  list nat)
+                     (e:  NatStack A)
+                 => match e with
+                    | Push x
+                      => (tt, x :: l)
+                    | Pop
+                      => match l with
+                         | x :: r
+                           => (x, r)
+                         | _
+                           => (0, nil)
+                         end
+                    end) nil.
+
+  Definition log_sem
+    : Semantics LogNat :=
+    mkSemantics (fun (A:  Type)
+                     (l:  list nat)
+                     (e:  LogNat A)
+                 => match e with
+                    | Log x
+                      => (tt, x :: l)
+                    end) nil.
 
   Definition push_sem
              {eff:   list (Type -> Type)}
@@ -244,8 +268,12 @@ Section EXAMPLE.
     Anil.
 
   Definition example_semantics :=
-    mkSemanticsForRow (push_sem pop_sem (push_sem log_sem sem_nil)).
+    mkSemanticsForRow (push_sem stack_sem (push_sem log_sem sem_nil)).
 
   Definition test :=
-    runProgram example_semantics (my_program 0).
+    evalProgram example_semantics (my_program 0).
+
+  Goal (test = tt).
+    reflexivity.
+  Qed.
 End EXAMPLE.
