@@ -287,6 +287,29 @@ Proof.
            exact H'.
 Defined.
 
+Definition get_spec_n
+           {ws:     list Type}
+           {eff:    list (Type -> Type)}
+           (H:      cardinal ws = cardinal eff)
+           (specs:  product (generalize' Specification ws eff))
+           (n:      nat)
+           (Hb:     n < cardinal eff)
+  : Specification (get ws n) (getr eff n).
+  assert (Hb': n < cardinal ws). {
+    rewrite H.
+    exact Hb.
+  }
+  assert (Hb'': n < cardinal (generalize' Specification ws eff)). {
+    rewrite <- generalize_cardinal'.
+    exact Hb.
+    exact H.
+  }
+  remember (fetch specs n Hb'') as spec_n.
+  refine (eq_rect (get (generalize' Specification ws eff) n) (fun X => X) spec_n (Specification (get ws n) (getr eff n)) _).
+  apply (get_generalize_get_getr eff ws Specification n H).
+  exact Hb.
+Defined.
+
 Definition abstract_step_row
            {ws:     list Type}
            {eff:    list (Type -> Type)}
@@ -306,25 +329,75 @@ Definition abstract_step_row
     rewrite H.
     exact Hbe.
   }
-  assert (Hget: get (specialize a eff) n = getr eff n a) by apply get_spec_getr_eq.
-  assert (Hs: n < cardinal (generalize' Specification ws eff)). {
-    rewrite <- generalize_cardinal'.
-    + exact Hbe.
-    + exact H.
-  }
-  assert (spec_n: Specification (get ws n) (getr eff n)). {
-    remember (fetch specs n Hs) as spec_n.
-    refine (eq_rect (get (generalize' Specification ws eff) n) (fun X => X) spec_n (Specification (get ws n) (getr eff n)) _).
-    apply (get_generalize_get_getr eff ws Specification n H).
-    exact Hbe.
-  }
+  assert (spec_n: Specification (get ws n) (getr eff n))
+    by exact (get_spec_n H specs n Hbe).
   refine (swap w n _ _); [ rewrite H;
                            rewrite <- specialize_cardinal in Hb;
                            exact Hb
                          |].
   assert (wn: get ws n) by exact (fetch w n Hbw).
   refine (abstract_step spec_n (eq_rect T (fun X => X) e (getr eff n a) _) x wn).
-  rewrite <- Hget.
+  rewrite <- get_spec_getr_eq.
+  symmetry.
+  exact Heq.
+Defined.
+
+Definition row_precondition
+           {ws:     list Type}
+           {eff:    list (Type -> Type)}
+           (H:      cardinal ws = cardinal eff)
+           (specs:  product (generalize' Specification ws eff))
+           (a:      Type)
+           (e:      row eff a)
+           (w:      product ws)
+  : Prop.
+  induction e as [[T n Heq Hb e]].
+  assert (Hbe: n < cardinal eff). {
+    rewrite <- specialize_cardinal in Hb.
+    exact Hb.
+  }
+  assert (Hbw: n < cardinal ws). {
+    rewrite H.
+    exact Hbe.
+  }
+  assert (wn: get ws n) by exact (fetch w n Hbw).
+  assert (spec_n: Specification (get ws n) (getr eff n))
+    by exact (get_spec_n H specs n Hbe).
+  refine (precondition spec_n
+                       (eq_rect T (fun X => X) e (getr eff n a) _)
+                       wn).
+  rewrite <- get_spec_getr_eq.
+  symmetry.
+  exact Heq.
+Defined.
+
+Definition row_postcondition
+           {ws:     list Type}
+           {eff:    list (Type -> Type)}
+           (H:      cardinal ws = cardinal eff)
+           (specs:  product (generalize' Specification ws eff))
+           (a:      Type)
+           (e:      row eff a)
+           (x:      a)
+           (w:      product ws)
+  : Prop.
+  induction e as [[T n Heq Hb e]].
+  assert (Hbe: n < cardinal eff). {
+    rewrite <- specialize_cardinal in Hb.
+    exact Hb.
+  }
+  assert (Hbw: n < cardinal ws). {
+    rewrite H.
+    exact Hbe.
+  }
+  assert (wn: get ws n) by exact (fetch w n Hbw).
+  assert (spec_n: Specification (get ws n) (getr eff n))
+    by exact (get_spec_n H specs n Hbe).
+  refine (postcondition spec_n
+                        (eq_rect T (fun X => X) e (getr eff n a) _)
+                        x
+                        wn).
+  rewrite <- get_spec_getr_eq.
   symmetry.
   exact Heq.
 Defined.
@@ -334,9 +407,8 @@ Definition mkRowSpecs
            {ws:     list Type}
            (H:      cardinal ws = cardinal eff)
            (specs:  product (generalize' Specification ws eff))
-  : Specification (product ws) (row eff).
-  refine (
-      {| abstract_step := @abstract_step_row ws eff H specs
-       |}
-    ).
-Abort.
+  : Specification (product ws) (row eff) :=
+    {| abstract_step := @abstract_step_row ws eff H specs
+     ; precondition  := @row_precondition ws eff H specs
+     ; postcondition  := @row_postcondition ws eff H specs
+     |}.
