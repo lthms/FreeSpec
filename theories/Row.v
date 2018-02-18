@@ -12,10 +12,10 @@ Require Import Coq.Program.Equality.
 
 Local Open Scope free_control_scope.
 
-Polymorphic Fixpoint getr
-            (set:  list (Type -> Type))
-            (n:    nat)
-            {struct n}
+Fixpoint getr
+         (set:  list (Type -> Type))
+         (n:    nat)
+         {struct n}
   : Type -> Type :=
   match n, set with
   | 0, t :: _
@@ -26,9 +26,9 @@ Polymorphic Fixpoint getr
     => fun _ => inhabited
   end.
 
-Polymorphic Fixpoint specialize
-            (x:    Type)
-            (row:  list (Type -> Type))
+Fixpoint specialize
+         (x:    Type)
+         (row:  list (Type -> Type))
   : list Type :=
   match row with
   | i :: rest
@@ -49,9 +49,9 @@ Proof.
     reflexivity.
 Defined.
 
-Polymorphic Fixpoint generalize
-            (x:    (Type -> Type) -> Type)
-            (row:  list (Type -> Type))
+Fixpoint generalize
+         (x:    (Type -> Type) -> Type)
+         (row:  list (Type -> Type))
   : list Type :=
   match row with
   | i :: rest
@@ -72,35 +72,35 @@ Proof.
     reflexivity.
 Defined.
 
-Polymorphic Inductive row
-            (set:  list (Type -> Type))
-            (a:    Type)
+Inductive row
+          (set:  list (Type -> Type))
+          (a:    Type)
   : Type :=
 | Row (e:  union (specialize a set))
   : row set a.
 
 Arguments Row [set a] (e).
 
-Polymorphic Class HasEffect
-            (set:  list (Type -> Type))
-            (I:    Type -> Type)
+Class HasEffect
+      (set:  list (Type -> Type))
+      (I:    Type -> Type)
   := { contains_spec :> forall (r:  Type),
            Contains (I r) (specialize r set)
      ; contains_gen :> forall (f: (Type -> Type) -> Type),
            Contains (f I) (generalize f set)
      }.
 
-Polymorphic Instance HasEffect_head
-            (set:  list (Type -> Type))
-            (I:    Type -> Type)
+Instance HasEffect_head
+         (set:  list (Type -> Type))
+         (I:    Type -> Type)
   : HasEffect (I :: set) I :=
   {}.
 
-Polymorphic Instance HasEffect_tail
-            (set:  list (Type -> Type))
-            (I:    Type -> Type)
-            (H:    HasEffect set I)
-            (any:  Type -> Type)
+Instance HasEffect_tail
+         (set:  list (Type -> Type))
+         (I:    Type -> Type)
+         (H:    HasEffect set I)
+         (any:  Type -> Type)
   : HasEffect (any :: set) I :=
   {}.
 
@@ -148,10 +148,10 @@ Proof.
     apply IHset.
 Defined.
 
-Polymorphic Instance HasEffect_indexed
-            (set:  list (Type -> Type))
-            (n:    nat)
-            (H:    n < cardinal set)
+Instance HasEffect_indexed
+         (set:  list (Type -> Type))
+         (n:    nat)
+         (H:    n < cardinal set)
   : HasEffect set (getr set n) :=
   {}.
 + intros r.
@@ -213,8 +213,12 @@ Notation "<< x ; y ; .. ; z >>" :=
   (Acons x (Acons y .. (Acons z Anil) ..))
   : free_row_scope.
 
-Notation "<| x |>" := (mkSemanticsForRow (push_sem x sem_nil)) (only parsing) : free_row_scope.
-Notation "<| x ; y ; .. ; z |>" := (mkSemanticsForRow (push_sem x (push_sem y .. (push_sem z sem_nil) ..))) (only parsing) : free_row_scope.
+Notation "<| x |>" :=
+  (mkSemanticsForRow (push_sem x sem_nil)) (only parsing)
+  : free_row_scope.
+Notation "<| x ; y ; .. ; z |>" :=
+  (mkSemanticsForRow (push_sem x (push_sem y .. (push_sem z sem_nil) ..))) (only parsing)
+  : free_row_scope.
 
 (** * Specification
  *)
@@ -283,15 +287,15 @@ Proof.
            exact H'.
 Defined.
 
-Polymorphic Definition abstract_step_row
-            {ws:     list Type}
-            {eff:    list (Type -> Type)}
-            (H:      cardinal ws = cardinal eff)
-            (specs:  product (generalize' Specification ws eff))
-            (a:      Type)
-            (e:      row eff a)
-            (x:      a)
-            (w:      product ws)
+Definition abstract_step_row
+           {ws:     list Type}
+           {eff:    list (Type -> Type)}
+           (H:      cardinal ws = cardinal eff)
+           (specs:  product (generalize' Specification ws eff))
+           (a:      Type)
+           (e:      row eff a)
+           (x:      a)
+           (w:      product ws)
   : product ws.
   induction e as [[T n Heq Hb e]].
   assert (Hbe: n < cardinal eff). {
