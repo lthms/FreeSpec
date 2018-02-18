@@ -26,7 +26,7 @@ Require Import FreeSpec.Abstract.
 
 Record Specification
        (W:  Type)
-       (I:  Interface)
+       (I:  Type -> Type)
   :=
     { abstract_step (A:  Type)
                     (e:  I A)

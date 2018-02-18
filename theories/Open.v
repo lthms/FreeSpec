@@ -7,7 +7,20 @@ Require Import Coq.Program.Equality.
 Import ListNotations.
 Local Open Scope list_scope.
 
-(* Set Universe Polymorphism. *)
+(** If you use polymorphic definition, do no use function from the
+    standard library. Define your own.
+ *)
+
+Polymorphic Fixpoint cardinal
+            {a:  Type}
+            (l:  list a)
+  : nat :=
+  match l with
+  | _ :: rst
+    => S (cardinal rst)
+  | nil
+    => O
+  end.
 
 Inductive inhabited
   : Type.
@@ -32,7 +45,7 @@ Polymorphic Inductive union
 | OneOf {t:   Type}
         (n:   nat)
         (H:   get set n = t)
-        (H':  n < length set)
+        (H':  n < cardinal set)
         (x:   t)
   : union set.
 
@@ -54,7 +67,7 @@ Polymorphic Fixpoint fetch
             {set:  list Type}
             (x:    product set)
             (n:    nat)
-            (H:    n < length set)
+            (H:    n < cardinal set)
   : get set n.
 case_eq set.
 + intros Heq.
@@ -77,7 +90,7 @@ Polymorphic Fixpoint swap
             {set:  list Type}
             (x:    product set)
             (n:    nat)
-            (H:    n < length set)
+            (H:    n < cardinal set)
             (v:    get set n)
             {struct x}
   : product set.
@@ -103,7 +116,7 @@ Polymorphic Class Contains
             (set:  list Type)
   := { rank:            nat
      ; rank_get_t:      get set rank = t
-     ; rank_bound:      rank < length set
+     ; rank_bound:      rank < cardinal set
      }.
 
 Arguments rank (t set) [_].
@@ -126,7 +139,7 @@ Polymorphic Fixpoint remove
 Polymorphic Instance Contains_nat
             (set:  list Type)
             (n:    nat)
-            (H:    n < length set)
+            (H:    n < cardinal set)
   : Contains (get set n) set :=
   { rank        := n
   ; rank_get_t  := eq_refl
