@@ -81,15 +81,48 @@ Definition test :=
   evalProgram example_semantics (my_program 0).
 
 Goal (test = tt).
-  remember (runProgram example_semantics pop_nat).
-  cbn in Heqp.
-  unfold push_sem in Heqp;
-    unfold sem_nil in Heqp.
   reflexivity.
 Qed.
 
-Axioms (spec_stack:  Specification nat NatStack)
-       (spec_log:    Specification nat LogNat).
+Definition spec_stack
+  : Specification nat NatStack :=
+  {| abstract_step  := fun (a:  Type)
+                           (e:  NatStack a)
+                           (x:  a)
+                           (s:  nat)
+                       => S s
+   ; precondition   := no_pre
+   ; postcondition  := fun (a:  Type)
+                           (e:  NatStack a)
+                           (x:  a)
+                           (s:  nat)
+                       => True
+   |}.
+
+Definition spec_log
+  : Specification nat LogNat :=
+  {| abstract_step  := fun (a:  Type)
+                           (e:  LogNat a)
+                           (x:  a)
+                           (s:  nat)
+                       => S s
+   ; precondition   := no_pre
+   ; postcondition  := fun (a:  Type)
+                           (e:  LogNat a)
+                           (x:  a)
+                           (s:  nat)
+                       => True
+   |}.
 
 Definition example_specification :=
   |< spec_stack; spec_log >|.
+
+Definition full_stack :=
+  specification_derive (my_program 0)
+                       <| stack_sem; log_sem |>
+                       |< spec_stack; spec_log >|
+                       << 0; 0 >>.
+
+Goal (full_stack = << 2; 1>>).
+  reflexivity.
+Qed.
