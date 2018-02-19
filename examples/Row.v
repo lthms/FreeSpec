@@ -1,6 +1,7 @@
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Control.
 Require Import FreeSpec.Program.
+Require Import FreeSpec.Specification.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Row.
 Require Import Coq.Lists.List.
@@ -86,3 +87,9 @@ Goal (test = tt).
     unfold sem_nil in Heqp.
   reflexivity.
 Qed.
+
+Axioms (spec_stack:  Specification nat NatStack)
+       (spec_log:    Specification nat LogNat).
+
+Definition example_specification :=
+  |< spec_stack; spec_log >|.

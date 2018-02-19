@@ -402,13 +402,53 @@ Definition row_postcondition
   exact Heq.
 Defined.
 
+Inductive SpecsBuilder
+          (eff:  list (Type -> Type))
+          (ws:   list Type) :=
+  { specs:   product (generalize' Specification ws eff)
+  ; card_p:  cardinal ws = cardinal eff
+  }.
+
+Arguments specs [eff ws] (_).
+Arguments card_p [eff ws] (_).
+
 Definition mkRowSpecs
            {eff:    list (Type -> Type)}
            {ws:     list Type}
-           (H:      cardinal ws = cardinal eff)
-           (specs:  product (generalize' Specification ws eff))
+           (build:  SpecsBuilder eff ws)
   : Specification (product ws) (row eff) :=
-    {| abstract_step := @abstract_step_row ws eff H specs
-     ; precondition  := @row_precondition ws eff H specs
-     ; postcondition  := @row_postcondition ws eff H specs
-     |}.
+    {| abstract_step := @abstract_step_row ws eff (card_p build) (specs build)
+     ; precondition  := @row_precondition ws eff (card_p build) (specs build)
+     ; postcondition  := @row_postcondition ws eff (card_p build) (specs build)
+    |}.
+
+Definition nil_spec
+  : SpecsBuilder nil nil :=
+  {| specs := (Anil: product (generalize' Specification nil nil))
+   ; card_p := eq_refl
+  |}.
+
+Definition push_spec
+           {eff:   list (Type -> Type)}
+           {i:     Type -> Type}
+           {ws:    list Type}
+           {w:     Type}
+           (spec:  Specification w i)
+           (prev:  SpecsBuilder eff ws)
+  : SpecsBuilder (i :: eff) (w :: ws).
+  refine (
+      {| specs := (Acons spec (specs prev): product (generalize' Specification (w :: ws) (i :: eff)))
+       |}
+    ).
+  destruct prev as [_H H].
+  cbn.
+  rewrite H.
+  reflexivity.
+Defined.
+
+Notation "|< x >|" :=
+  (mkRowSpecs ((push_spec x nil_spec))) (only parsing)
+  : free_row_scope.
+Notation "|< x ; y ; .. ; z >|" :=
+  (mkRowSpecs (push_spec x (push_spec y .. (push_spec z nil_spec) ..))) (only parsing)
+  : free_row_scope.
