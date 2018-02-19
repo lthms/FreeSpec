@@ -11,8 +11,6 @@ effect handler.
 
 This repository can be divided into several parts:
 
-* `theories/Control` defines a Monad typeclasses hierarchy, and will eventually
-  get its own repository
 * `theories/` defines the core formalism of FreeSpec, it is “the framework” per
   se
 * `examples/` implements a complete example which involves the most important
@@ -28,6 +26,24 @@ repository:
   FreeSpec
 
 ## Getting Started
+
+### `coq-prelude`
+
+This repository relies on
+[`coq-prelude`](https://github.com/ANSSI-FR/coq-prelude), an “*opinionated
+Prelude for Coq inspired by Haskell*”. In particular, `coq-prelude` provides the
+Monad-related definitions.
+
+Eventually, we will submit a Pull Request to the Coq OPAM Repository to add
+`coq-prelude`. Right now, you need to install this library from source.
+
+```bash
+git clone https://github.com/ANSSI-FR/coq-prelude
+cd coq-prelude
+sudo make install
+```
+
+### `freespec`
 
 FreeSpec has been tested with Coq v8.7, and should work with Coq v8.6. To build
 the proofs, just use the Makefile at the root of the project:
