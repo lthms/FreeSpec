@@ -20,14 +20,15 @@ Require Import Coq.Program.Equality.
 Require Import FreeSpec.Abstract.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Specification.Constant.
-Require Import FreeSpec.Control.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Refine.
-Require Import FreeSpec.WEq.
 
-Local Open Scope free_weq_scope.
+Require Import Prelude.Control.
+Require Import Prelude.Equality.
+
+Local Open Scope prelude_scope.
 
 Inductive sequence
           (I:  Interface)

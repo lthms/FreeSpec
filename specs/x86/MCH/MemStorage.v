@@ -20,21 +20,21 @@ Require Import Coq.NArith.NArith.
 Require Import FreeSpec.Specs.Memory.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Function.
 Require Import FreeSpec.MonadSemantics.
-Require Import FreeSpec.Control.State.
-Require Import FreeSpec.Control.Classes.
-Require Import FreeSpec.Control.Identity.
-Require Import FreeSpec.WEq.
+
+Require Import Prelude.Control.
+Require Import Prelude.Control.Function.
+Require Import Prelude.Control.State.
+Require Import Prelude.Control.Classes.
+Require Import Prelude.Control.Identity.
+Require Import Prelude.Equality.
 
 Require Import FreeSpec.Libs.NOmega.NOmega.
 
 Local Close Scope nat_scope.
 Local Open Scope N_scope.
 
-Local Open Scope free_weq_scope.
-Local Open Scope free_control_scope.
+Local Open Scope prelude_scope.
 
 Inductive MSi
           (n:  N)
@@ -67,17 +67,17 @@ Definition MSs
   := mem n
      -> byte.
 
-Definition MSs_weq
+Definition MSs_eq
            {n:             N}
            (store store':  MSs n)
   : Prop :=
   forall (addr: mem n),
     store addr == store' addr.
 
-Instance MSs_WEq
+Instance MSs_Eq
          (n:  N)
-  : WEq (MSs n) :=
-  { weq := @MSs_weq n
+  : Equality (MSs n) :=
+  { equal := @MSs_eq n
   }.
 
 Definition MSs_init
@@ -95,7 +95,7 @@ Lemma nxt_neq
       {n:  N}
       (x:  mem n)
       (H:  1 < n)
-  : ~ weq x (nxt x).
+  : x /= (nxt x).
 Proof.
   unfold nxt.
   unfold add.
@@ -201,13 +201,13 @@ Fact write_then_read
      (v:  word)
   : evalProgram (MSSemantics x) ([write_word a v] ;; [read_word a]) == v.
 Proof.
-  Opaque weq_bool.
+  Opaque equalb.
   cbn.
   repeat rewrite weq_bool_refl.
-  rewrite (weq_bool_false_rewrite (nxt a) a).
+  rewrite (equalb_false_rewrite (nxt a) a).
   rewrite <- join_bytes_upper_lower_eq.
   reflexivity.
-  apply not_weq_sym.
+  apply not_equal_sym.
   apply (nxt_neq a).
   exact H.
 Qed.

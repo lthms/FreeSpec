@@ -15,12 +15,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Control.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
-Require Import FreeSpec.Control.State.
-Require Import FreeSpec.WEq.
-Require Import FreeSpec.Control.Identity.
+
+Require Import Prelude.Control.
+Require Import Prelude.Control.Identity.
+Require Import Prelude.Control.State.
+Require Import Prelude.Equality.
 
 (** * The Semantics Monad
 
@@ -49,12 +50,12 @@ Arguments handle [I M _ A] (_).
  *)
 
 Definition monad_state_semantics
-           {S:     Type} `{WEq S}
+           {S:     Type} `{Equality S}
            {I:     Interface} `{MonadSemantics I (State S)}
            (init:  S)
   : Semantics I :=
   mkSemantics (fun (A:  Type)
                    (s:  S)
                    (e:  I A)
-               => unwrap (runStateT (m:=Identity) (handle e) s))
+               => runIdentity (runStateT (m:=Identity) (handle e) s))
               init.

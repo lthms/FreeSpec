@@ -22,12 +22,12 @@ Require Import Coq.Logic.Classical.
 Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
-Require Import FreeSpec.PropBool.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.WEq.
 Require Import FreeSpec.Abstract.
-Require Import FreeSpec.PropBool.
+
+Require Import Prelude.PropBool.
+Require Import Prelude.Equality.
 
 (** * Temporal Logic [Formula]
 
@@ -83,7 +83,7 @@ Proof.
   exact is_prop_bool0.
 Qed.
 
-Local Open Scope free_weq_scope.
+Local Open Scope prelude_scope.
 
 (** ** [Formula] Definition
 

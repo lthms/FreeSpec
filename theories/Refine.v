@@ -20,8 +20,9 @@ Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Abstract.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.State.
+
+Require Import Prelude.Control.
+Require Import Prelude.Control.State.
 
 (** * Stateful Refinement
 

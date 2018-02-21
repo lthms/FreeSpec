@@ -16,27 +16,26 @@
  *)
 
 Require Import Coq.Bool.Bool.
+Require Import Sumbool.
 
-Require Import FreeSpec.PropBool.
 Require Import FreeSpec.TemporalLogic.
 Require Import FreeSpec.TemporalLogic.Notations.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
-Require Import FreeSpec.WEq.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Specification.Constant.
-Require Import FreeSpec.Control.
 
-Require Import Sumbool.
+Require Import Prelude.PropBool.
+Require Import Prelude.Equality.
+Require Import Prelude.Control.
 
 Local Open Scope formula_scope.
-Local Open Scope free_weq_scope.
-Local Open Scope free_control_scope.
+Local Open Scope prelude_scope.
 Local Open Scope free_prog_scope.
 
 Lemma neq_sym
       {T:        Type}
-     `{WEq T}
+     `{Equality T}
       (t:        T)
       (Hneq_sym: t /= t)
   : False.
@@ -48,11 +47,11 @@ Qed.
 
 Section MAP.
   Variables (Key:         Type)
-            (key_eq:      WEq Key)
-            (key_eqdec:   WEqBool Key)
+            (key_eq:      Equality Key)
+            (key_eqdec:   EqualityBool Key)
             (Value:       Type)
-            (value_eq:    WEq Value)
-            (value_eqdec: WEqBool Value).
+            (value_eq:    Equality Value)
+            (value_eqdec: EqualityBool Value).
 
   Inductive IMap
     : Interface :=
@@ -115,7 +114,7 @@ Section MAP.
        == evalProgram (MapSemantics s) ([Read k]) .
   Proof.
     cbn.
-    apply weq_bool_false in Hneq.
+    apply equalb_false in Hneq.
     rewrite Hneq.
     reflexivity.
   Qed.
@@ -260,9 +259,9 @@ Section MAP.
         apply andb_prop in Heq.
         destruct Heq as [H1 H2].
         split.
-        ++ apply weq_bool_weq in H1.
+        ++ apply equalb_equal in H1.
            exact H1.
-        ++ apply weq_bool_weq in H2.
+        ++ apply equalb_equal in H2.
            exact H2.
       + intro Heq.
         cbn in *.
@@ -272,9 +271,9 @@ Section MAP.
         destruct Heq as [H1 H2].
         apply andb_true_intro.
         split.
-        ++ apply weq_bool_weq in H1.
+        ++ apply equalb_equal in H1.
            exact H1.
-        ++ apply weq_bool_weq in H2.
+        ++ apply equalb_equal in H2.
            exact H2.
     Defined.
 
@@ -314,7 +313,7 @@ Section MAP.
         induction i; induction i.
         ++ cbn in *.
            apply negb_true_iff in Heq.
-           apply weq_bool_false.
+           apply equalb_false.
            exact Heq.
         ++ cbn in *.
            discriminate Heq.
@@ -322,7 +321,7 @@ Section MAP.
         induction i; induction i.
         ++ cbn in *.
            apply negb_true_iff.
-           apply weq_bool_false in H.
+           apply equalb_false in H.
            exact H.
         ++ cbn in *.
            destruct H.

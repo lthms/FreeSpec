@@ -6,4 +6,4 @@ src/Datatypes.hs
 src/IO.hs
 src/Nat.hs
 src/String.hs
-src/WEq.hs
+src/Equality.hs

@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Control.
+Require Import Prelude.Control.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
 

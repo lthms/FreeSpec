@@ -17,16 +17,16 @@
 
 Require Import Coq.Program.Equality.
 
-Require Import FreeSpec.Control.
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Control.Either.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.WEq.
 
-Local Open Scope free_control_scope.
-Local Open Scope free_weq_scope.
+Require Import Prelude.Control.
+Require Import Prelude.Control.Either.
+Require Import Prelude.Equality.
+
+Local Open Scope prelude_scope.
 
 (** * Interface
 
@@ -131,16 +131,16 @@ Add Parametric Relation
     transitivity proved by failProgram_weq_trans
       as fail_program_relation.
 
-Instance FailProgram_WEq
+Instance FailProgram_Eq
          (Err:  Type)
          (I:    Interface)
          (A:    Type)
-  : WEq (FailProgram Err I A) :=
-  { weq := failProgram_weq
+  : Equality (FailProgram Err I A) :=
+  { equal := failProgram_weq
   }.
 
 Definition fail_program_map
-           (Err:  Type) `{WEq Err}
+           (Err:  Type) `{Equality Err}
            (I:    Interface)
            (A B:  Type)
            (f:    A -> B)
@@ -153,7 +153,7 @@ Definition fail_program_map
  *)
 
 Instance FailProgram_Functor
-         (Err:  Type) `{WEq Err}
+         (Err:  Type) `{Equality Err}
          (I:    Interface)
   : Functor (FailProgram Err I) :=
   { map := fail_program_map Err I
@@ -175,7 +175,7 @@ Proof.
 Defined.
 
 Definition failProgram_pure
-           (Err:  Type) `{WEq Err}
+           (Err:  Type) `{Equality Err}
            (I:    Interface)
            (A:    Type)
            (x:    A)
@@ -183,7 +183,7 @@ Definition failProgram_pure
   program_may_fail (I:=I) (R:=A) $ pure (pure x:  Either Err A).
 
 Definition failProgram_apply
-           (Err:    Type) `{WEq Err}
+           (Err:    Type) `{Equality Err}
            (I:      Interface)
            (A B:    Type)
            (pf:     FailProgram Err I (A -> B))
@@ -196,7 +196,7 @@ Definition failProgram_apply
                           pure (f x))).
 
 Instance failProgram_Applicative
-         (Err:  Type) `{WEq Err}
+         (Err:  Type) `{Equality Err}
          (I:    Interface)
   : Applicative (FailProgram Err I) :=
   { apply := failProgram_apply Err I
@@ -241,7 +241,7 @@ Proof.
 Defined.
 
 Definition failProgram_bind
-           (Err:  Type) `{WEq Err}
+           (Err:  Type) `{Equality Err}
            (I:    Interface)
            (A B:  Type)
            (p:    FailProgram Err I A)
@@ -249,14 +249,14 @@ Definition failProgram_bind
   : FailProgram Err I B :=
   program_may_fail (xe <- runFailProgram p     ;
                     match xe with
-                    | right x
+                    | Right x
                       => runFailProgram (f x)
-                    | left e
-                      => pure (left e)
+                    | Left e
+                      => pure (Left e)
                     end).
 
 Instance FailProgram_Monad
-         (Err:  Type) `{WEq Err}
+         (Err:  Type) `{Equality Err}
          (I:    Interface)
   : Monad (FailProgram Err I) :=
   { bind := failProgram_bind Err I
@@ -282,13 +282,13 @@ Proof.
        unfold program_bind.
        remember (fun (xe:  Either Err R)
                  =>  match xe with
-                     | left e => program_pure (left e)
-                     | right x => runFailProgram (g x)
+                     | Left e => program_pure (Left e)
+                     | Right x => runFailProgram (g x)
                      end) as f1.
        remember (fun (xe:  Either Err B)
                  => match xe with
-                    | left e => program_pure (left e)
-                    | right x => runFailProgram (h x)
+                    | Left e => program_pure (Left e)
+                    | Right x => runFailProgram (h x)
                     end) as f2.
        assert (Bind (Bind p f1) f2 == Bind p (fun x => Bind (f1 x) f2))
          by (constructor; reflexivity).
@@ -301,13 +301,13 @@ Proof.
        unfold program_bind.
        remember (fun (xe:  Either Err R)
                  =>  match xe with
-                     | left e => program_pure (left e)
-                     | right x => runFailProgram (g x)
+                     | Left e => program_pure (Left e)
+                     | Right x => runFailProgram (g x)
                      end) as f1.
        remember (fun (xe:  Either Err B)
                  => match xe with
-                    | left e => program_pure (left e)
-                    | right x => runFailProgram (h x)
+                    | Left e => program_pure (Left e)
+                    | Right x => runFailProgram (h x)
                     end) as f2.
        assert (Bind (Bind p f1) f2 == Bind p (fun x => Bind (f1 x) f2))
          by (constructor; reflexivity).
@@ -354,7 +354,7 @@ Definition throw
            {A:    Type}
            (err:  Err)
   : FailProgram Err I A :=
-  program_may_fail (I:=I) (R:=A) $ pure (left err).
+  program_may_fail (I:=I) (R:=A) $ pure (Left err).
 
 Definition catch
            {Err:  Type}
@@ -365,9 +365,9 @@ Definition catch
   : FailProgram Err I A :=
   program_may_fail (runFailProgram p >>= fun (x:  Either Err A)
                                          => match x with
-                                            | right res
+                                            | Right res
                                               => pure x
-                                            | left err
+                                            | Left err
                                               => runFailProgram (f err)
                                             end).
 
@@ -401,7 +401,7 @@ Definition fail_abstract_step
            (x:    A)
            (w:    W) :=
   match e, x with
-  | effect_may_fail e, right x
+  | effect_may_fail e, Right x
     => abstract_step c e x w
   | _, _
     => w
@@ -430,12 +430,12 @@ Inductive fail_postcondition
              (x:  A)
              (w:  W)
              (H:  postcondition c e x w)
-  : fail_postcondition c (Either Err A) (effect_may_fail e) (right x) w
+  : fail_postcondition c (Either Err A) (effect_may_fail e) (Right x) w
 | fail_left (A:    Type)
             (i:    I A)
             (err:  Err)
             (w:    W)
-  : fail_postcondition c (Either Err A) (effect_may_fail i) (left err) w.
+  : fail_postcondition c (Either Err A) (effect_may_fail i) (Left err) w.
 
 Definition FailSpecs
            {Err:  Type}

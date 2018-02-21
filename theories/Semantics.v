@@ -21,9 +21,10 @@ Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
 Require Export FreeSpec.Interface.
-Require Import FreeSpec.WEq.
 
-Local Open Scope free_weq_scope.
+Require Import Prelude.Equality.
+
+Local Open Scope prelude_scope.
 
 (** * [Semantics]
 
@@ -172,10 +173,10 @@ Add Parametric Relation
   transitivity proved by (semantics_eq_trans)
     as semantics_rel.
 
-Instance semantics_WEq
+Instance semantics_Equality
          (I:  Interface)
-  : WEq (Semantics I) :=
-  {| weq := @semantics_eq I |}.
+  : Equality (Semantics I) :=
+  {| equal := @semantics_eq I |}.
 
 (** ** Semantics Result Weak Equality
 
@@ -234,11 +235,11 @@ Add Parametric Relation
     transitivity proved by (run_semantics_eq_trans)
       as run_semantics_equiv.
 
-Instance run_semantics_WEq
+Instance run_semantics_Eq
          {I: Interface}
          {A: Type}
-  : WEq (A * Semantics I) :=
-  { weq := run_semantics_eq
+  : Equality (A * Semantics I) :=
+  { equal := run_semantics_eq
   }.
 
 (** We then provide the several morphisms to be able to rewrite terms
@@ -318,7 +319,7 @@ Qed.
 Goal (forall (I:         Interface)
              (sig sig':  Semantics I)
              (A:         Type)
-             (eqA:       WEq A)
+             (eqA:       Equality A)
              (e:         I A),
          sig == sig'
          -> evalEffect sig e == evalEffect sig' e).
@@ -331,7 +332,7 @@ Qed.
 Goal (forall (I:         Interface)
              (sig sig':  Semantics I)
              (A:         Type)
-             (eqA:       WEq A)
+             (eqA:       Equality A)
              (e:         I A),
          sig == sig'
          -> execEffect sig e == execEffect sig' e).

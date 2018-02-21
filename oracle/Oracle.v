@@ -16,14 +16,15 @@
  *)
 
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.PropBool.
 Require Import FreeSpec.MonadSemantics.
-Require Import FreeSpec.Control.Classes.
 
-Local Open Scope free_control_scope.
+Require Import Prelude.Control.
+Require Import Prelude.Control.State.
+Require Import Prelude.PropBool.
+Require Import Prelude.Control.Classes.
+
+Local Open Scope prelude_scope.
 Local Close Scope nat_scope.
 Local Open Scope list_scope.
 
@@ -87,7 +88,7 @@ Definition test_semantics_once
            {I:     Interface}
            {S:     Type}
            {M:     Type -> Type}
-          `{MonadState M S}
+          `{MonadState S M}
            (pick:  instruction_picker M I)
            (c:     Specification S I)
           `{SpecificationBool S I c}
@@ -101,7 +102,7 @@ Fixpoint test_semantics_aux
          {I:     Interface}
          {S:     Type}
          {M:     Type -> Type}
-        `{MonadState M S}
+        `{MonadState S M}
          (pick:  instruction_picker M I)
          (c:     Specification S I)
         `{SpecificationBool S I c}
@@ -122,7 +123,7 @@ Definition test_semantics
            {I:     Interface}
            {S:     Type}
            {M:     Type -> Type}
-          `{MonadState M S}
+          `{MonadState S M}
            (pick:  instruction_picker M I)
            (c:     Specification S I)
           `{SpecificationBool S I c}

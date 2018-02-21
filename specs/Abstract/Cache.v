@@ -1,9 +1,4 @@
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Classes.
-Require Import FreeSpec.Control.Function.
-Require Import FreeSpec.Control.Option.
-Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Refine.
@@ -11,11 +6,16 @@ Require Import FreeSpec.Specs.Abstract.Abstract.
 Require Import FreeSpec.Specs.Abstract.MemoryController.
 Require Import FreeSpec.Specs.Address.
 Require Import FreeSpec.Specs.Memory.
-Require Import FreeSpec.WEq.
 
-Local Open Scope free_weq_scope.
+Require Import Prelude.Control.
+Require Import Prelude.Control.Classes.
+Require Import Prelude.Control.Function.
+Require Import Prelude.Control.Option.
+Require Import Prelude.Control.State.
+Require Import Prelude.Equality.
+
+Local Open Scope prelude_scope.
 Local Open Scope free_prog_scope.
-Local Open Scope free_control_scope.
 Local Open Scope bool_scope.
 
 (** * Interface
@@ -181,9 +181,9 @@ Add Parametric Relation
     transitivity proved by cline_weq_trans
       as cline_weq_rel.
 
-Instance cline_WEq
-  : WEq cline :=
-  { weq := cline_weq
+Instance cline_Equality
+  : Equality cline :=
+  { equal := cline_weq
   }.
 
 Definition Cache_state
@@ -202,7 +202,7 @@ Definition _cache_hit
            (a:    address)
            (map:  Cache_state)
   : bool :=
-  weq_bool a <<< tag <<< map $ address_to_index a.
+  equalb a <<< tag <<< map $ address_to_index a.
 
 Definition _get_cline
            (i:    index)

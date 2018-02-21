@@ -17,19 +17,19 @@
 
 Require Import Coq.Strings.String.
 
+Require Import Prelude.Control.
+Require Import Prelude.Equality.
+
 Require Import FreeSpec.Compose.
-Require Import FreeSpec.Control.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.WEq.
 
 Require Import FreeSpec.PoC.Nonce.
 Require Import FreeSpec.PoC.OAuth.
 Require Import FreeSpec.PoC.UserDb.
 
 Local Open Scope free_scope.
-Local Open Scope free_control_scope.
-Local Open Scope free_weq_scope.
+Local Open Scope prelude_scope.
 
 Module MastodonOAuthSpec <:  OAuthSpec.
   Definition Token := string.

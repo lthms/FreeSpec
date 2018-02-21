@@ -15,12 +15,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Control.
-Require Import FreeSpec.WEq.
-Require Import FreeSpec.Control.IO.
+Require Import Prelude.Control.
+Require Import Prelude.Equality.
+Require Import Prelude.Control.IO.
+
 Require Import Coq.Strings.String.
 
-Local Open Scope free_control_scope.
+Local Open Scope prelude_scope.
 Local Open Scope string_scope.
 
 Axiom (putStrLn: string -> IO unit).

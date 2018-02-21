@@ -23,22 +23,22 @@ Require Import Coq.Setoids.Setoid.
 
 Require Import FreeSpec.Compose.
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Classes.
-Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.PropBool.
 Require Import FreeSpec.Refine.
 Require Import FreeSpec.Tactics.
-Require Import FreeSpec.WEq.
+
+Require Import Prelude.Control.
+Require Import Prelude.Control.Classes.
+Require Import Prelude.Control.State.
+Require Import Prelude.PropBool.
+Require Import Prelude.Equality.
 
 Require Import FreeSpec.Examples.Map.
 
 Local Open Scope free_scope.
-Local Open Scope free_weq_scope.
 Local Open Scope free_prog_scope.
-Local Open Scope free_control_scope.
+Local Open Scope prelude_scope.
 
 (** This Example is here to show how to create a Component which
     relies on two separated interfaces. To do that, we take the
@@ -65,8 +65,8 @@ Section SMRAM_EXAMPLE.
       into the SMRAM.
     *)
   Variables (Addr:                Type)
-            (AddrWEq:             WEq Addr)
-            (AddrWEqBool:         WEqBool Addr)
+            (AddrEq:              Equality Addr)
+            (AddrEqBool:          EqualityBool Addr)
             (Value:               Type)
             (Smram:               Addr -> Prop)
             (Smram_weq_morphism:  forall (a a': Addr),
@@ -114,9 +114,9 @@ Section SMRAM_EXAMPLE.
     { smram_lock: bool
     }.
 
-  Instance mch_WEq
-    : WEq (MCH) :=
-    { weq := eq
+  Instance mch_Eq
+    : Equality (MCH) :=
+    { equal := eq
     }.
 
   (** ** Required Interfaces
@@ -519,7 +519,7 @@ Section SMRAM_EXAMPLE.
          +++ apply Hsync.
              exact Hsmram.
          +++ apply (pred_bool_false_1 _ Smram_bool) in Heq_cond.
-             apply weq_bool_weq in Heq_cond0.
+             apply equalb_equal in Heq_cond0.
              apply (Smram_weq_morphism a' a) in Hsmram.
              apply Heq_cond in Hsmram.
              destruct Hsmram.
@@ -552,7 +552,7 @@ Section SMRAM_EXAMPLE.
          intros a'.
          intros Hsmram.
          assert (Hneq: a ?= a' = false). {
-           apply <- weq_bool_false.
+           apply <- equalb_false.
            intros Hfalse.
            apply (pred_bool_false_1 _ Smram_bool) in Heq_cond.
            apply (Smram_weq_morphism a' a) in Hsmram.

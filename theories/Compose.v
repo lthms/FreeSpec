@@ -19,13 +19,13 @@
 Require Import Coq.Setoids.Setoid.
 (* end hide *)
 
-Require Import FreeSpec.WEq.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Control.
 
-Local Open Scope free_weq_scope.
+Require Import Prelude.Equality.
+
+Local Open Scope prelude_scope.
 
 (** Often, one [Program] will rely on more than one [Interface]. Since
     operational [Semantics] are dedicated to one interface, we need to

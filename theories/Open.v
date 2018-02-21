@@ -18,8 +18,9 @@
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.PeanoNat.
 Require Import Omega.
-Require Import FreeSpec.Control.Either.
 Require Import Coq.Program.Equality.
+
+Require Import Prelude.Control.Either.
 
 Import ListNotations.
 Local Open Scope list_scope.

@@ -17,14 +17,15 @@
 
 Require Import FreeSpec.Concurrent.
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Classes.
-Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Refine.
-Require Import FreeSpec.WEq.
+
+Require Import Prelude.Equality.
+Require Import Prelude.Control.
+Require Import Prelude.Control.Classes.
+Require Import Prelude.Control.State.
 
 Set Implicit Arguments.
 

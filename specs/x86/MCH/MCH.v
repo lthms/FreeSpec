@@ -24,23 +24,24 @@ Require Import FreeSpec.Interface.
 Require Import FreeSpec.Undefined.
 Require Import FreeSpec.Refine.
 Require Import FreeSpec.Compose.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Classes.
-Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.WEq.
 Require Import FreeSpec.Compose.
 Require Import FreeSpec.Specs.Bitfield.
 Require Import FreeSpec.Specs.x86.MCH.SMRAMC.
 Require Import FreeSpec.Specs.x86.MCH.MemStorage.
-Require Import FreeSpec.PropBool.
 Require Import FreeSpec.Specs.Bitfield.
+
+Require Import Prelude.Control.
+Require Import Prelude.Control.Classes.
+Require Import Prelude.Control.State.
+Require Import Prelude.Equality.
+Require Import Prelude.PropBool.
 
 Local Close Scope nat_scope.
 Local Open Scope N_scope.
 Local Open Scope free_scope.
 Local Open Scope free_prog_scope.
-Local Open Scope free_control_scope.
+Local Open Scope prelude_scope.
 
 (** * Interface
 
@@ -66,9 +67,9 @@ Inductive MCHi
 
 Definition MCHs := unit.
 
-Instance mchs_WEq
-  : WEq MCHs :=
-  { weq := eq
+Instance mchs_Eq
+  : Equality MCHs :=
+  { equal := eq
   }.
 
 (** We need a notation here. If you use a plain ~Definition~, Coq

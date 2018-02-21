@@ -1,9 +1,10 @@
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.WEq.
 
-Local Open Scope free_weq_scope.
+Require Import Prelude.Equality.
+
+Local Open Scope prelude_scope.
 
 Definition reference_specification
            {I:  Interface}

@@ -16,14 +16,15 @@
  *)
 
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.Control.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Row.
 Require Import Coq.Lists.List.
 
-Local Open Scope free_control_scope.
+Require Import Prelude.Control.
+
+Local Open Scope prelude_scope.
 Local Open Scope free_row_scope.
 
 Inductive NatStack

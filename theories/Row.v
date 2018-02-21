@@ -17,17 +17,18 @@
 
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Open.
-Require Import FreeSpec.Control.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Specification.
+
+Require Import Prelude.Control.
 
 Require Import Omega.
 
 Require Import Coq.Lists.List.
 Require Import Coq.Program.Equality.
 
-Local Open Scope free_control_scope.
+Local Open Scope prelude_scope.
 
 Fixpoint getr
          (set:  list (Type -> Type))

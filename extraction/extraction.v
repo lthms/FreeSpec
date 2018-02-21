@@ -20,7 +20,7 @@ Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Oracle.Oracle.
 
-Require Import FreeSpec.Control.Option.
+Require Import Prelude.Control.Option.
 Require Import FreeSpec.Examples.Map.
 Require Import FreeSpec.Specs.Memory.
 Require Import FreeSpec.Specs.x86.MCH.MCH.
@@ -45,5 +45,5 @@ Extract Inlined Constant Datatypes.snd => "snd".
 
 Cd "extraction/hs".
 Separate Extraction FreeSpec.MonadSemantics FreeSpec.Specs.x86.MCH.MCH
-         FreeSpec.Control.Option.
+         Prelude.Control.Option.
 Cd "../..".

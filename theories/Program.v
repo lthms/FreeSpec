@@ -22,11 +22,12 @@ Require Import Coq.Setoids.Setoid.
 Require Import Coq.Program.Basics.
 
 Require Import FreeSpec.Semantics.
-Require Import FreeSpec.WEq.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Classes.
 
-Local Open Scope free_weq_scope.
+Require Import Prelude.Equality.
+Require Import Prelude.Control.
+Require Import Prelude.Control.Classes.
+
+Local Open Scope prelude_scope.
 
 (** * The [Program] Monad
 
@@ -64,8 +65,8 @@ Local Open Scope free_weq_scope.
  *)
 
 Inductive Program
-          (I: Interface)
-          (A: Type) :=
+          (I:  Interface)
+          (A:  Type) :=
 | Pure (a:  A)
   : Program I A
 | Request (e:  I A)
@@ -201,11 +202,11 @@ Add Parametric Relation
     transitivity proved by (program_eq_trans)
       as program_equiv.
 
-Instance program_WEq
+Instance program_Eq
          (I:  Interface)
          (A:  Type)
-  : WEq (Program I A) :=
-  { weq := program_eq
+  : Equality (Program I A) :=
+  { equal := program_eq
   }.
 
 (** Also, we can easily show the [program_eq] property is strong
@@ -254,7 +255,7 @@ Add Parametric Morphism
     (I:  Interface)
     (A:  Type)
   : (runProgram)
-    with signature eq ==> (@weq (Program I A) _) ==> (@run_semantics_eq I A)
+    with signature eq ==> (@equal (Program I A) _) ==> (@run_semantics_eq I A)
   as run_program_morphism_1.
 Proof.
   intros y p p' Heq.
@@ -298,7 +299,7 @@ Add Parametric Morphism
     (I:  Interface)
     (A:  Type)
   : (evalProgram)
-    with signature (@weq (Semantics I) _) ==> (@program_eq I A) ==> (eq)
+    with signature (@equal (Semantics I) _) ==> (@program_eq I A) ==> (eq)
   as eval_program_morphism.
 Proof.
   intros sig sig' Heqs p q Heqp.
@@ -312,7 +313,7 @@ Add Parametric Morphism
     (I:  Interface)
     (A:  Type)
   : (execProgram)
-    with signature (@weq (Semantics I) _) ==> (@program_eq I A) ==> (@semantics_eq I)
+    with signature (@equal (Semantics I) _) ==> (@program_eq I A) ==> (@semantics_eq I)
   as exec_program_morphism.
 Proof.
   intros sig sig' Heqs p q Heqp.
@@ -326,9 +327,9 @@ Add Parametric Morphism
     (I:      Interface)
     (A B C:  Type)
   : (@Bind I B A)
-    with signature (@weq (Program I A) _)
+    with signature (@equal (Program I A) _)
                      ==> (@eq (A -> Program I B))
-                     ==> (@weq (Program I B) _)
+                     ==> (@equal (Program I B) _)
       as pbind_morphism.
 Proof.
   intros p q Heq f.

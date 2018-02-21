@@ -11,4 +11,4 @@ src/MemStorage.hs
 src/Program.hs
 src/State.hs
 src/Undefined.hs
-src/WEq.hs
+src/Equality.hs

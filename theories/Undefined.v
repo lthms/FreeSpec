@@ -18,8 +18,9 @@
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Compose.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Classes.
+
+Require Import Prelude.Control.
+Require Import Prelude.Control.Classes.
 
 (** * The Shameful [Undefined] Interface
 

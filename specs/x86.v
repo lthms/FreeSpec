@@ -15,8 +15,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.IO.
+Require Import Prelude.Control.
+Require Import Prelude.Control.IO.
 
 Require Import FreeSpec.Specs.x86.MCH.MCH.
 

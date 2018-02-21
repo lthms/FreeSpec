@@ -1,9 +1,5 @@
 Require Import FreeSpec.Compose.
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Classes.
-Require Import FreeSpec.Control.Function.
-Require Import FreeSpec.Control.State.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Refine.
@@ -11,12 +7,16 @@ Require Import FreeSpec.Specs.Abstract.Abstract.
 Require Import FreeSpec.Specs.Abstract.Memory.
 Require Import FreeSpec.Specs.Address.
 Require Import FreeSpec.Specs.Memory.
-Require Import FreeSpec.WEq.
 
-Local Open Scope free_control_scope.
-Local Open Scope free_prog_scope.
+Require Import Prelude.Control.
+Require Import Prelude.Control.Classes.
+Require Import Prelude.Control.Function.
+Require Import Prelude.Control.State.
+Require Import Prelude.Equality.
+
+Local Open Scope prelude_scope.
 Local Open Scope free_scope.
-Local Open Scope free_weq_scope.
+Local Open Scope free_prog_scope.
 
 (** * Interface
  *)
@@ -62,9 +62,9 @@ Program Definition _toggle
         ; is_open   := negb (is_open reg)
         |}.
 
-Instance MemoryController_state_WEq
-  : WEq (MemoryController_state) :=
-  { weq := eq
+Instance MemoryController_state_Eq
+  : Equality (MemoryController_state) :=
+  { equal := eq
   }.
 
 (** ** Refinement

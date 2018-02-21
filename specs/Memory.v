@@ -20,8 +20,8 @@ Require Import Coq.Program.Program.
 Require Import Coq.Setoids.Setoid.
 Require Import Omega.
 
-Require Import FreeSpec.PropBool.
-Require Import FreeSpec.WEq.
+Require Import Prelude.PropBool.
+Require Import Prelude.Equality.
 
 (** * Definitions
 
@@ -94,10 +94,10 @@ Add Parametric Relation
     transitivity proved by mem_eq_trans
       as mem_eq_rel.
 
-Instance mem_WEq
+Instance mem_Eq
          (n: N)
-  : WEq (mem n) :=
-  { weq := @mem_eq n
+  : Equality (mem n) :=
+  { equal := @mem_eq n
   }.
 
 Definition mem_bool
@@ -135,10 +135,10 @@ Proof.
     exact H.
 Defined.
 
-Instance mem_WEqBool
+Instance mem_EqBool
          (n:  N)
-  : WEqBool (mem n) :=
-  { weq_bool := @mem_bool n
+  : EqualityBool (mem n) :=
+  { equalb := @mem_bool n
   }.
 
 (** * Manipulation

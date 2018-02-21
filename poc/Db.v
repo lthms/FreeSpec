@@ -16,16 +16,17 @@
  *)
 
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Control.
-Require Import FreeSpec.Control.Either.
 Require Import FreeSpec.Abstract.
 Require Import FreeSpec.Fail.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.WEq.
 
-Local Open Scope free_weq_scope.
+Require Import Prelude.Control.
+Require Import Prelude.Control.Either.
+Require Import Prelude.Equality.
+
+Local Open Scope prelude_scope.
 
 Generalizable All Variables.
 Set Implicit Arguments.
@@ -97,7 +98,7 @@ Module DB (Spec:  DbSpec).
       => None.
 
     Definition query_insert
-              `{WEqBool Spec.K}
+              `{EqualityBool Spec.K}
                (k:  Spec.K)
                (r:  Spec.Res)
                (s:  State)
@@ -137,7 +138,7 @@ Module DB (Spec:  DbSpec).
          end.
 
     Definition query_step
-              `{WEqBool Spec.K}
+              `{EqualityBool Spec.K}
                (A:      Type)
                (q:      Query A)
                (x:      A)
@@ -183,7 +184,7 @@ Module DB (Spec:  DbSpec).
       : is_key_of_l k v (cons entity l).
 
     Fixpoint key_count
-            `{WEqBool Spec.K}
+            `{EqualityBool Spec.K}
              (k:  Spec.K)
              (l:  list Entity)
       : nat :=
@@ -195,7 +196,7 @@ Module DB (Spec:  DbSpec).
       end.
 
     Definition query_select_postcondition_res_wf
-              `{WEqBool Spec.K}
+              `{EqualityBool Spec.K}
                (res:       list Entity)
       : Prop :=
       forall (k:  Spec.K),
@@ -224,7 +225,7 @@ Module DB (Spec:  DbSpec).
            /\ is_key_of k v state.
 
     Inductive query_postcondition
-             `{WEqBool Spec.K}
+             `{EqualityBool Spec.K}
       : forall (A:  Type),
         Query A -> A -> State -> Prop :=
     | insert_postcondition (state:  State)
@@ -249,7 +250,7 @@ Module DB (Spec:  DbSpec).
       : query_postcondition (delete selector) tt state.
 
     Definition query_specs
-              `{WEqBool Spec.K}
+              `{EqualityBool Spec.K}
       : Specification State Query :=
       {| abstract_step := query_step
          ; precondition := query_precondition
@@ -257,7 +258,7 @@ Module DB (Spec:  DbSpec).
       |}.
 
     Lemma query_specs_compliance
-         `{WEqBool Spec.K}
+         `{EqualityBool Spec.K}
           {A:      Type}
           (p:      Program Query A)
           (state:  State)
@@ -289,7 +290,7 @@ Module DB (Spec:  DbSpec).
 
   Module TransactionSemantics.
     Record State
-          `{WEqBool Spec.K}
+          `{EqualityBool Spec.K}
     : Type :=
       { view:                QuerySemantics.State
       ; semantics:           Semantics Query
@@ -300,7 +301,7 @@ Module DB (Spec:  DbSpec).
     Program (the Coq Spec.Keyword, not the FreeSpec Monad) would failed
     here because of universe error. *)
     Definition transaction_step
-           `{WEqBool Spec.K}
+           `{EqualityBool Spec.K}
             (A:      Type)
             (instr:  i A)
             (x:      A)
@@ -323,7 +324,7 @@ Module DB (Spec:  DbSpec).
     Qed.
 
     Definition transaction_req
-              `{WEqBool Spec.K}
+              `{EqualityBool Spec.K}
                (A:      Type)
                (instr:  i A)
                (state:  State)
@@ -331,7 +332,7 @@ Module DB (Spec:  DbSpec).
       True.
 
     Definition transaction_postcondition
-              `{WEqBool Spec.K}
+              `{EqualityBool Spec.K}
                (A:      Type)
                (instr:  i A)
                (x:      A)
@@ -343,7 +344,7 @@ Module DB (Spec:  DbSpec).
       end.
 
     Definition transaction_specs
-               `{WEqBool Spec.K}
+               `{EqualityBool Spec.K}
       : Specification State i :=
       {| abstract_step := transaction_step
        ; precondition := transaction_req
