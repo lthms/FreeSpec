@@ -3,10 +3,10 @@ Require Import FreeSpec.Specification.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Refine.
-Require Import FreeSpec.Specs.Abstract.Abstract.
-Require Import FreeSpec.Specs.Abstract.Memory.
-Require Import FreeSpec.Specs.Address.
-Require Import FreeSpec.Specs.Memory.
+Require Import FreeSpec.Arch.Abstract.Abstract.
+Require Import FreeSpec.Arch.Abstract.Memory.
+Require Import FreeSpec.Arch.Address.
+Require Import FreeSpec.Arch.Memory.
 
 Require Import Prelude.Control.
 Require Import Prelude.Control.Classes.

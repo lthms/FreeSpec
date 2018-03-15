@@ -15,11 +15,31 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import Prelude.Control.
-Require Import Prelude.Control.IO.
+Require Import Coq.Program.Program.
 
-Require Import FreeSpec.Specs.x86.MCH.MCH.
+Require Import FreeSpec.Arch.Memory.
+Require Import FreeSpec.Arch.Bitfield.
 
-Definition x86Main
-  : IO unit :=
-  pure tt.
+Record SMRAMC :=
+  { d_lock: bool
+  ; d_open: bool
+  ; d_cls:  bool
+  }.
+
+Definition SMRAMC_bf
+  : Bitfield 8 SMRAMC :=
+  skip 4                  :;
+  d_lck  :<- bit           ;
+  d_cls  :<- bit           ;
+  d_open :<- bit           ;
+  skip 1                  :;
+
+  bf_pure {| d_lock  := d_lck
+           ; d_open := d_open
+           ; d_cls  := d_cls
+           |}.
+
+Definition parse_smramc
+           (b: byte)
+  : SMRAMC :=
+  parse SMRAMC_bf b.

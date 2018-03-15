@@ -20,7 +20,7 @@ Require Import Coq.Logic.Eqdep.
 Require Import Coq.Program.Equality.
 Require Import Coq.NArith.NArith.
 
-Require Import FreeSpec.Specs.Memory.
+Require Import FreeSpec.Arch.Memory.
 Require Import Prelude.Equality.
 
 Local Close Scope nat_scope.

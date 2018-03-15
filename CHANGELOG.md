@@ -2,6 +2,7 @@
 
 ## `freespec-r2` (unreleased)
 
+* Organize the project into a hierarchy of libraries.
 * Monad-related definitions have been moved into another library called
   [`coq-prelude`](https:github.com/ANSSI-FR/coq-prelude), to ease its use by
   other projects.

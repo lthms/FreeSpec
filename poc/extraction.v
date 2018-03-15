@@ -26,6 +26,6 @@ Require Import ExtrHaskellString.
 
 Extract Constant putStrLn => "Prelude.putStrLn".
 
-Cd "poc/poc-hs/src".
+Cd "poc-hs/src".
 Separate Extraction CoqMain.
-Cd "../../..".
+Cd "../..".

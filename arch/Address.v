@@ -15,16 +15,35 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Specs.x86.
+Require Import FreeSpec.Arch.Memory.
+Require Import Coq.Init.Nat.
+Require Import Coq.NArith.NArith.
 
-Extraction Language Haskell.
+(* we only consider 32 bit system *)
+Definition address := lword.
 
-Require Import ExtrHaskellBasic.
-Require Import ExtrHaskellNatInt.
-Require Import ExtrHaskellString.
+Local Close Scope nat_scope.
+Local Open Scope N_scope.
 
-Require Import Prelude.Control.IO.ExtrHaskell.
+Definition is_pow_2
+           (n:  N)
+  : Prop :=
+  2 ^ (N.log2 n) = n.
 
-Cd "specs/x86/x86-hs/src".
-Separate Extraction x86Main.
-Cd "../../../..".
+Program Definition is_aligned
+        (x:     address)
+        (base:  N | is_pow_2 base)
+  : Prop :=
+  cast base x = box base 0.
+
+Program Definition aligned_address
+        (n:  N | is_pow_2 n)
+  : Type :=
+  {addr: address | is_aligned addr n}.
+
+Program Definition address_64B_aligned
+  : Type :=
+  aligned_address 64.
+Next Obligation.
+  reflexivity.
+Defined.

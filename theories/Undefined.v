@@ -41,9 +41,9 @@ Inductive Undefined
     We use an Interface to deal with Undefined Behaviour for at least
     two reasons:
 
-      * It makes obvious that a given Semantics uses the [undefined]
+      - It makes obvious that a given Semantics uses the [undefined]
         effect
-      * It is easier to write a specification to check if [undefined]
+      - It is easier to write a specification to check if [undefined]
         is called
 
     * [UndefMonad] Typeclass

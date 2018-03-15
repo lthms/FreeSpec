@@ -1,6 +1,6 @@
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.Specs.Memory.
-Require Import FreeSpec.Specs.Address.
+Require Import FreeSpec.Arch.Memory.
+Require Import FreeSpec.Arch.Address.
 
 Require Import Prelude.Equality.
 

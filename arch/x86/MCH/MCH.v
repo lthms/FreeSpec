@@ -17,19 +17,19 @@
 
 Require Import Coq.NArith.NArith.
 
-Require Import FreeSpec.Specs.x86.MCH.SMRAMC.
-Require Import FreeSpec.Specs.Memory.
-Require Import FreeSpec.Specs.Address.
+Require Import FreeSpec.Arch.x86.MCH.SMRAMC.
+Require Import FreeSpec.Arch.Memory.
+Require Import FreeSpec.Arch.Address.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Undefined.
 Require Import FreeSpec.Refine.
 Require Import FreeSpec.Compose.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Compose.
-Require Import FreeSpec.Specs.Bitfield.
-Require Import FreeSpec.Specs.x86.MCH.SMRAMC.
-Require Import FreeSpec.Specs.x86.MCH.MemStorage.
-Require Import FreeSpec.Specs.Bitfield.
+Require Import FreeSpec.Arch.Bitfield.
+Require Import FreeSpec.Arch.x86.MCH.SMRAMC.
+Require Import FreeSpec.Arch.x86.MCH.MemStorage.
+Require Import FreeSpec.Arch.Bitfield.
 
 Require Import Prelude.Control.
 Require Import Prelude.Control.Classes.

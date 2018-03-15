@@ -11,7 +11,7 @@ COQDOCFLAGS :=                                      \
 
 export COQDOCFLAGS
 
-.PHONY:all clean mrproper docs html tex coq poc install uninstall
+.PHONY:all clean mrproper docs html tex coq poc
 
 coq: $(SUBMAKE) $(SRC)
 	@(echo "[*] Compiling the Coq source tree")
@@ -22,17 +22,12 @@ poc:
 	@(make -C poc/poc-hs)
 
 all: $(SUBMAKE) $(SRC)
-	@(echo "[*] Compiling the framework core")
+	@(echo "[*] Compiling the Coq source tree")
 	@(make -f $(SUBMAKE))
-	@(echo "[*] Compiling the examples")
-	@(make -C examples)
-	@(echo "[*] Compiling the architecture specifications")
-	@(make -C arch)
-	@(echo "[*] Compiling the oracle project")
-	@(make -C oracle)
 	@(echo "[*] Compiling the Haskell Proof of Concept")
-	@(make -C poc)
 	@(make -C poc/poc-hs)
+	@(echo "[*] Compiling the x86 emulator")
+	@(make -C specs/x86/x86-hs)
 
 $(SUBMAKE): .make
 	@(echo "[*] Generating $(SUBMAKE)")
@@ -65,10 +60,4 @@ html:
 
 tex:
 	make -f $(SUBMAKE) all-gal.pdf
-	mv all.pdf docs/$(NAME).pdf
-
-install:
-	make -f $(SUBMAKE) install
-
-uninstall:
-	make -f $(SUBMAKE) uninstall
+	mv all-gal.pdf docs/$(NAME).pdf

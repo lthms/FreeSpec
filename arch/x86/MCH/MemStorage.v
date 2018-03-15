@@ -17,7 +17,7 @@
 
 Require Import Coq.NArith.NArith.
 
-Require Import FreeSpec.Specs.Memory.
+Require Import FreeSpec.Arch.Memory.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.MonadSemantics.
@@ -29,7 +29,7 @@ Require Import Prelude.Control.Classes.
 Require Import Prelude.Control.Identity.
 Require Import Prelude.Equality.
 
-Require Import FreeSpec.Libs.NOmega.NOmega.
+Require Import FreeSpec.Arch.Utils.NOmega.
 
 Local Close Scope nat_scope.
 Local Open Scope N_scope.
