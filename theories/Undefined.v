@@ -56,39 +56,8 @@ Inductive Undefined
     State Monad).
  *)
 
-Class UndefMonad
-      (m: Type -> Type)
-  := { undef_is_monad :> Monad m
-     ; undef {A: Type}
-       : m A
-     }.
-
-Instance undefmonad_Trans
-         (t: forall (m: Type -> Type) `{Monad m}, Type -> Type)
-        `{MonadTrans t}
-         (m: Type -> Type)
-        `{UndefMonad m}
-  : UndefMonad (t m) :=
-  { undef := fun {a: Type} => lift (undef (A:=a))
-  }.
-
-Instance undefprogram_UndefMonad
-  : UndefMonad (Program Undefined) :=
-  { undef := fun {a: Type} => Request (undefined (A:=a))
-  }.
-
-Local Open Scope free_scope.
-
-Instance rightprogram_UndefMonad
-         {I I': Interface}
-        `{UndefMonad (Program I)}
-  : UndefMonad (Program (I <+> I')) :=
-  { undef := fun {a: Type} => liftl undef
-  }.
-
-Instance leftprogram_UndefMonad
-         {I I': Interface}
-        `{UndefMonad (Program I')}
-  : UndefMonad (Program (I <+> I')) :=
-  { undef := fun {a: Type} => liftr undef
-  }.
+Definition undef
+           {ix:  Type -> Type} `{Use Undefined ix}
+           {a:   Type}
+  : Program ix a :=
+  request undefined.

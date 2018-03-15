@@ -20,6 +20,7 @@ Require Import FreeSpec.Open.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Specification.
+Require Import FreeSpec.Compose.
 
 Require Import Prelude.Control.
 
@@ -122,13 +123,22 @@ Instance HasEffect_tail
   : HasEffect (any :: set) I :=
   {}.
 
-Definition inj_effect
-           {a:    Type}
+Definition row_lift_effect
            {I:    Type -> Type}
-           {set:  list (Type -> Type)} `{HasEffect set I}
+           {set:  list (Type -> Type)}
+          `{HasEffect set I}
+           (a:    Type)
            (x:    I a)
-  : Program (row set) a :=
-  Request (Row (inj (set := specialize a set) x)).
+  : (row set) a :=
+  Row (inj (set := specialize a set) x).
+
+Instance row_Use
+         (eff:  Type -> Type)
+         (set:  list (Type -> Type))
+        `{H: HasEffect set eff}
+  : Use eff (row set) :=
+     { lift_eff := row_lift_effect
+     }.
 
 Fact get_gen_getr_eq
      (set:  list (Type -> Type))

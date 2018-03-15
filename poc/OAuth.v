@@ -18,6 +18,7 @@
 Require Import Prelude.Control.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
+Require Import FreeSpec.Compose.
 
 Module Type OAuthSpec.
   Parameters (Token:  Type)
@@ -27,13 +28,14 @@ End OAuthSpec.
 Module OAuth (Spec:  OAuthSpec).
   Inductive OAuthInterface
   : Interface :=
-  | check_token (tok:  Spec.Token)
+  | CheckToken (tok:  Spec.Token)
     : OAuthInterface (option Spec.ID).
 
   Module DSL.
     Definition check_token
+               {ix:  Type -> Type} `{Use OAuthInterface ix}
                (tok:  Spec.Token)
-    : Program OAuthInterface (option Spec.ID) :=
-      Request (check_token tok).
+    : Program ix (option Spec.ID) :=
+      request (CheckToken tok).
   End DSL.
 End OAuth.

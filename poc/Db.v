@@ -21,6 +21,7 @@ Require Import FreeSpec.Fail.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
+Require Import FreeSpec.Compose.
 
 Require Import Prelude.Control.
 Require Import Prelude.Control.Either.
@@ -50,37 +51,41 @@ Module DB (Spec:  DbSpec).
 
   Inductive Query
     : Interface :=
-  | select (selector:  Entity -> bool)
+  | Select (selector:  Entity -> bool)
     : Query (list Entity)
-  | insert (value:     Spec.Res)
+  | Insert (value:     Spec.Res)
     : Query Entity
-  | update (selector:  Entity -> bool)
+  | Update (selector:  Entity -> bool)
            (update:    Spec.Res -> Spec.Res)
     : Query unit
-  | delete (selector:  Entity -> bool)
+  | Delete (selector:  Entity -> bool)
     : Query unit.
 
   Module DSL.
     Definition select
+               {ix:  Type -> Type} `{Use Query ix}
                (sel:  Entity -> bool)
-    : Program Query (list Entity) :=
-      Request (select sel).
+    : Program ix (list Entity) :=
+      request (Select sel).
 
     Definition update
+               {ix:  Type -> Type} `{Use Query ix}
                (sel:  Entity -> bool)
                (up:   Spec.Res -> Spec.Res)
-    : Program Query unit :=
-      Request (update sel up).
+    : Program ix unit :=
+      request (Update sel up).
 
     Definition delete
+               {ix:  Type -> Type} `{Use Query ix}
                (sel:  Entity -> bool)
-      : Program Query unit :=
-      Request (delete sel).
+      : Program ix unit :=
+      request (Delete sel).
 
     Definition insert
+               {ix:  Type -> Type} `{Use Query ix}
                (v:  Spec.Res)
-      : Program Query Entity :=
-      Request (insert v).
+      : Program ix Entity :=
+      request (Insert v).
   End DSL.
 
   (** ** Functional Specification
@@ -145,11 +150,11 @@ Module DB (Spec:  DbSpec).
                (state:  State)
       : State :=
       match q, x with
-      | insert _, entity
+      | Insert _, entity
         => query_insert (key entity) (val entity) state
-      | update sel up, tt
+      | Update sel up, tt
         => query_update sel up state
-      | delete sel, tt
+      | Delete sel, tt
         => query_delete sel state
       | _, _
         => state
@@ -233,21 +238,21 @@ Module DB (Spec:  DbSpec).
                       (res:    Entity)
                       (Hval:   val res = v)
                       (Hkey:   state (key res) = None)
-      : query_postcondition (insert v) res state
+      : query_postcondition (Insert v) res state
     | select_postcondition (selector:  Entity -> bool)
                       (res:       list Entity)
                       (state:     State)
                       (Hwf:       query_select_postcondition_res_wf res)
                       (Hrs:       query_select_postcondition_res_to_state selector res state)
                       (Hsr:       query_select_postcondition_state_to_res selector res state)
-      : query_postcondition (select selector) res state
+      : query_postcondition (Select selector) res state
     | update_postcondition (state:     State)
                       (selector:  Entity -> bool)
                       (up:        Spec.Res -> Spec.Res)
-      : query_postcondition (update selector up) tt state
+      : query_postcondition (Update selector up) tt state
     | delete_postcondition (state:     State)
                       (selector:  Entity -> bool)
-      : query_postcondition (delete selector) tt state.
+      : query_postcondition (Delete selector) tt state.
 
     Definition query_specs
               `{EqualityBool Spec.K}

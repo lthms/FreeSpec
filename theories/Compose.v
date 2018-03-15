@@ -34,6 +34,38 @@ Local Open Scope prelude_scope.
 
  *)
 
+(** * Generic Typeclass
+
+  The [Use] Typeclass will be used to implement extensible effects.
+
+ *)
+
+Class Use
+      (i:   Type -> Type)
+      (ix:  Type -> Type)
+  := { lift_eff (a:  Type)
+                (e:  i a)
+       : ix a
+     }.
+
+Instance Instance_Use
+         (i:  Type -> Type)
+  : Use i i :=
+  { lift_eff := fun (a:  Type)
+                    (e:  i a)
+                => e
+  }.
+
+Arguments lift_eff [i ix _ a] (e).
+
+Definition request
+           {i:   Type -> Type}
+           {ix:  Type -> Type} `{Use i ix}
+           {a:   Type}
+           (e:   i a)
+  : Program ix a :=
+  Request (lift_eff e).
+
 (** * [Interface] Composition
 
  *)
@@ -61,27 +93,23 @@ Infix "<+>" :=
 
 Local Open Scope free_scope.
 
-Fixpoint liftl
-         {I J:  Interface}
-         {A:    Type}
-         (p:    Program I A)
-  : Program (I <+> J) A :=
-  match p with
-  | Pure a => Pure a
-  | Request i => Request (InL i)
-  | Bind p f => Bind (liftl p) (fun x =>  liftl (f x))
-  end.
+Instance IntCompose_Use_L
+         (ix i j:  Interface)
+        `{Use i ix}
+  : Use i (ix <+> j) :=
+  { lift_eff := fun (a:  Type)
+                    (e:  i a)
+                => InL (lift_eff e)
+  }.
 
-Fixpoint liftr
-         {I J:  Interface}
-         {A:    Type}
-         (p:    Program J A)
-  : Program (I <+> J) A :=
-  match p with
-  | Pure a => Pure a
-  | Request i => Request (InR i)
-  | Bind p f => Bind (liftr p) (fun x =>  liftr (f x))
-  end.
+Instance IntCompose_Use_R
+         (j i jx:  Interface)
+        `{Use j jx}
+  : Use j (i <+> jx) :=
+  { lift_eff := fun (a:  Type)
+                    (e:  j a)
+                => InR (lift_eff e)
+  }.
 
 (** * Operational Semantics
 

@@ -18,6 +18,7 @@
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Specification.
+Require Import FreeSpec.Compose.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Row.
 Require Import Coq.Lists.List.
@@ -38,12 +39,12 @@ Definition push_nat
            {eff:  list (Type -> Type)} `{HasEffect eff NatStack}
            (x:    nat)
   : Program (row eff) unit :=
-  inj_effect (Push x).
+  request (Push x).
 
 Definition pop_nat
            {eff:  list (Type -> Type)} `{HasEffect eff NatStack}
   : Program (row eff) nat :=
-  inj_effect Pop.
+  request Pop.
 
 Inductive LogNat
   : Type -> Type :=
@@ -54,7 +55,7 @@ Definition log_nat
            {eff:  list (Type -> Type)} `{HasEffect eff LogNat}
            (n:    nat)
   : Program (row eff) unit :=
-  inj_effect (Log n).
+  request (Log n).
 
 Definition my_program
            {eff:  list (Type -> Type)} `{HasEffect eff NatStack}

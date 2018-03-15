@@ -89,7 +89,7 @@ Definition MCHm
 Definition mch_undefined
            {A: Type}
   : MCHm A :=
-  undef (UndefMonad:=undefmonad_Trans _ _).
+  lift undef.
 
 Definition pci_do
            {A:  Type}

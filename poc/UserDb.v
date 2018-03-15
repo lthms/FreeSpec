@@ -19,6 +19,7 @@ Require Import Prelude.Control.
 Require Import Prelude.Control.Option.
 Require Import Prelude.Equality.
 Require Import FreeSpec.PoC.Db.
+Require Import FreeSpec.Compose.
 Require Import FreeSpec.Program.
 
 Require Import Coq.Strings.String.
@@ -55,12 +56,14 @@ Definition head
   end.
 
 Definition user_from_email
+           {ix:  Type -> Type} `{Use Query ix}
            (ml:  string)
-  : Program Query (option UserDb.Entity) :=
+  : Program ix (option UserDb.Entity) :=
   head <$> DSL.select (fun entity
                        => ml ?= email (val entity)).
 
 Definition user_key_from_email
+           {ix:  Type -> Type} `{Use Query ix}
            (ml:  string)
-  : Program Query (option nat) :=
+  : Program ix (option nat) :=
   map key <$> user_from_email ml.

@@ -18,14 +18,22 @@
 Require Import Coq.Sets.Ensembles.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Interface.
+Require Import FreeSpec.Compose.
+Require Import FreeSpec.Program.
 
 Inductive NonceGen
           (A:  Type)
   : Interface :=
-| gen_nonce
+| GetNonce
   : NonceGen A A.
 
-Arguments gen_nonce [A].
+Arguments GetNonce [A].
+
+Definition get_nonce
+           {a:   Type}
+           {ix:  Type -> Type} `{Use (NonceGen a) ix}
+  : Program ix a :=
+  request GetNonce.
 
 Module NonceSpecification.
   Definition State
@@ -55,7 +63,7 @@ Module NonceSpecification.
                             (x:      R)
                             (state:  State A)
                        => match i, x with
-                          | gen_nonce, x
+                          | GetNonce, x
                             => gen_nonce_step x state
                           end
      ; precondition := no_pre
@@ -64,7 +72,7 @@ Module NonceSpecification.
                             (x:      R)
                             (state:  State A)
                         => match i, x with
-                           | gen_nonce, x
+                           | GetNonce, x
                              => gen_nonce_postcondition x state
                            end
      |}.
