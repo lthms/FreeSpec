@@ -199,7 +199,7 @@ Fact write_then_read
      (x:  MSs n)
      (a:  mem n)
      (v:  word)
-  : evalProgram (MSSemantics x) ([write_word a v] ;; [read_word a]) == v.
+  : evalProgram (MSSemantics x) (Request (write_word a v) ;; Request (read_word a)) == v.
 Proof.
   Opaque equalb.
   cbn.

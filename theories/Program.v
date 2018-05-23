@@ -509,10 +509,3 @@ Fixpoint interface_map
   | Bind q f
     => Bind (interface_map q map) (fun x => interface_map (f x) map)
   end.
-
-(** * Notations
-
- *)
-
-Notation  "[ i ]" := (Request i) (at level 50) : free_prog_scope.
-Notation "'[ i ]" := (lift (Request i)) (at level 50) : free_prog_scope.

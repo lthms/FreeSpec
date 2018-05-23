@@ -89,8 +89,8 @@ Section MAP.
              (k: Key)
              (v: Value)
     : MapProgram Value :=
-    _ <- [Write k v];
-    [Read k].
+    _ <- Request (Write k v);
+    Request (Read k).
 
   Lemma write_then_read_1
         (s: State)
@@ -109,9 +109,9 @@ Section MAP.
         (v:    Value)
         (Hneq: k' /= k)
     : evalProgram (MapSemantics s)
-                  (_ <- [Write k' v];
-                     [Read k])
-       == evalProgram (MapSemantics s) ([Read k]) .
+                  (_ <- Request (Write k' v);
+                   Request (Read k))
+       == evalProgram (MapSemantics s) (Request (Read k)) .
   Proof.
     cbn.
     apply equalb_false in Hneq.
@@ -201,8 +201,8 @@ Section MAP.
 
     Definition read_write
       : MapProgram unit :=
-      v <- [Read k];
-      [Write k' v].
+      v <- Request (Read k);
+      Request (Write k' v).
 
     Lemma read_write_specificationful
       : read_write =| never_read_x_specification[tt].
@@ -214,7 +214,7 @@ Section MAP.
         trivial.
       + intros int Henf.
         rewrite (tt_singleton
-                   (specification_derive ([Read k]) int never_read_x_specification tt)
+                   (specification_derive (Request (Read k)) int never_read_x_specification tt)
                    tt).
         unfold never_read_x_specification in Henf.
         inversion Henf as [Hprom Hreq].
@@ -341,9 +341,9 @@ Section MAP.
                (k': Key)
                (v': Value)
       : MapProgram unit :=
-      _ <- [Write k x]                                               ;
-      _ <- [Read k']                                                 ;
-      [Write k v'].
+      Request (Write k x)                                           ;;
+      Request (Read k')                                             ;;
+      Request (Write k v').
 
     Variables (int: Semantics IMap).
 
