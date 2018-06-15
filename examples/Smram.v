@@ -37,7 +37,6 @@ Require Import Prelude.Equality.
 Require Import FreeSpec.Examples.Map.
 
 Local Open Scope free_scope.
-Local Open Scope free_prog_scope.
 Local Open Scope prelude_scope.
 
 (** This Example is here to show how to create a Component which
@@ -143,24 +142,24 @@ Section SMRAM_EXAMPLE.
   Definition read_dram
              (a: Addr)
     : StateT MCH (Program (IDRAM <+> IVGA)) Value :=
-    '[InL (Read a)].
+    lift (Request (InL (Read a))).
 
   Definition read_vga
              (a: Addr)
     : StateT MCH (Program (IDRAM <+> IVGA)) Value :=
-    '[InR (Read a)].
+    lift (Request (InR (Read a))).
 
   Definition write_dram
              (a: Addr)
              (v: Value)
     : StateT MCH (Program (IDRAM <+> IVGA)) unit :=
-    '[InL (Write a v)].
+    lift (Request (InL (Write a v))).
 
   Definition write_vga
              (a: Addr)
              (v: Value)
     : StateT MCH (Program (IDRAM <+> IVGA)) unit :=
-    '[InR (Write a v)].
+    lift (Request (InR (Write a v))).
 
   (** Then, we define a [StatefulRefinement] from [IMCH] to [IDRAM <+>
       IVGA].
