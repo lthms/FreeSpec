@@ -127,79 +127,44 @@ Definition execProgram
 
  *)
 
-CoInductive program_eq
-            {I:    Interface}
-            {A:    Type}
-            (p q:  Program I A)
-  : Prop :=
-| program_is_eq (Hres: forall (sig: Semantics I),
-                    evalProgram sig p = evalProgram sig q)
-(*
-  TODO: Do we really need the semantics equivalence? maybe the Leibniz
-  equality is enough
- *)
-                (Hnext: forall (sig: Semantics I),
-                    execProgram sig p == execProgram sig q)
-  : program_eq p q.
-
-(**
-    We can easily prove this property is indeed and equivalence by
-    showing it is reflexive, symmetric and transitive.
-
- *)
-
-Lemma program_eq_refl
-      {I:  Interface}
-      {A:  Type}
-      (p:  Program I A)
-  : program_eq p p.
-Proof.
-  constructor; reflexivity.
-Qed.
-
-Lemma program_eq_sym
-      {I:     Interface}
-      {A:     Type}
-      (p p':  Program I A)
-  : program_eq p p'
-    -> program_eq p' p.
-Proof.
-  intro H1.
-  destruct H1 as [Hres Hnext].
-  constructor.
-  + intro sig.
-    rewrite Hres.
-    reflexivity.
-  + intro sig.
-    rewrite Hnext.
-    reflexivity.
-Qed.
-
-Lemma program_eq_trans
-      {I:         Interface}
-      {A:         Type}
-      (p p' p'':  Program I A)
-  : program_eq p p'
-    -> program_eq p' p''
-    -> program_eq p p''.
-Proof.
-  intros [Hres1 Hnext1] [Hres2 Hnext2].
-  constructor; intro sig.
-  + transitivity (evalProgram sig p').
-    ++ apply Hres1.
-    ++ apply Hres2.
-  + transitivity (execProgram sig p').
-    ++ apply Hnext1.
-    ++ apply Hnext2.
-Qed.
+Inductive program_eq
+          {I:  Type -> Type}
+          {A:  Type}
+  : Program I A -> Program I A -> Prop :=
+| program_eq_refl (p:  Program I A)
+  : program_eq p p
+| program_eq_sym (p q:  Program I A)
+                  (H:    program_eq p q)
+  : program_eq q p
+| program_eq_trans (p q r:  Program I A)
+                    (Hpq:   program_eq p q)
+                    (Hqr:   program_eq q r)
+  : program_eq p r
+| program_eq_append_pure (p:  Program I A)
+  : program_eq p (Bind p (@Pure I A))
+| program_eq_bind_ret {B:  Type}
+                       (x:  B)
+                       (f:  B -> Program I A)
+  : program_eq (Bind (Pure x) f) (f x)
+| program_eq_bind_assoc {B C:  Type}
+                         (p:   Program I B)
+                         (f:   B -> Program I C)
+                         (g:   C -> Program I A)
+  : program_eq (Bind (Bind p f) g) (Bind p (fun x => Bind (f x) g))
+| program_eq_bind {B:    Type}
+                   (p q:  Program I B)
+                   (f g:  B -> Program I A)
+                   (Hpq:  @program_eq I B p q)
+                   (Hfg:  forall (x:  B), program_eq (f x) (g x))
+  : program_eq (Bind p f) (Bind q g).
 
 Add Parametric Relation
     (I:  Interface)
     (A:  Type)
   : (Program I A) (program_eq)
-    reflexivity  proved by (program_eq_refl)
-    symmetry     proved by (program_eq_sym)
-    transitivity proved by (program_eq_trans)
+    reflexivity  proved by program_eq_refl
+    symmetry     proved by program_eq_sym
+    transitivity proved by program_eq_trans
       as program_equiv.
 
 Instance program_Eq
@@ -252,47 +217,56 @@ Proof.
 Qed.
 
 Add Parametric Morphism
-    (I:  Interface)
-    (A:  Type)
-  : (runProgram)
-    with signature eq ==> (@equal (Program I A) _) ==> (@run_semantics_eq I A)
-  as run_program_morphism_1.
-Proof.
-  intros y p p' Heq.
-  constructor.
-  destruct Heq.
-  + apply Hres.
-  + apply Heq.
-Qed.
-
-Add Parametric Morphism
     (I: Interface)
     (A: Type)
   : (runProgram)
     with signature (@semantics_eq I) ==> eq ==> (@run_semantics_eq I A)
   as run_program_morphism_2.
 Proof.
-  intros sig sig' Heq p.
-  revert sig sig' Heq.
-  induction p; intros sig sig' Heq.
-  + cbn.
-    constructor; [ reflexivity
-                 | exact Heq
-                 ].
-  + cbn.
-    destruct Heq as [Hres Hnext].
-    constructor; [ apply Hres
-                 | apply Hnext
-                 ].
+  intros sig1 sig2 Heq_sig p.
+  revert sig1 sig2 Heq_sig.
+  induction p; intros sig1 sig2 Heq_sig.
+  + constructor; [ reflexivity |].
+    apply Heq_sig.
+  + constructor; apply Heq_sig.
   + repeat rewrite run_program_bind_assoc.
-    assert (rw:  evalProgram sig p = evalProgram sig' p). {
+    assert (rw:  evalProgram sig1 p = evalProgram sig2 p). {
       apply IHp.
-      exact Heq.
+      exact Heq_sig.
     }
     rewrite rw.
     apply H.
     apply IHp.
-    exact Heq.
+    exact Heq_sig.
+Qed.
+
+Add Parametric Morphism
+    (I:  Interface)
+    (A:  Type)
+  : (runProgram)
+    with signature eq ==> (@equal (Program I A) _) ==> (@run_semantics_eq I A)
+  as run_program_morphism_1.
+Proof.
+  intros sig p q Heq.
+  revert sig.
+  induction Heq; intros sig.
+  + reflexivity.
+  + symmetry.
+    apply (IHHeq sig).
+  + etransitivity; [ apply (IHHeq1 sig)
+                   | apply (IHHeq2 sig)
+                   ].
+  + constructor; reflexivity.
+  + constructor; reflexivity.
+  + constructor; reflexivity.
+  + repeat rewrite run_program_bind_assoc.
+    assert (Hstep: run_semantics_eq (runProgram sig p) (runProgram sig q))
+      by apply IHHeq.
+    assert (rw:  execProgram sig p == execProgram sig q) by apply Hstep.
+    assert (rw': evalProgram sig p = evalProgram sig q) by apply Hstep.
+    rewrite rw.
+    rewrite rw'.
+    apply H.
 Qed.
 
 Add Parametric Morphism
@@ -324,22 +298,52 @@ Proof.
 Qed.
 
 Add Parametric Morphism
-    (I:      Interface)
-    (A B C:  Type)
+    (I:    Interface)
+    (A B:  Type)
   : (@Bind I B A)
     with signature (@equal (Program I A) _)
-                     ==> (@eq (A -> Program I B))
+                     ==> (@equal (A -> Program I B) _)
                      ==> (@equal (Program I B) _)
       as pbind_morphism.
 Proof.
-  intros p q Heq f.
-  constructor; intros sig.
-  + repeat rewrite eval_program_bind_assoc.
-    rewrite Heq.
-    reflexivity.
-  + repeat rewrite exec_program_bind_assoc.
-    rewrite Heq.
-    reflexivity.
+  intros p q Heq f g Heq_f.
+  constructor.
+  apply program_eq_bind.
+  + symmetry.
+    exact Heq.
+  + intros x.
+    symmetry.
+    apply Heq_f.
+Qed.
+
+Lemma program_eq_sig_eq
+      {I:    Type -> Type}
+      {A:    Type} `{Equality A}
+      (p q:  Program I A)
+  : p == q
+    -> forall (sig sig':  Semantics I),
+      sig == sig'
+      -> evalProgram sig p == evalProgram sig' q.
+Proof.
+  intros Heq sig1 sig2 Heq_sig.
+  rewrite Heq_sig.
+  rewrite Heq.
+  reflexivity.
+Qed.
+
+Lemma program_eq_res_eq
+      {I:    Type -> Type}
+      {A:    Type}
+      (p q:  Program I A)
+  : p == q
+    -> forall (sig sig':  Semantics I),
+      sig == sig'
+      -> evalProgram sig p = evalProgram sig' q.
+Proof.
+  intros Heq sig1 sig2 Heq_sig.
+  rewrite Heq_sig.
+  rewrite Heq.
+  reflexivity.
 Qed.
 
 (** ** Monad Laws
@@ -371,10 +375,18 @@ Instance program_Functor
   { map := @program_map I
   }.
 Proof.
-  + intros A x.
-    constructor; reflexivity.
-  + intros A B C f g p.
-    constructor; reflexivity.
+  + intros A HA x.
+    unfold program_map.
+    rewrite <- program_eq_append_pure.
+    reflexivity.
+  + intros A B C HC u v x.
+    unfold compose.
+    unfold program_map.
+    rewrite program_eq_bind_assoc.
+    apply program_eq_bind; [ reflexivity |].
+    intros y.
+    rewrite program_eq_bind_ret.
+    reflexivity.
 Defined.
 
 Definition program_apply
@@ -398,16 +410,45 @@ Instance program_Applicative
   ; apply := @program_apply I
   }.
 Proof.
-  + intros A p.
-    constructor; reflexivity.
-  + intros A B C u v p.
-    constructor; reflexivity.
-  + intros A B v x.
-    constructor; reflexivity.
-  + intros A B u y.
-    constructor; reflexivity.
-  + intros A B HB g p.
-    constructor; reflexivity.
+  + intros A HA p.
+    unfold program_apply, program_pure.
+    rewrite program_eq_bind_ret.
+    rewrite <- program_eq_append_pure.
+    reflexivity.
+  + intros A B C HC u v p.
+    unfold program_apply, program_pure.
+    rewrite program_eq_bind_ret.
+    repeat rewrite program_eq_bind_assoc.
+    apply program_eq_bind; [ reflexivity |].
+    intros x.
+    rewrite program_eq_bind_ret.
+    repeat rewrite program_eq_bind_assoc.
+    apply program_eq_bind; [ reflexivity |].
+    intros y.
+    unfold compose.
+    rewrite program_eq_bind_ret.
+    repeat rewrite program_eq_bind_assoc.
+    apply program_eq_bind; [ reflexivity |].
+    intros z.
+    rewrite program_eq_bind_ret.
+    reflexivity.
+  + intros A B HB v x.
+    unfold program_apply, program_pure.
+    repeat rewrite program_eq_bind_ret.
+    reflexivity.
+  + intros A B HA u y.
+    unfold program_apply, program_pure.
+    repeat rewrite program_eq_bind_ret.
+    apply program_eq_bind; [ reflexivity |].
+    intros x.
+    repeat rewrite program_eq_bind_ret.
+    reflexivity.
+  + intros A B HA g x.
+    cbn.
+    unfold program_map, program_apply, program_pure.
+    rewrite program_eq_bind_ret.
+    apply program_eq_bind; [ reflexivity |].
+    reflexivity.
 Defined.
 
 Definition program_bind
@@ -422,38 +463,24 @@ Instance program_Monad
   { bind := @program_bind I
   }.
 Proof.
-  + constructor; reflexivity.
-  + constructor; reflexivity.
-  + constructor; reflexivity.
-  + intros A B HB p f f' Heq.
+  + intros A B HB x f.
+    apply program_eq_bind_ret.
+  + intros A HA x.
     unfold program_bind.
-    constructor.
-    ++ intros sig.
-       assert (R1: forall (sig: Semantics I)
-                          (f: A -> Program I B),
-                  evalProgram sig (Bind p f)
-                  = evalProgram (execProgram sig p) (f (evalProgram sig p)))
-         by reflexivity.
-       rewrite R1.
-       rewrite R1.
-       assert (R2: f (evalProgram sig p) == f' (evalProgram sig p))
-         by apply Heq.
-       rewrite R2.
-       reflexivity.
-    ++ intros sig.
-       assert (R1: forall (sig: Semantics I)
-                          (f: A -> Program I B),
-                  execProgram sig (Bind p f)
-                  == execProgram (execProgram sig p) (f (evalProgram sig p)))
-         by reflexivity.
-       rewrite R1.
-       rewrite R1.
-       assert (R2: f (evalProgram sig p) == f' (evalProgram sig p))
-         by apply Heq.
-       rewrite R2.
-       reflexivity.
-  + intros A B HB g p.
-    constructor; reflexivity.
+    rewrite <- program_eq_append_pure.
+    reflexivity.
+  + intros A B C HC f g h.
+    unfold program_bind.
+    apply program_eq_bind_assoc.
+  + intros A B HB x f g Heq.
+    rewrite Heq.
+    reflexivity.
+  + intros A B HA x f.
+    cbn.
+    unfold program_map, program_bind.
+    apply program_eq_bind; [ reflexivity |].
+    intros y.
+    reflexivity.
 Defined.
 
 (** ** Alternative [Program] Execution
@@ -509,3 +536,145 @@ Fixpoint interface_map
   | Bind q f
     => Bind (interface_map q map) (fun x => interface_map (f x) map)
   end.
+
+Inductive View
+          (I:  Type -> Type)
+          (A:  Type)
+  : Type :=
+| Result (x:  A)
+  : View I A
+| Seq {B:    Type}
+      (eff:  I B)
+      (f:    B -> Program I A)
+  : View I A.
+
+Arguments Result {I A} (x).
+Arguments Seq {I A B} (eff f).
+
+Require Import FunInd.
+
+Function view
+         {I:  Type -> Type}
+         {A:  Type}
+         (p:  Program I A)
+  : View I A :=
+  match p with
+  | Pure x
+    => Result x
+  | Request eff
+    => Seq eff (@Pure I A)
+  | Bind p f
+    => match view p with
+       | Result x
+         => view (f x)
+       | Seq eff h
+         => Seq eff (fun x => Bind (h x) f)
+       end
+  end.
+
+Theorem program_eq'_eval_eq
+        {I:    Type -> Type}
+        {A:    Type}
+        (p q:  Program I A)
+  : p == q -> forall (sig:  Semantics I),
+      runProgram sig p = runProgram sig q.
+Proof.
+  intros Heq.
+  induction Heq; intros sig.
+  + reflexivity.
+  + symmetry.
+    apply IHHeq.
+  + transitivity (runProgram sig q).
+    ++ apply IHHeq1.
+    ++ apply IHHeq2.
+  + cbn.
+    destruct (runProgram sig p).
+    reflexivity.
+  + reflexivity.
+  + reflexivity.
+  + cbn.
+    rewrite IHHeq.
+    rewrite H.
+    reflexivity.
+Qed.
+
+Function simplify
+         {I:  Type -> Type}
+         {A:  Type}
+         (p:  Program I A)
+  : Program I A :=
+  match view p with
+  | Result x
+    => Pure x
+  | Seq eff f
+    => Bind (Request eff) f
+  end.
+
+Theorem simplify_eq
+        {I:  Type -> Type}
+        {A:  Type}
+        (p:  Program I A)
+  : p == (simplify p).
+Proof.
+  induction p.
+  + apply program_eq_refl.
+  + cbn.
+    apply program_eq_append_pure.
+  + assert ((simplify (Bind p f))
+            == (Bind (simplify p) (fun x => simplify (f x)))). {
+      functional induction (simplify p).
+      + unfold simplify.
+        cbn.
+        rewrite e.
+        fold (simplify (f x)).
+        eapply program_eq_trans.
+        apply program_eq_sym.
+        apply H.
+        apply program_eq_sym.
+        eapply program_eq_trans.
+        eapply program_eq_bind_ret.
+        fold (simplify (f x)).
+        apply program_eq_sym.
+        apply H.
+      + unfold simplify.
+        cbn.
+        rewrite e.
+        eapply program_eq_trans.
+        apply program_eq_sym.
+        apply program_eq_bind_assoc.
+        apply program_eq_bind.
+        apply program_eq_refl.
+        intros x.
+        fold (simplify (f x)).
+        apply H.
+    }
+    apply program_eq_trans with (q:=(Bind (simplify p) (fun x : B => simplify (f x)))).
+    ++ apply program_eq_bind.
+       apply IHp.
+       apply H.
+    ++ apply program_eq_sym.
+       apply H0.
+Qed.
+
+(* FIXME: not enough *)
+Theorem program_request_seq_ind
+        {I:       Type -> Type}
+        {A:       Type}
+        (P:       Program I A -> Prop)
+        (Hmorph:  forall (p q:  Program I A),
+            p == q -> (P p <-> P q))
+        (Hres:   forall (x:  A), P (Pure x))
+        (Hseq:   forall {B:    Type}
+                        (eff:  I B)
+                        (f:    B -> Program I A),
+            P (Bind (Request eff) f))
+  : forall (p:  Program I A),
+    P p.
+Proof.
+  intros p.
+  assert (Hsimp:  p == (simplify p)) by apply simplify_eq.
+  apply (Hmorph (simplify p) p (program_eq_sym _ _ Hsimp)).
+  functional induction (simplify p).
+  + apply Hres.
+  + apply Hseq.
+Qed.

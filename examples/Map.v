@@ -31,7 +31,6 @@ Require Import Prelude.Control.
 
 Local Open Scope formula_scope.
 Local Open Scope prelude_scope.
-Local Open Scope free_scope.
 
 Lemma neq_sym
       {T:        Type}

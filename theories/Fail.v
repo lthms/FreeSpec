@@ -160,18 +160,18 @@ Instance FailProgram_Functor
   }.
 Proof.
   + intros A Ha [p].
-    constructor; intro int.
-    ++ cbn.
-       fold (evalProgram int p0).
-       induction (evalProgram int p0); reflexivity.
-    ++ reflexivity.
+    unfold fail_program_map.
+    unfold id.
+    cbn.
+    unfold program_map.
+    unfold either_map.
+    rewrite (program_eq_append_pure p0) at 2.
+    apply program_eq_bind; [ reflexivity |].
+    intros x.
+    induction x; reflexivity.
   + intros A B C Hc u v x.
     induction x.
-    constructor; intros int.
-    ++ cbn.
-       fold (evalProgram int p).
-       induction (evalProgram int p); reflexivity.
-    ++ reflexivity.
+    unfold fail_program_map, program_may_fail.
 Defined.
 
 Definition failProgram_pure

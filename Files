@@ -2,7 +2,6 @@ theories/Interface.v
 theories/Semantics.v
 theories/MonadSemantics.v
 theories/Program.v
-theories/Fail.v
 theories/Abstract.v
 theories/Specification.v
 theories/Compose.v
