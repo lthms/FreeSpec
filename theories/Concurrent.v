@@ -255,7 +255,7 @@ Proof.
   revert Hsig.
   revert Hst.
   revert sig st w.
-  cofix; intros sig st w Hst Hsig.
+  cofix concurrence_is_possible; intros sig st w Hst Hsig.
   constructor.
   + cbn.
     assert (pick st =¦ req)

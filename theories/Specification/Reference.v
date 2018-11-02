@@ -33,7 +33,7 @@ Theorem semantics_eq_reference_specification
     -> sig |= reference_specification [ref].
 Proof.
   revert ref sig.
-  cofix.
+  cofix semantics_eq_reference_specification.
   intros ref sig [Hres Hnext].
   constructor.
   + intros A e Htrue.

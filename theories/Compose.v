@@ -148,7 +148,7 @@ Add Parametric Morphism
     with signature (semantics_eq) ==> (semantics_eq) ==> (semantics_eq)
       as mk_comp_semantics_complete_morphism.
 Proof.
-  cofix.
+  cofix mk_comp_semantics_complete_morphism.
   intros sig_1 sig_2 Heq sig_1' sig_2' Heq'.
   constructor.
   + intros A e.
@@ -163,22 +163,22 @@ Proof.
          rewrite Heq.
          reflexivity.
        }
-       apply (mk_comp_semantics_complete_morphism_Proper (execEffect sig_1 e)
-                                                         (execEffect sig_2 e)
-                                                         H
-                                                         sig_1'
-                                                         sig_2'
-                                                         Heq').
+       apply (mk_comp_semantics_complete_morphism (execEffect sig_1 e)
+                                                  (execEffect sig_2 e)
+                                                  H
+                                                  sig_1'
+                                                  sig_2'
+                                                  Heq').
     ++ assert (execEffect sig_1' e == execEffect sig_2' e). {
          rewrite Heq'.
          reflexivity.
        }
-       apply (mk_comp_semantics_complete_morphism_Proper sig_1
-                                                         sig_2
-                                                         Heq
-                                                         (execEffect sig_1' e)
-                                                         (execEffect sig_2' e)
-                                                         H).
+       apply (mk_comp_semantics_complete_morphism sig_1
+                                                  sig_2
+                                                  Heq
+                                                  (execEffect sig_1' e)
+                                                  (execEffect sig_2' e)
+                                                  H).
 Qed.
 
 (* TODO: are these two morphisms really needed? *)
@@ -242,7 +242,7 @@ Fact mk_comp_semantics_equivalence
            (sig_j:  Semantics J),
     sig_i <x> sig_j == mkCompSemantics' sig_i sig_j.
 Proof.
-  cofix.
+  cofix mk_comp_semantics_equivalence.
   intros sig_i sig_j.
   constructor.
   + intros A e.
@@ -349,7 +349,7 @@ Lemma compliant_semantics_compose_compliant_semantics
     -> sig_j |= c_j[w_j]
     -> sig_i <x> sig_j |= (c_i <·> c_j)[(w_i, w_j)].
 Proof.
-  cofix.
+  cofix compliant_semantics_compose_compliant_semantics.
   intros sig_i sig_j c_i c_j w_i w_j Hsig_i Hsig_j.
   constructor.
   + intros A e Hpre.
@@ -451,7 +451,7 @@ Lemma expand_compliant_left
            (sig_j:  Semantics J),
     sig_i <x> sig_j |= (expand_specification_left c J)[w].
 Proof.
-  cofix.
+  cofix expand_compliant_left.
   intros S I J c w sig_i Hcomp sig_j.
   assert (Hcomp': sig_i |= c[w]) by apply Hcomp.
   destruct Hcomp.
@@ -542,7 +542,7 @@ Lemma expand_compliant_right
            (sig_j:  Semantics J),
     sig_j <x> sig_i |= (expand_specification_right c J)[w].
 Proof.
-  cofix.
+  cofix expand_compliant_right.
   intros S I J c w sig_i Hcomp sig_j.
   assert (Hcomp': sig_i |= c[w]) by apply Hcomp.
   destruct Hcomp.

@@ -185,7 +185,7 @@ Fact _stateful_specification_enforcement
     inv w s
     -> (mkSemantics step s) |= c[w].
 Proof.
-  cofix.
+  cofix _stateful_specification_enforcement.
   intros w Hpres Henf s Hinv .
   constructor.
   + intros A e Hreq.

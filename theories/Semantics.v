@@ -116,7 +116,7 @@ Lemma semantics_eq_refl
   : forall (sig: Semantics I),
     semantics_eq sig sig.
 Proof.
-  cofix.
+  cofix semantics_eq_refl.
   intros int.
   constructor.
   + reflexivity.
@@ -130,7 +130,7 @@ Lemma semantics_eq_sym
     semantics_eq sig sig'
     -> semantics_eq sig' sig.
 Proof.
-  cofix.
+  cofix semantics_eq_sym.
   intros sig sig' H1.
   destruct H1.
   constructor.
@@ -148,7 +148,7 @@ Lemma semantics_eq_trans
     -> semantics_eq sig' sig''
     -> semantics_eq sig sig''.
 Proof.
-  cofix.
+  cofix semantics_eq_trans.
   intros sig sig' sig'' H1 H2.
   destruct H1 as [Hres1 Hnext1].
   destruct H2 as [Hres2 Hnext2].

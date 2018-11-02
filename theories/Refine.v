@@ -141,7 +141,7 @@ Theorem compliant_refinement
     sync w_i s w_j
     -> StatefulSemantics sr s sig |= master[w_i].
 Proof.
-  cofix.
+  cofix compliant_refinement.
   intros w_i s w_j sig Hcomp Hsync.
   constructor.
   + intros A e Hpre.
