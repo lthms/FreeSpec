@@ -66,16 +66,20 @@ Proof.
   reflexivity.
 Qed.
 
-Fact specification_derives_specification_step
+Fact specification_derives_request_eq
      {W:    Type}
      {I:    Interface}
-     {A:    Type}
+     {A B:  Type}
      (e:    I A)
+     (f:    A -> Program I B)
      (sig:  Semantics I)
      (c:    Specification W I)
      (w:    W)
-  : specification_derive (Request e) sig c w
-    = abstract_step c e (evalEffect sig e) w.
+  : specification_derive (Request e f) sig c w
+    = specification_derive (f (evalEffect sig e))
+                           (execEffect sig e)
+                           c
+                           (abstract_step c e (evalEffect sig e) w).
 Proof.
   reflexivity.
 Qed.
@@ -235,23 +239,19 @@ Inductive correct_program
           (c:  Specification W I)
           (w:  W)
   : forall {A:  Type}, Program I A -> Prop :=
-| compliant_request {A:     Type}
-                    (e:     I A)
-                    (Hreq:  precondition c e w)
-  : correct_program c w (Request e)
-| compliant_ret {A:  Type}
-                (x:  A)
+| compliant_pure {A:  Type}
+                 (x:  A)
   : correct_program c w (Pure x)
-| compliant_inv {A B:    Type}
-                (p:      Program I A)
-                (f:      A -> Program I B)
-                (Hcp:    correct_program c w p)
-                (Hnext:  forall (sig: Semantics I)
-                               (Henf: sig |= c[w]),
-                    correct_program c
-                                    (specification_derive p sig c w)
-                                    (f (evalProgram sig p)))
-  : correct_program c w (Bind p f).
+| compliant_request {A B:   Type}
+                    (e:     I A)
+                    (f:     A -> Program I B)
+                    (Hreq:  precondition c e w)
+                    (Hnext:  forall (sig: Semantics I)
+                                    (Henf: sig |= c[w]),
+                        correct_program c
+                                        (abstract_step c e (evalEffect sig e) w)
+                                        (f (evalEffect sig e)))
+  : correct_program c w (Request e f).
 
 Notation "p '=|' c '[' w ']'" :=
   (correct_program c w p)
@@ -264,60 +264,6 @@ Notation "p '=|' c '[' w ']'" :=
     [compliant_semantics] and [correct_program].
 
  *)
-
-Fact correct_program_bind_pure
-     {W:    Type}
-     {I:    Interface}
-     {A B:  Type}
-     (a:    A)
-     (f:    A -> Program I B)
-     (c:    Specification W I)
-     (w:    W)
-  : f a =| c[w]
-    -> Bind (Pure a) f =| c[w].
-Proof.
-  intros Hp.
-  constructor.
-  + constructor.
-  + intros sig Henf.
-    cbn.
-    exact Hp.
-Qed.
-
-Fact correct_effect_compliant_semantics
-     {W:    Type}
-     {I:    Interface}
-     {A:    Type}
-     (e:    I A)
-     (sig:  Semantics I)
-     (c:    Specification W I)
-     (w:    W)
-     (H:    sig |= c[w])
-     (Hp:   Request e =| c[w])
-  : (abstractExec w (abstract_step c) sig (Request e))
-      |= c[specification_derive (Request e) sig c w].
-Proof.
-  cbn.
-  constructor.
-  + intros B e' Heff.
-    destruct H as [Hprom Henf].
-    inversion Hp.
-    apply Henf in Hreq.
-    apply inj_pair2 in H1.
-    subst.
-    inversion Hreq.
-    apply Hprom0.
-    exact Heff.
-  + intros B e' Heff.
-    destruct H as [Hprom Henf].
-    inversion Hp.
-    apply Henf in Hreq.
-    apply inj_pair2 in H1.
-    subst.
-    inversion Hreq.
-    apply Henf0.
-    exact Heff.
-Qed.
 
 Fact pure_compliant_semantics
      {W:    Type}
@@ -345,9 +291,10 @@ Fact specification_derive_assoc
      (sig:    Semantics I)
      (c:      Specification W I)
      (w:      W)
-  : specification_derive (Bind (Bind p f) g) sig c w
-    = specification_derive (Bind p (fun x => Bind (f x) g)) sig c w.
+  : specification_derive (pbind (pbind p f) g) sig c w
+    = specification_derive (pbind p (fun x => pbind (f x) g)) sig c w.
 Proof.
+  rewrite program_eq_bind_assoc.
   reflexivity.
 Qed.
 
@@ -361,7 +308,7 @@ Fact exec_abs_assoc
            (sig:  Semantics I)
            (c:    Specification W I)
            (w:    W),
-    abstractExec w (abstract_step c) sig (Bind p f)
+    abstractExec w (abstract_step c) sig (pbind p f)
     = abstractExec (specification_derive p sig c w)
                    (abstract_step c)
                    (abstractExec w (abstract_step c) sig p)
@@ -369,7 +316,8 @@ Fact exec_abs_assoc
 Proof.
   intros B f sig c s.
   repeat rewrite abstract_exec_exec_program_same.
-  reflexivity.
+  revert sig; induction p; [reflexivity |]; intros sig.
+  apply H.
 Qed.
 
 Fact eval_program_assoc
@@ -382,13 +330,14 @@ Fact eval_program_assoc
            (sig:  Semantics I)
            (c:    Specification W I)
            (w:    W),
-    evalProgram sig (Bind p f)
+    evalProgram sig (pbind p f)
     = evalProgram (abstractExec w (abstract_step c) sig p)
                   (f (evalProgram sig p)).
 Proof.
   intros B f sig c s.
   rewrite abstract_exec_exec_program_same.
-  reflexivity.
+  revert sig; induction p; [reflexivity |]; intros sig.
+  apply H.
 Qed.
 
 Fact specification_derive_bind
@@ -405,19 +354,12 @@ Fact specification_derive_bind
                          (abstractExec w (abstract_step c) sig p)
                          c
                          (specification_derive p sig c w)
-    = specification_derive (Bind p f) sig c w.
+    = specification_derive (pbind p f) sig c w.
 Proof.
   induction p.
   + reflexivity.
-  + reflexivity.
   + intros C f' sig' c' w'.
-    rewrite specification_derive_assoc.
-    rewrite <- (IHp C) .
-    rewrite <- H.
-    rewrite <- eval_program_assoc.
-    rewrite <- exec_abs_assoc.
-    rewrite <- (IHp A) .
-    reflexivity.
+    apply H.
 Qed.
 
 Fact abstractExec_Bind
@@ -436,10 +378,11 @@ Fact abstractExec_Bind
                                sig
                                p)
                  (f (evalProgram sig p))
-    = abstractExec w (abstract_step c) sig (Bind p f).
+    = abstractExec w (abstract_step c) sig (pbind p f).
 Proof.
   intros f sig c w.
   repeat rewrite abstract_exec_exec_program_same.
+  rewrite exec_program_bind_assoc.
   reflexivity.
 Qed.
 
@@ -458,20 +401,16 @@ Proof.
   induction p.
   + intros c w sig He Hp;
       apply (pure_compliant_semantics a sig c w He).
-  + intros c w sig He Hp;
-      apply (correct_effect_compliant_semantics e sig c w He Hp).
   + intros c w sig He Hp.
-    inversion Hp;
-      apply inj_pair2 in H3;
-      repeat apply inj_pair2 in H4;
-      subst.
-    apply (IHp c w sig He) in Hcp.
-    rewrite <- abstractExec_Bind.
-    rewrite <- specification_derive_bind.
-    apply H.
-    ++ exact Hcp.
-    ++ apply Hnext.
-       exact He.
+    constructor.
+    ++ apply H;
+         dependent induction Hp.
+         +++ now apply He.
+         +++ now apply Hnext.
+    ++ apply H;
+         dependent induction Hp.
+       +++ now apply He in Hreq.
+       +++ now apply Hnext.
 Qed.
 
 Lemma correct_pbind_correct_left_operand
@@ -482,12 +421,20 @@ Lemma correct_pbind_correct_left_operand
       (c:    Specification W I)
       (p:    Program I A)
       (f:    A -> Program I B)
-  : Bind p f =| c[w]
+  : pbind p f =| c[w]
     -> p =| c[w].
 Proof.
-  intros H.
-  inversion H; simplify_eqs; simpl_existTs; subst.
-  exact Hcp.
+  revert w; induction p; intro w.
+  + intro.
+    constructor.
+  + cbn.
+    constructor.
+    ++ dependent induction H0.
+       apply Hreq.
+    ++ intros sig Hsig.
+       apply H.
+       dependent induction H0.
+       now apply Hnext.
 Qed.
 
 Lemma correct_bind_correct_right_operand
@@ -500,13 +447,22 @@ Lemma correct_bind_correct_right_operand
       (f:     A -> Program I B)
       (sig:   Semantics I)
       (Hsig:  sig |= c[w])
-  : Bind p f =| c[w]
+  : pbind p f =| c[w]
     -> f (evalProgram sig p) =| c [specification_derive p sig c w].
 Proof.
-  intros H.
-  inversion H; simplify_eqs; simpl_existTs; subst.
-  apply Hnext.
-  exact Hsig.
+  revert Hsig;
+    revert sig;
+    revert w;
+    induction p;
+    intros w sig Hsig.
+  + auto.
+  + cbn.
+    intro Hc.
+    apply H.
+    apply Hsig.
+    ++ now dependent induction Hc.
+    ++ dependent induction Hc.
+       now apply Hnext.
 Qed.
 
 Definition no_pre

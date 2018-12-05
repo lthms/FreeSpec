@@ -193,10 +193,13 @@ Fixpoint refine
   match p with
   | Pure x
     => Pure x
-  | Request e
-    => ref _ e
-  | Bind q f
-    => Bind (refine q ref) (fun x => refine (f x) ref)
+  | Request e f
+    => match (ref _ e) with
+       | Pure x
+         => refine (f x) ref
+       | Request e g
+         => Request e (fun x => pbind (g x) (fun y => refine (f y) ref))
+       end
   end.
 
 Definition adapt

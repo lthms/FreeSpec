@@ -24,6 +24,7 @@ Require Import FreeSpec.Program.
 Require Import FreeSpec.Specification.
 
 Require Import Prelude.Equality.
+Require Import Prelude.Control.
 
 Local Open Scope prelude_scope.
 
@@ -64,7 +65,7 @@ Definition request
            {a:   Type}
            (e:   i a)
   : Program ix a :=
-  Request (lift_eff e).
+  Request (lift_eff e) (@pure _ _ a).
 
 (** * [Interface] Composition
 
@@ -362,18 +363,12 @@ Proof.
                                                ].
   + intros A e Hpre.
     induction e; cbn; cbn in *.
-    ++ apply compliant_semantics_compose_compliant_semantics.
-       +++ apply correct_effect_compliant_semantics.
-           ++++ exact Hsig_i.
-           ++++ constructor.
-                exact Hpre.
-       +++ exact Hsig_j.
-    ++ apply compliant_semantics_compose_compliant_semantics.
-       +++ exact Hsig_i.
-       +++ apply correct_effect_compliant_semantics.
-           ++++ exact Hsig_j.
-           ++++ constructor.
-                exact Hpre.
+    ++ apply compliant_semantics_compose_compliant_semantics; [| apply Hsig_j].
+       inversion Hsig_i.
+       apply (Henf A e Hpre).
+    ++ apply compliant_semantics_compose_compliant_semantics; [apply Hsig_i |].
+       inversion Hsig_j.
+       apply (Henf A e Hpre).
 Qed.
 
 (** ** Left

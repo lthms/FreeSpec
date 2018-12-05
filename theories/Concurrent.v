@@ -69,7 +69,7 @@ Fixpoint sequence_to_prog
   | sequence_nil
     => pure tt
   | sequence_cons i rest
-    => Request i >>= fun _ => sequence_to_prog rest
+    => Request i (fun _ => sequence_to_prog rest)
   end.
 
 CoInductive stream
@@ -185,21 +185,14 @@ Lemma correct_sequence_rewrite_abstract_state
   : specification_derive (sequence_to_prog seq) sig c w = w.
 Proof.
   revert Hsig; revert sig w.
-  induction seq; intros sig w Hsig.
-  + reflexivity.
+  induction Hseq; intros sig w Hsig.
   + cbn.
-    unfold program_bind.
-    rewrite <- specification_derive_bind.
-    inversion Hseq; simplify_eqs; simpl_existTs; subst.
-    rewrite IHseq.
-    ++ apply Hni.
-       apply Hreq.
-    ++ apply H0.
-    ++ apply compliant_correct_compliant; [ exact Hsig |].
-       constructor.
-       destruct Hni.
-       apply Hreq0.
-       exact Hreq.
+    rewrite specification_derives_request_eq.
+    rewrite IHHseq.
+    ++ now apply Hni.
+    ++ apply Hsig.
+       now apply Hni.
+  + reflexivity.
 Qed.
 
 Lemma correct_sequence_correct_program
@@ -215,27 +208,16 @@ Lemma correct_sequence_correct_program
   : sequence_to_prog seq =| c[w].
 Proof.
   revert w.
-  induction seq; intros w.
-  + constructor.
+  induction Hseq; intros w.
   + cbn.
-    unfold program_bind.
     constructor.
-    ++ inversion Hseq; simplify_eqs; simpl_existTs; subst.
-       constructor.
-       destruct Hni.
-       apply Hreq0.
-       exact Hreq.
-    ++ intros int Hint.
-       inversion Hseq; simplify_eqs; simpl_existTs; subst.
-       assert (Heq:  specification_derive (Request e) int c w = w). {
-         cbn.
-         destruct Hni.
-         apply Hni.
-         apply Hreq.
-       }
-       rewrite Heq.
-       apply IHseq.
-       exact H0.
+    ++ now apply Hni.
+    ++ intros sig Hsig.
+       assert (R: abstract_step c e (evalEffect sig e) w = w)
+         by now apply Hni.
+       rewrite R.
+       apply IHHseq.
+  + constructor.
 Qed.
 
 Theorem concurrence_is_possible

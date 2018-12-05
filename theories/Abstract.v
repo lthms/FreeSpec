@@ -42,15 +42,11 @@ Fixpoint abstractRun
   match p with
   | Pure a
     => (a, sig, w)
-  | Request e
-    => (evalEffect sig e,
-        execEffect sig e,
-        abs_step _ e (evalEffect sig e) w)
-  | Bind q f
-    => abstractRun (snd (abstractRun w abs_step sig q))
+  | Request e f
+    => abstractRun (abs_step _ e (evalEffect sig e) w)
                    abs_step
-                   (snd (fst (abstractRun w abs_step sig q)))
-                   (f (fst (fst (abstractRun w abs_step sig q))))
+                   (execEffect sig e)
+                   (f (evalEffect sig e))
   end.
 
 (** Similary to [FreeSpec.Program.runProgram], we define several
@@ -113,8 +109,8 @@ Lemma abstract_run_run_program_same
 Proof.
   induction p; intros w abs_step sig; cbn.
   + reflexivity.
-  + apply injective_projections; reflexivity.
-  + rewrite H; rewrite IHp; reflexivity.
+  + rewrite H.
+    reflexivity.
 Qed.
 
 Lemma abstract_eval_eval_program_same

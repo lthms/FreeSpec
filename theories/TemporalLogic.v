@@ -504,16 +504,10 @@ Proof.
     apply tl_run_refl.
   + intros tl sig.
     cbn.
-    constructor.
-    apply Formula_step_is_tl_step.
-  + intros tl sig.
-    cbn.
-    apply (tl_run_trans tl
-                        (snd (runFormula sig p tl))
-                        (snd
-                           (runFormula (snd (fst (runFormula sig p tl))) (f (fst (fst (runFormula sig p tl))))
-                                  (snd (runFormula sig p tl))))).
-    ++ apply IHp.
+    eapply (tl_run_trans tl
+                        (tl_step (effect e) tl)).
+    ++ constructor.
+       apply Formula_step_is_tl_step.
     ++ apply H.
 Qed.
 
