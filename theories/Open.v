@@ -194,31 +194,6 @@ Polymorphic Definition inj
   : union set :=
   OneOf (rank t set) (rank_get_t t set) (rank_bound t set) x.
 
-Ltac evaluate_exact v :=
-  let x := fresh "x" in
-  let Heqx := fresh "Heqx" in
-  remember v as x eqn:Heqx;
-  vm_compute in Heqx;
-  match type of Heqx with
-  | x = ?ev => exact ev
-  end.
-
-Ltac inj v :=
-  match goal with
-  | [ |- union ?set]
-    => evaluate_exact (@inj _ set _ v)
-  end.
-
-Section DoesItWork.
-  Definition test_bool
-    : union [bool; nat] :=
-    inj true.
-
-  Definition test_nat
-    : union [bool; nat] :=
-    inj 0.
-End DoesItWork.
-
 Definition visit
            {t:    Type}
            {set:  list Type} `{Contains t set}
