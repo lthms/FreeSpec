@@ -41,7 +41,7 @@ Polymorphic Fixpoint cardinal
   end.
 
 Inductive inhabited
-  : Type.
+  : Type :=.
 
 Polymorphic Fixpoint get
             (set:  list Type)
