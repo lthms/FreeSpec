@@ -36,19 +36,19 @@ Module Airlock.
 
   Definition open_first_door
     : AirlockM unit :=
-    lift (Request (InL Door.Open)).
+    lift (singleton (InL Door.Open)).
 
   Definition close_first_door
     : AirlockM unit :=
-    lift (Request (InL Door.Close)).
+    lift (singleton (InL Door.Close)).
 
   Definition open_second_door
     : AirlockM unit :=
-    lift (Request (InR Door.Open)).
+    lift (singleton (InR Door.Open)).
 
   Definition close_second_door
     : AirlockM unit :=
-    lift (Request (InR Door.Close)).
+    lift (singleton (InR Door.Close)).
 
   Definition first_door_is_open
     : AirlockM bool :=

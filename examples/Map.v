@@ -32,18 +32,6 @@ Require Import Prelude.Control.
 Local Open Scope formula_scope.
 Local Open Scope prelude_scope.
 
-Lemma neq_sym
-      {T:        Type}
-     `{Equality T}
-      (t:        T)
-      (Hneq_sym: t /= t)
-  : False.
-Proof.
-  assert (t == t) as Heq by (reflexivity).
-  apply Hneq_sym in Heq.
-  exact Heq.
-Qed.
-
 Section MAP.
   Variables (Key:         Type)
             (key_eq:      Equality Key)
@@ -88,8 +76,8 @@ Section MAP.
              (k: Key)
              (v: Value)
     : MapProgram Value :=
-    _ <- Request (Write k v);
-    Request (Read k).
+    _ <- singleton (Write k v);
+    singleton (Read k).
 
   Lemma write_then_read_1
         (s: State)
@@ -98,8 +86,7 @@ Section MAP.
     : evalProgram (MapSemantics s) (read_then_write k v) == v.
   Proof.
     cbn.
-    rewrite weq_bool_refl.
-    reflexivity.
+    now rewrite weq_bool_refl.
   Qed.
 
   Lemma write_then_read_2
@@ -108,14 +95,13 @@ Section MAP.
         (v:    Value)
         (Hneq: k' /= k)
     : evalProgram (MapSemantics s)
-                  (_ <- Request (Write k' v);
-                   Request (Read k))
-       == evalProgram (MapSemantics s) (Request (Read k)) .
+                  (_ <- singleton (Write k' v);
+                   singleton (Read k))
+       == evalProgram (MapSemantics s) (singleton (Read k)) .
   Proof.
     cbn.
     apply equalb_false in Hneq.
-    rewrite Hneq.
-    reflexivity.
+    now rewrite Hneq.
   Qed.
 
   Section SPECIFICATION.
@@ -200,8 +186,8 @@ Section MAP.
 
     Definition read_write
       : MapProgram unit :=
-      v <- Request (Read k);
-      Request (Write k' v).
+      v <- singleton (Read k);
+      singleton (Write k' v).
 
     Lemma read_write_specificationful
       : read_write =| never_read_x_specification[tt].
@@ -209,19 +195,14 @@ Section MAP.
       unfold read_write.
       constructor.
       + constructor.
-        cbn.
-        trivial.
       + intros int Henf.
-        rewrite (tt_singleton
-                   (specification_derive (Request (Read k)) int never_read_x_specification tt)
-                   tt).
-        unfold never_read_x_specification in Henf.
-        inversion Henf as [Hprom Hreq].
-        assert (never_read_x_postcondition Value (Read k) (evalEffect int (Read k)))
-          as Hnext
-            by (apply Hprom; cbn; trivial).
         constructor.
-        exact Hnext.
+        ++ destruct Henf as [Hprom Hreq].
+           now assert (never_read_x_postcondition Value (Read k) (evalEffect int (Read k)))
+             as Hnext by (apply Hprom; cbn; trivial).
+        ++ cbn.
+           intros int' Henf'.
+           constructor.
     Qed.
 
     Definition write_k_x
@@ -340,9 +321,9 @@ Section MAP.
                (k': Key)
                (v': Value)
       : MapProgram unit :=
-      Request (Write k x)                                           ;;
-      Request (Read k')                                             ;;
-      Request (Write k v').
+      singleton (Write k x)                                           ;;
+      singleton (Read k')                                             ;;
+      singleton (Write k v').
 
     Variables (int: Semantics IMap).
 

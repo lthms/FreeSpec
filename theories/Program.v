@@ -99,6 +99,13 @@ Fixpoint runProgram
     => runProgram (snd (handle sig e)) (f (fst (handle sig e)))
   end.
 
+Definition singleton
+           {I:  Interface}
+           {A:  Type}
+           (e:  I A)
+  : Program I A :=
+  Request e (@Pure I A).
+
 Definition evalProgram
            {I:    Interface}
            {A:    Type}
