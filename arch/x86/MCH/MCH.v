@@ -39,9 +39,8 @@ Require Import Prelude.PropBool.
 
 Local Close Scope nat_scope.
 Local Open Scope N_scope.
-Local Open Scope free_scope.
-Local Open Scope free_prog_scope.
 Local Open Scope prelude_scope.
+Local Open Scope free_scope.
 
 (** * Interface
 
@@ -95,7 +94,7 @@ Definition pci_do
            {A:  Type}
            (i:  PCIi A)
   : MCHm A :=
-  '[InL i].
+  lift (singleton (InL i)).
 
 Definition pio_out8
            (x:  word)

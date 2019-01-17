@@ -191,7 +191,6 @@ Definition MSSemantics
   monad_state_semantics (MSs_init n).
 
 Require Import FreeSpec.Program.
-Local Open Scope free_prog_scope.
 
 Fact write_then_read
      {n:  N}
@@ -199,7 +198,7 @@ Fact write_then_read
      (x:  MSs n)
      (a:  mem n)
      (v:  word)
-  : evalProgram (MSSemantics x) (Request (write_word a v) ;; Request (read_word a)) == v.
+  : evalProgram (MSSemantics x) (singleton (write_word a v) ;; singleton (read_word a)) == v.
 Proof.
   Opaque equalb.
   cbn.

@@ -15,7 +15,6 @@ Require Import Prelude.Control.State.
 Require Import Prelude.Equality.
 
 Local Open Scope prelude_scope.
-Local Open Scope free_prog_scope.
 Local Open Scope bool_scope.
 
 (** * Interface
@@ -47,7 +46,7 @@ Inductive Cache_interface
 
 Record Cache_abstract
   : Type :=
-  { cache_view:  Abstract
+  { cache_view:  View
   ; strats:    address -> Strategy
   }.
 
@@ -283,7 +282,7 @@ Definition do_mc
            {A:  Type}
            (i:  MemoryController_interface A)
   : Cache_monad A :=
-  '[i].
+  lift (singleton i).
 
 Definition prepare_line
            (a:     address)
@@ -345,7 +344,7 @@ Definition backend_view
            (st:        Strategy)
            (a:         address)
            (cache:     Cache_state)
-           (map_view:  Abstract)
+           (map_view:  View)
   : byte :=
   match st with
   | UC
@@ -357,10 +356,10 @@ Definition backend_view
   end.
 
 Definition sync_pred
-  : sync_pred Cache_abstract Abstract Cache_state :=
+  : sync_pred Cache_abstract View Cache_state :=
   fun (c_abs:  Cache_abstract)
       (cache:  Cache_state)
-      (m_abs:  Abstract)
+      (m_abs:  View)
   => forall (a:  address),
       cache_view c_abs a = backend_view (strats c_abs a) a cache m_abs.
 

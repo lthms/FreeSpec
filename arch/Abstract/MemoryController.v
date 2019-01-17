@@ -16,7 +16,6 @@ Require Import Prelude.Equality.
 
 Local Open Scope prelude_scope.
 Local Open Scope free_scope.
-Local Open Scope free_prog_scope.
 
 (** * Interface
  *)
@@ -88,13 +87,13 @@ Definition do_dram
            {A:  Type}
            (i:  Memory_interface A)
   : MemoryController_monad A :=
-  '[InL i].
+  lift (singleton (InL i)).
 
 Definition do_vga
            {A:  Type}
            (i:  Memory_interface A)
   : MemoryController_monad A :=
-  '[InR i].
+  lift (singleton (InR i)).
 
 (* Here we need to explicit MemoryController_monad is an alias to
    StateT. If we don’t, Coq gets lost and says it cannot find an
@@ -158,8 +157,8 @@ Definition MemoryController_abstract_step
            (A:    Type)
            (i:    MemoryController_interface A)
            (_:    A)
-           (map:  Abstract)
-  : Abstract :=
+           (map:  View)
+  : View :=
   match i with
   | write_mc a true x
     => update a x map
@@ -170,7 +169,7 @@ Definition MemoryController_abstract_step
 Definition MemoryController_precondition
            (A:    Type)
            (i:    MemoryController_interface A)
-           (map:  Abstract)
+           (map:  View)
   : Prop :=
   True.
 
@@ -178,7 +177,7 @@ Definition MemoryController_postcondition
            (A:    Type)
            (i:    MemoryController_interface A)
            (ret:  A)
-           (map:  Abstract)
+           (map:  View)
   : Prop :=
   match i
         in MemoryController_interface A'
@@ -193,7 +192,7 @@ Definition MemoryController_postcondition
   end (eq_refl A).
 
 Definition MemoryController_specs
-  : Specification Abstract MemoryController_interface :=
+  : Specification View MemoryController_interface :=
   {| abstract_step := MemoryController_abstract_step
    ; precondition  := MemoryController_precondition
    ; postcondition := MemoryController_postcondition
