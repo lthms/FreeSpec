@@ -15,13 +15,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-(*begin hide *)
 Require Import Coq.Classes.Equivalence.
 Require Import Coq.Setoids.Setoid.
-(* end hide *)
-
 Require Export FreeSpec.Interface.
-
 Require Import Prelude.Equality.
 
 Local Open Scope prelude_scope.

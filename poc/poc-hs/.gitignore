@@ -1,9 +1,0 @@
-.stack-work
-src/Ascii.hs
-src/Control.hs
-src/CoqMain.hs
-src/Datatypes.hs
-src/IO.hs
-src/Nat.hs
-src/String.hs
-src/Equality.hs

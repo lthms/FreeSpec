@@ -42,7 +42,7 @@ Fixpoint getr
   | S n, _ :: set'
     => getr set' n
   | _, _
-    => fun _ => inhabited
+    => fun _ => uninhabited
   end.
 
 Fixpoint specialize

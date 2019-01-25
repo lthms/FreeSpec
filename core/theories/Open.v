@@ -40,7 +40,7 @@ Polymorphic Fixpoint cardinal
     => O
   end.
 
-Inductive inhabited
+Inductive uninhabited
   : Type :=.
 
 Polymorphic Fixpoint get
@@ -54,7 +54,7 @@ Polymorphic Fixpoint get
   | S n, _ :: set'
     => get set' n
   | _, _
-    => inhabited
+    => uninhabited
   end.
 
 Polymorphic Inductive union

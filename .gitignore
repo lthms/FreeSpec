@@ -1,14 +1,9 @@
-Makefile.proj
-docs/html/*
-.make
+#coq
 *.v.d
 *.vo.aux
 *.glob
 *.vo
 *.aux
-FreeSpec.hs
-OUT.coc
-extraction/hs/*.hs
-docs/freespec.pdf
-Makefile.proj.conf
 .coqdeps.d
+#docs
+html/

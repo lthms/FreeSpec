@@ -1,3 +1,5 @@
+-R theories FreeSpec
+
 theories/Interface.v
 theories/Semantics.v
 theories/MonadSemantics.v

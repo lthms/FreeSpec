@@ -1,0 +1,2 @@
+COQDOCFLAGS := -interpolate --charset utf-8 --with-header ../docs/header.html \
+               -with-footer ../docs/footer.html -l
