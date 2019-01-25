@@ -1,14 +1,16 @@
   </body>
   <script>
-    var regex = /^\s*(?:<br\s*\/?\s*>\n*)+|(?:<br\s*\/?\s*>)+\s*$/gi;
+    var regex = /^(\s*<br\s*\/?\s*>\s*)*|(\s*<br\s*\/?\s*>\s*)*$/gi;
     var code_blocks = document.getElementsByClassName('code');
 
     Array.from(code_blocks).forEach((block) => {
-        console.log(block.innerHTML);
         block.innerHTML = block.innerHTML.replace(regex, '')
-
         if (block.innerHTML === '') {
             block.parentNode.removeChild(block);
+        } else {
+            block.innerHTML = block.innerHTML.replace(/&nbsp;/gi, ' ');
+            block.innerHTML = block.innerHTML.replace(/<br> *\n/gi, '\n');
+            block.innerHTML = '<pre><code>' + block.innerHTML + '</code></pre>';
         }
     });
   </script>
