@@ -1,9 +1,19 @@
-#coq
-*.v.d
-*.vo.aux
+# Coq
+.*.aux
+.*.d
 *.glob
 *.vo
-*.aux
-.coqdeps.d
-#docs
-html/
+.lia.cache
+
+# Ocaml
+*.a
+*.cmxa
+*.cmxs
+*.d
+*.o
+*.cmi
+*.cmx
+
+Makefile
+Makefile.conf
+.merlin

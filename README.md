@@ -13,6 +13,8 @@ This repository is organized as follows:
 
 - `core/`: the core framework that notably introduces `Program`,
   `Semantics` and `Specification`.
+- `exec/`: an extension to FreeSpec that adds a new command to Coq, `Exec`, to
+  execute `Program` instances (only certain interfaces shall be supported).
 
 FreeSpec formalism has been described in depth in [an academic
 paper](https://hal.inria.fr/hal-01799712/document) published at the [Formal
@@ -29,6 +31,8 @@ library from source (see the [appropriate
 README](https://github.com/ANSSI-FR/coq-prelude/blob/master/README.md) for
 installation notes).
 
+### FreeSpec
+
 FreeSpec is being developed and tested with the latest Coq release only. We make
 no promise regarding older versions.
 
@@ -44,6 +48,21 @@ example files provided in this repository. They should compile just fine.
 
 ```bash
 # from the root of this repository
-cd examples/
+cd core/examples/
 make
 ```
+
+### FreeSpec.Exec
+
+The plugin does not require any particular dependency to work, except the Coq
+proof assistant itself. Basically, if you already have a working Coq development
+environment, you should be good to go.
+
+```bash
+# from the root of this repository
+cd exec
+./configure
+make install # root privileges might be required if you do not use `opam'
+```
+To load the plugin, use `Require Import FreeSpec.Exec.Plugin`. The supported
+interfaces (only `Console.i`) will be made accessible in `FreeSpec.Exec.Interfaces`.
