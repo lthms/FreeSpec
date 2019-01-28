@@ -18,6 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+Require Import Prelude.Equality.
+Require Import Coq.Setoids.Setoid.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
 
@@ -146,4 +148,17 @@ Proof.
   unfold abstractExec, execProgram.
   rewrite abstract_run_run_program_same.
   reflexivity.
+Qed.
+
+Add Parametric Morphism
+    (S: Type)
+    (I: Interface)
+    (A: Type) `{Equality A}
+  : (@deriveAbstraction S I A)
+    with signature eq ==> eq ==> eq ==> (@equal (Program I A) _) ==> eq
+      as derive_abstraction_morphism.
+Proof.
+  intros s abs_step sig p q Heq.
+  cbn in Heq.
+  now subst.
 Qed.
