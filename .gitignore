@@ -17,3 +17,6 @@
 Makefile
 Makefile.conf
 .merlin
+
+# generated docs
+html/
