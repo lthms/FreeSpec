@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2018 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,7 @@
 
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.TemporalLogic.
-Require Import FreeSpec.Specification.
+Require Import FreeSpec.Experiment.TemporalLogic.
 
 Definition temporal_step
            (I: Interface) :=

@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.TemporalLogic.
+Require Import FreeSpec.Experiment.TemporalLogic.
 
 (** We define several notation to make a formula more readable. These
     notations are obviously optional, but they can help to have a

@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2018 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,13 +20,12 @@
 
 Require Import Coq.Program.Equality.
 
-Require Import FreeSpec.Abstract.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Specification.Constant.
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Refine.
+Require Import FreeSpec.Component.
 
 Require Import Prelude.Control.
 Require Import Prelude.Equality.
@@ -141,16 +140,16 @@ Qed.
 
 CoFixpoint concurrent_semantics
          {I:    Interface}
-         (sig:  Semantics I)
+         (sig:  Sem.t I)
          (st:   stream I)
-  : Semantics I :=
-  handler (fun {A:  Type}
-               (e:  I A)
-           => (evalEffect (execProgram sig (sequence_to_prog (pick st))) e,
-               concurrent_semantics (execEffect (execProgram sig
-                                                             (sequence_to_prog (pick st))
-                                                ) e)
-                                    (consume st))).
+  : Sem.t I :=
+  Sem.handler (fun {A:  Type}
+                   (e:  I A)
+               => Sem.mkRes (evalEffect (execProgram sig (sequence_to_prog (pick st))) e)
+                            (concurrent_semantics (execEffect (execProgram sig
+                                                                           (sequence_to_prog (pick st))
+                                                              ) e)
+                                                  (consume st))).
 
 Inductive non_interference_requirement
           {W:    Type}
@@ -182,7 +181,7 @@ Lemma correct_sequence_rewrite_abstract_state
           I A -> Prop)
       (seq:   sequence I)
       (Hseq:  seq =¦ req)
-      (sig:   Semantics I)
+      (sig:   Sem.t I)
       (Hsig:  sig |= c[w])
       (Hni:   c \\ req)
   : specification_derive (sequence_to_prog seq) sig c w = w.
@@ -208,7 +207,7 @@ Lemma correct_sequence_correct_program
       (seq:   sequence I)
       (Hseq:  seq =¦ req)
       (Hni:   c \\ req)
-  : sequence_to_prog seq =| c[w].
+  : sequence_to_prog seq |> c[w].
 Proof.
   revert w.
   induction Hseq; intros w.
@@ -232,7 +231,7 @@ Theorem concurrence_is_possible
             I A -> Prop)
         (st:    stream I)
         (Hst:   st *=¦ req)
-        (sig:   Semantics I)
+        (sig:   Sem.t I)
         (Hsig:  sig |= c[w])
         (Hni:   c \\ req)
   : concurrent_semantics sig st |= c[w].
@@ -261,12 +260,9 @@ Proof.
                                                          | exact Hni
                                                          ].
     assert (Hsig': execProgram sig (sequence_to_prog seq) |= c[specification_derive (sequence_to_prog seq) sig c w]). {
-      erewrite <- abstract_exec_exec_program_same.
-      apply compliant_correct_compliant.
-      exact Hsig.
-      apply correct_sequence_correct_program with (req0 :=  req).
-      + exact Hseq.
-      + exact Hni.
+      apply correct_program_compliant_semantics_compliant_semantics.
+      + exact Hsig.
+      + now apply correct_sequence_correct_program with (req0 :=  req).
     }
     apply Hsig'.
     apply Hpre.
@@ -280,18 +276,12 @@ Proof.
     intros A e Hpre.
     remember (execProgram sig (sequence_to_prog seq)) as sig'.
     remember (evalEffect sig' e) as x.
-    assert (Hp:  sequence_to_prog seq =| c[w]). {
-      apply correct_sequence_correct_program with (req0 :=  req).
-      exact Hseq.
-      exact Hni.
-    }
+    assert (Hp:  sequence_to_prog seq |> c[w])
+      by now apply correct_sequence_correct_program with (req0 :=  req).
     assert (Hsig':  sig' |= c[w]). {
       rewrite <- (correct_sequence_rewrite_abstract_state w c req seq Hseq sig Hsig Hni).
       rewrite Heqsig'.
-      erewrite <- abstract_exec_exec_program_same.
-      apply compliant_correct_compliant.
-      + exact Hsig.
-      + exact Hp.
+      now apply correct_program_compliant_semantics_compliant_semantics.
     }
     apply concurrence_is_possible.
     apply Hnext.

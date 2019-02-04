@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2018 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,27 +28,27 @@ Local Open Scope prelude_scope.
 
 Definition reference_specification
            {I:  Interface}
-  : Specification (Semantics I) I :=
+  : Specification (Sem.t I) I :=
   {| abstract_step := fun (A:  Type)
                           (e:  I A)
                           (_:  A)
-                          (s:  Semantics I)
-                     => execEffect s e
-   ; precondition := fun (A:  Type)
+                          (s:  Sem.t I)
+                      => execEffect s e
+  ; precondition := fun (A:  Type)
                          (_:  I A)
-                         (_: Semantics I)
-                     => True
-   ; postcondition := fun (A:    Type)
-                          (e:    I A)
-                          (res:  A)
-                          (s:    Semantics I)
-                      => evalEffect s e = res
+                         (_: Sem.t I)
+                    => True
+  ; postcondition := fun (A:    Type)
+                         (e:    I A)
+                         (res:  A)
+                         (s:    Sem.t I)
+                     => evalEffect s e = res
   |}.
 
 Theorem semantics_eq_reference_specification
         {I:    Interface}
-        (ref:  Semantics I)
-        (sig:  Semantics I)
+        (ref:  Sem.t I)
+        (sig:  Sem.t I)
   : sig == ref
     -> sig |= reference_specification [ref].
 Proof.
@@ -68,7 +68,7 @@ Qed.
 
 Corollary reference_compliant_reference_specification
           {I:    Interface}
-          (ref:  Semantics I)
+          (ref:  Sem.t I)
   : ref |= reference_specification [ref].
 Proof.
   apply semantics_eq_reference_specification.

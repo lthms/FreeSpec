@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2018 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Abstract.
 
 Definition const_precondition
            {I:             Interface}
@@ -154,15 +153,13 @@ Lemma correct_program_compliant_exec
       {A:    Type}
       (p:    Program I A)
       (c:    Specification unit I)
-      (sig:  Semantics I)
-  : p =| c[tt]
+      (sig:  Sem.t I)
+  : p |> c[tt]
     -> sig |= c[tt]
     -> (execProgram sig p) |= c[tt].
 Proof.
   intros Hc Hcomp.
-  apply (compliant_correct_compliant p c tt sig) in Hcomp.
-  ++ rewrite abstract_exec_exec_program_same in Hcomp.
-     rewrite (tt_singleton (specification_derive p sig c tt) tt) in Hcomp.
-     exact Hcomp.
-  ++ exact Hc.
+  apply (correct_program_compliant_semantics_compliant_semantics c tt sig p) in Hcomp.
+  + now induction (specification_derive p sig c tt).
+  + exact Hc.
 Qed.

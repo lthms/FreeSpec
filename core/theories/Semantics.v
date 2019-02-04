@@ -41,46 +41,71 @@ Local Open Scope prelude_scope.
 
  *)
 
-CoInductive Semantics
-            (I: Interface)
-  : Type :=
-| handler (f: forall {A: Type}, I A -> A * Semantics I)
-  : Semantics I.
+Module Sem.
+  Section def.
+  Variable (I: Interface).
 
-Arguments handler [I] (f).
+  CoInductive t: Type :=
+  | handler (f: forall {A: Type}, I A -> result A): t
+  with
+  result: Type -> Type :=
+  | mkRes {A}: A -> t -> result A.
+
+  Definition next
+             {A: Type}
+             (res: result A)
+    : t :=
+    match res with
+    | mkRes _ sem => sem
+    end.
+
+  Definition res
+             {A: Type}
+             (res: result A)
+    : A :=
+    match res with
+    | mkRes x _ => x
+    end.
+  End def.
+End Sem.
+
+Arguments Sem.handler [I] (f).
+Arguments Sem.mkRes [I A] (_ _).
+Arguments Sem.next [I A] (_).
+Arguments Sem.res [I A] (_).
 
 Definition handle
-           {I:    Interface}
+           {i:    Interface}
            {A:    Type}
-           (sig:  Semantics I)
-           (e:    I A)
-  : (A * Semantics I) :=
-  match sig with handler f => f A e end.
+           (sig:  Sem.t i)
+           (e:    i A)
+  : Sem.result i A :=
+  match sig with Sem.handler f => f A e end.
 
 Definition evalEffect
            {I:    Interface}
            {A:    Type}
-           (sig:  Semantics I)
+           (sig:  Sem.t I)
            (e:    I A)
   : A :=
-  fst (handle sig e).
+  Sem.res (handle sig e).
 
 Definition execEffect
            {I:    Interface}
            {A:    Type}
-           (sig:  Semantics I)
+           (sig:  Sem.t I)
            (e:    I A)
-    : Semantics I :=
-    snd (handle sig e).
+    : Sem.t I :=
+    Sem.next (handle sig e).
 
 CoFixpoint coerce_semantics
            {I I':  Interface}
            (f:     forall (A:  Type), I A -> I' A)
-           (sig:   Semantics I')
-  : Semantics I :=
-  handler (fun (A:  Type)
-               (e:  I A)
-           => (evalEffect sig (f _ e), coerce_semantics f (execEffect sig (f _ e)))).
+           (sig:   Sem.t I')
+  : Sem.t I :=
+  Sem.handler (fun (A:  Type)
+                   (e:  I A)
+               => Sem.mkRes (evalEffect sig (f _ e)) (coerce_semantics f (execEffect sig (f _ e)))).
 
 (** ** Semantics Equivalence
 
@@ -92,8 +117,8 @@ CoFixpoint coerce_semantics
 
 CoInductive semantics_eq
             {I:     Interface}
-            (sig1:  Semantics I)
-            (sig2:  Semantics I)
+            (sig1:  Sem.t I)
+            (sig2:  Sem.t I)
   : Prop :=
 | semantics_is_eq (Hres: forall {A:  Type}
                                 (e:  I A),
@@ -109,7 +134,7 @@ CoInductive semantics_eq
 
 Lemma semantics_eq_refl
       {I:  Interface}
-  : forall (sig: Semantics I),
+  : forall (sig: Sem.t I),
     semantics_eq sig sig.
 Proof.
   cofix semantics_eq_refl.
@@ -122,7 +147,7 @@ Qed.
 
 Lemma semantics_eq_sym
       {I:  Interface}
-  : forall (sig sig': Semantics I),
+  : forall (sig sig': Sem.t I),
     semantics_eq sig sig'
     -> semantics_eq sig' sig.
 Proof.
@@ -131,15 +156,14 @@ Proof.
   destruct H1.
   constructor.
   + intros A e.
-    symmetry.
-    exact (Hres A e).
+    now symmetry.
   + intros A e.
     apply (semantics_eq_sym (execEffect sig e) (execEffect sig' e) (Hnext A e)).
 Qed.
 
 Lemma semantics_eq_trans
       {I:  Interface}
-  : forall (sig sig' sig'':  Semantics I),
+  : forall (sig sig' sig'':  Sem.t I),
     semantics_eq sig sig'
     -> semantics_eq sig' sig''
     -> semantics_eq sig sig''.
@@ -150,9 +174,7 @@ Proof.
   destruct H2 as [Hres2 Hnext2].
   constructor.
   + intros A e.
-    transitivity (evalEffect sig' e).
-    exact (Hres1 A e).
-    exact (Hres2 A e).
+    now transitivity (evalEffect sig' e).
   + intros A e.
     apply (semantics_eq_trans (execEffect sig   e)
                               (execEffect sig'  e)
@@ -163,7 +185,7 @@ Qed.
 
 Add Parametric Relation
     (I:  Interface)
-  : (Semantics I) (semantics_eq)
+  : (Sem.t I) (semantics_eq)
   reflexivity  proved by (semantics_eq_refl)
   symmetry     proved by (semantics_eq_sym)
   transitivity proved by (semantics_eq_trans)
@@ -171,8 +193,9 @@ Add Parametric Relation
 
 Instance semantics_Equality
          (I:  Interface)
-  : Equality (Semantics I) :=
-  {| equal := @semantics_eq I |}.
+  : Equality (Sem.t I) :=
+  {| equal := @semantics_eq I
+  |}.
 
 (** ** Semantics Result Weak Equality
 
@@ -184,48 +207,48 @@ Instance semantics_Equality
 Definition run_semantics_eq
            {I:     Interface}
            {A:     Type}
-           (r r':  (A * Semantics I))
+           (r r':  Sem.result I A)
   : Prop :=
-  fst r = fst r' /\ snd r == snd r'.
+  Sem.res r = Sem.res r' /\ Sem.next r == Sem.next r'.
 
 Lemma run_semantics_eq_refl
       {I:  Interface}
       {A:  Type}
-      (x:  (A * Semantics I))
+      (x:  Sem.result I A)
   : run_semantics_eq x x.
 Proof.
-  constructor; reflexivity.
+  now constructor.
 Qed.
 
 Lemma run_semantics_eq_sym
            {I:    Interface}
            {A:    Type}
-           (x y:  (A * Semantics I))
+           (x y:  Sem.result I A)
   : run_semantics_eq x y
     -> run_semantics_eq y x.
 Proof.
   intros [H H']; symmetry in H; symmetry in H'.
-  constructor; [exact H|exact H'].
+  now constructor.
 Qed.
 
 Lemma run_semantics_eq_trans
            {I:     Interface}
            {A:     Type}
-           (x y z: (A * Semantics I))
+           (x y z: Sem.result I A)
   : run_semantics_eq x y
     -> run_semantics_eq y z
     -> run_semantics_eq x z.
 Proof.
   intros [H H'] [G G'].
   constructor.
-  + rewrite H; exact G.
-  + rewrite H'; exact G'.
+  + now rewrite H.
+  + now rewrite H'.
 Qed.
 
 Add Parametric Relation
     (I:  Interface)
     (A:  Type)
-  : (A * Semantics I) (@run_semantics_eq I A)
+  : (Sem.result I A) (@run_semantics_eq I A)
     reflexivity  proved by (run_semantics_eq_refl)
     symmetry     proved by (run_semantics_eq_sym)
     transitivity proved by (run_semantics_eq_trans)
@@ -234,7 +257,7 @@ Add Parametric Relation
 Instance run_semantics_Eq
          {I: Interface}
          {A: Type}
-  : Equality (A * Semantics I) :=
+  : Equality (Sem.result I A) :=
   { equal := run_semantics_eq
   }.
 
@@ -246,30 +269,28 @@ Instance run_semantics_Eq
 Add Parametric Morphism
     (I:  Interface)
     (A:  Type)
-  : (@fst A (Semantics I))
-    with signature (run_semantics_eq) ==> (@eq A)
+  : (@Sem.res I A)
+    with signature (@equal (Sem.result I A) _) ==> eq
   as fst_program_morphism.
 Proof.
-  intros o o' [H _H].
-  exact H.
+  now intros o o' [H _H].
 Qed.
 
 Add Parametric Morphism
     (I:  Interface)
     (A:  Type)
-  : (@snd A (Semantics I))
-    with signature (run_semantics_eq) ==> (semantics_eq)
+  : (@Sem.next I A)
+    with signature (@equal (Sem.result I A) _) ==> (@equal (Sem.t I) _)
   as snd_program_morphism.
 Proof.
-  intros o o' [_H H].
-  exact H.
+  now intros o o' [_H H].
 Qed.
 
 Add Parametric Morphism
     (I: Interface)
     (A: Type)
   : (handle)
-    with signature (@semantics_eq I) ==> (@eq (I A)) ==> (run_semantics_eq)
+    with signature (@equal (Sem.t I) _) ==> eq ==> (@equal (Sem.result I A) _)
       as semantics_handle_morphism.
 Proof.
   intros sig sig' Heq e.
@@ -277,35 +298,32 @@ Proof.
   + destruct Heq.
     apply (Hres A e).
   + destruct Heq.
-    assert (Hin:  semantics_eq (execEffect sig e) (execEffect sig' e))
+    now assert (Hin:  semantics_eq (execEffect sig e) (execEffect sig' e))
       by (apply Hnext).
-    apply Hnext.
 Qed.
 
 Add Parametric Morphism
     (I:  Interface)
     (A:  Type)
   : (evalEffect)
-    with signature (@semantics_eq I) ==> (@eq (I A)) ==> (eq)
+    with signature (@equal (Sem.t I) _) ==> (@eq (I A)) ==> eq
       as eval_effect_morphism.
 Proof.
   intros sig sig' Heq e.
   unfold evalEffect.
-  rewrite Heq.
-  reflexivity.
+  now rewrite Heq.
 Qed.
 
 Add Parametric Morphism
     (I: Interface)
     (A: Type)
   : (execEffect)
-    with signature (@semantics_eq I) ==> (@eq (I A)) ==> (@semantics_eq I)
+    with signature (@equal (Sem.t I) _) ==> (@eq (I A)) ==> (@equal (Sem.t I) _)
       as exec_effect_morphism.
 Proof.
   intros sig sig' Heq i.
   unfold execEffect.
-  rewrite Heq.
-  reflexivity.
+  now rewrite Heq.
 Qed.
 
 (* begin hide *)
@@ -313,7 +331,7 @@ Qed.
 (* A list of goal to check the rewrite tactic actually works *)
 
 Goal (forall (I:         Interface)
-             (sig sig':  Semantics I)
+             (sig sig':  Sem.t I)
              (A:         Type)
              (eqA:       Equality A)
              (e:         I A),
@@ -321,12 +339,11 @@ Goal (forall (I:         Interface)
          -> evalEffect sig e == evalEffect sig' e).
 Proof.
   intros I sig sig' A eqA e Heq.
-  rewrite Heq.
-  reflexivity.
+  now rewrite Heq.
 Qed.
 
 Goal (forall (I:         Interface)
-             (sig sig':  Semantics I)
+             (sig sig':  Sem.t I)
              (A:         Type)
              (eqA:       Equality A)
              (e:         I A),
@@ -334,8 +351,7 @@ Goal (forall (I:         Interface)
          -> execEffect sig e == execEffect sig' e).
 Proof.
   intros I sig sig' A eqA e Heq.
-  rewrite Heq.
-  reflexivity.
+  now rewrite Heq.
 Qed.
 (* end hide *)
 
@@ -359,11 +375,11 @@ CoFixpoint mkSemantics
            {State:  Type}
            (ps:     PS State)
            (s:      State)
-  : Semantics I :=
-  handler (
+  : Sem.t I :=
+  Sem.handler (
       fun (A:  Type)
-          (e:  I A) =>
-        (fst (ps A s e), mkSemantics ps (snd (ps A s e)))).
+          (e:  I A)
+      => Sem.mkRes (fst (ps A s e)) (mkSemantics ps (snd (ps A s e)))).
 
 (** * Semantics for Labeled Effects
 
@@ -380,13 +396,13 @@ Local Open Scope free_scope.
 Definition enrich_semantics
            {I:    Interface}
            (L:    Type)
-           (int:  Semantics I)
-  : Semantics (I <?> L) :=
+           (int:  Sem.t I)
+  : Sem.t (I <?> L) :=
   mkSemantics (fun (A:    Type)
-                   (sig:  Semantics I)
+                   (sig:  Sem.t I)
                    (e:    (I <?> L) A)
                => match e with
                   | e <:> _
-                    => handle sig e
+                    => (Sem.res (handle sig e), Sem.next (handle sig e))
                   end)
               int.

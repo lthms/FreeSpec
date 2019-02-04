@@ -19,18 +19,19 @@
  *)
 
 Require Import Coq.Bool.Bool.
-Require Import Sumbool.
+Require Import Coq.Bool.Sumbool.
 
-Require Import FreeSpec.TemporalLogic.
-Require Import FreeSpec.TemporalLogic.Notations.
+Require Import Prelude.PropBool.
+Require Import Prelude.Equality.
+Require Import Prelude.Control.
+
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Specification.Constant.
 
-Require Import Prelude.PropBool.
-Require Import Prelude.Equality.
-Require Import Prelude.Control.
+Require Import FreeSpec.Experiment.TemporalLogic.
+Require Import FreeSpec.Experiment.TemporalLogic.Notations.
 
 Local Open Scope formula_scope.
 Local Open Scope prelude_scope.
@@ -70,7 +71,7 @@ Section MAP.
 
   Definition MapSemantics
              (s: State)
-    : Semantics IMap
+    : Sem.t IMap
     := mkSemantics map_program_step s.
 
   Definition MapProgram := Program IMap.
@@ -79,8 +80,8 @@ Section MAP.
              (k: Key)
              (v: Value)
     : MapProgram Value :=
-    _ <- singleton (Write k v);
-    singleton (Read k).
+    _ <- request (Write k v);
+    request (Read k).
 
   Lemma write_then_read_1
         (s: State)
@@ -98,9 +99,9 @@ Section MAP.
         (v:    Value)
         (Hneq: k' /= k)
     : evalProgram (MapSemantics s)
-                  (_ <- singleton (Write k' v);
-                   singleton (Read k))
-       == evalProgram (MapSemantics s) (singleton (Read k)) .
+                  (_ <- request (Write k' v);
+                   request (Read k))
+       == evalProgram (MapSemantics s) (request (Read k)) .
   Proof.
     cbn.
     apply equalb_false in Hneq.
@@ -189,11 +190,11 @@ Section MAP.
 
     Definition read_write
       : MapProgram unit :=
-      v <- singleton (Read k);
-      singleton (Write k' v).
+      v <- request (Read k);
+      request (Write k' v).
 
     Lemma read_write_specificationful
-      : read_write =| never_read_x_specification[tt].
+      : read_write |> never_read_x_specification[tt].
     Proof.
       unfold read_write.
       constructor.
@@ -324,20 +325,20 @@ Section MAP.
                (k': Key)
                (v': Value)
       : MapProgram unit :=
-      singleton (Write k x)                                           ;;
-      singleton (Read k')                                             ;;
-      singleton (Write k v').
+      request (Write k x)                                           ;;
+      request (Read k')                                             ;;
+      request (Write k v').
 
-    Variables (int: Semantics IMap).
+    Variables (int: Sem.t IMap).
 
     Lemma enforces_policy
           (s: State)
       : forall k' v',
         k /= k'
         -> x /= v'
-        -> halt_satisfies (snd (runFormula int
-                                      (write_read_write k' v')
-                                      policy_step)).
+        -> halt_satisfies (snd (Sem.res (runFormula int
+                                                    (write_read_write k' v')
+                                                    policy_step))).
     Proof.
       intros.
       cbn.

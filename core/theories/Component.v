@@ -1,6 +1,9 @@
 (* FreeSpec
  * Copyright (C) 2018–2019 ANSSI
  *
+ * Contributors:
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -19,31 +22,37 @@ Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Abstract.
 
 Require Import Prelude.Control.
 Require Import Prelude.Control.State.
 
-(** * Stateful Refinement
+(** * Modeling Components *)
 
-    ** Definition
- *)
-
-Definition StatefulRefinement
-           (I J:  Interface)
-           (S:    Type) :=
+(** The initial goal of FreeSpec remains to model components (1) which
+    exposes and uses interfaces, and (2) which carries their own
+    state. To model (1), we rely on the [Program] monad. A Component
+    is therefore model as a function that maps operations of the
+    [Interface] it exposes to [Program] parameterized with the
+    [Interface] it uses. Besides, to model the stateful nature of
+    components, we leverage the [StateT] monad. *)
+Definition Component
+           (I:  Interface)
+           (S:  Type)
+           (J:  Interface) :=
   forall (A: Type),
     I A -> StateT S (Program J) A.
 
-Definition StatefulSemantics
+(** It then becomes possible to turn a component model into a
+    semantics for the interface it exposes. *)
+Definition ComponentSemantics
            {I J:  Interface}
            {S:    Type}
-           (sr:   StatefulRefinement I J S)
+           (sr:   Component I S J)
            (s:    S)
-           (sig:  Semantics J)
-  : Semantics I :=
+           (sig:  Sem.t J)
+  : Sem.t I :=
     mkSemantics (fun {A:   Type}
-                     (st:  (S * Semantics J))
+                     (st:  (S * Sem.t J))
                      (e:   I A)
                  => ( fst (evalProgram (snd st) (sr A e (fst st)))
                     , ( snd (evalProgram (snd st) (sr A e (fst st)))
@@ -53,23 +62,33 @@ Definition StatefulSemantics
                 )
                 (s, sig).
 
-(** ** Specification Compliance
+(** ** Specification Compliance *)
+
+(** This definition of what a [Component] allows for specifying a
+    system in terms of inter-connected components. Our motivation to
+    use Coq is to leverage its features to _verify_ these components
+    and, ultimately, the system as a whole.
+
+    The “local” verification process could be summarized as follows:
+    as long as a given component is used in accordance with an
+    abstract specification it exposes, it will itself use the
+    components it relies on in accordance with their respective
+    abstract specifications. Stated this way, we can already see why
+    FreeSpec is advertized as a _compositional_ reasoning framework.
 
     We consider so-called “predicates of synchronization” between two
-    abstract States [Si] (input) and [So] (output) linked by a
-    concrete state [S].
- *)
-
+    witness states [w__i] (input) and [w__j] (output) linked by a concrete
+    state [S].*)
 Definition sync_pred
            (W_I W_J: Type)
            (S: Type)
   := W_I -> S -> W_J -> Prop.
 
-Definition correct_refinement
+Definition correct_component
            {W_I W_J:  Type}
            {I J:      Interface}
            {S:        Type}
-           (sr:       StatefulRefinement I J S)
+           (sr:       Component I S J)
            (master:   Specification W_I I)
            (slave:    Specification W_J J)
            (sync:     sync_pred W_I W_J S) :=
@@ -80,20 +99,20 @@ Definition correct_refinement
          (e:    I A),
     sync w_i s w_j
     -> precondition master e w_i
-    -> (sr A e s) =| slave[w_j].
+    -> (sr A e s) |> slave[w_j].
 
 Definition sync_preservation
            {W_I W_J:  Type}
            {I J:      Interface}
            {S:        Type}
-           (sr:       StatefulRefinement I J S)
+           (sr:       Component I S J)
            (master:   Specification W_I I)
            (slave:    Specification W_J J)
            (sync:     sync_pred W_I W_J S) :=
   forall (w_i:    W_I)
          (s:      S)
          (w_j:    W_J)
-         (sig:    Semantics J)
+         (sig:    Sem.t J)
          (Hcomp:  sig |= slave[w_j])
          {A:      Type}
          (e:      I A),
@@ -107,14 +126,14 @@ Definition sync_postcondition
            {W_I W_J:  Type}
            {I J:      Interface}
            {S:        Type}
-           (sr:       StatefulRefinement I J S)
+           (sr:       Component I S J)
            (master:   Specification W_I I)
            (slave:    Specification W_J J)
            (sync:     sync_pred W_I W_J S) :=
   forall (w_i:    W_I)
          (s:      S)
          (w_j:    W_J)
-         (sig:    Semantics J)
+         (sig:    Sem.t J)
          (Hcomp:  sig |= slave[w_j])
          {A:      Type}
          (e:      I A),
@@ -126,89 +145,47 @@ Theorem compliant_refinement
         {W_I W_J:    Type}
         {I J:        Interface}
         {S:          Type}
-        (sr:         StatefulRefinement I J S)
+        (sr:         Component I S J)
         (master:     Specification W_I I)
         (slave:      Specification W_J J)
         (sync:       sync_pred W_I W_J S)
         (Hsyncpres:  sync_preservation sr master slave sync)
         (Hsyncp:     sync_postcondition sr master slave sync)
-        (Hcorrect:   correct_refinement sr master slave sync)
+        (Hcorrect:   correct_component sr master slave sync)
   : forall (w_i:   W_I)
            (s:    S)
            (w_j:   W_J)
-           (sig:  Semantics J)
+           (sig:  Sem.t J)
            (Hcomp: sig |= slave[w_j]),
     sync w_i s w_j
-    -> StatefulSemantics sr s sig |= master[w_i].
+    -> ComponentSemantics sr s sig |= master[w_i].
 Proof.
   cofix compliant_refinement.
   intros w_i s w_j sig Hcomp Hsync.
   constructor.
   + intros A e Hpre.
     unfold sync_postcondition in Hsyncp.
-    assert (evalEffect (StatefulSemantics sr s sig) e
+    assert (evalEffect (ComponentSemantics sr s sig) e
             = fst (evalProgram sig (sr A e s)))
       as Heq by reflexivity.
     rewrite Heq.
     apply (Hsyncp w_i s w_j sig Hcomp A e Hsync Hpre).
   + intros A e Hpre.
-    unfold correct_refinement in Hcorrect.
-    assert ((sr A e s) =| slave[w_j])
+    unfold correct_component in Hcorrect.
+    assert ((sr A e s) |> slave[w_j])
       as Hcp
         by  apply (Hcorrect w_i s w_j A e Hsync Hpre).
-    assert (execEffect (StatefulSemantics sr s sig) e
-            = StatefulSemantics sr
+    assert (execEffect (ComponentSemantics sr s sig) e
+            = ComponentSemantics sr
                                 (snd (evalProgram sig (sr A e s)))
                                 (execProgram sig (sr A e s)))
       as Hassoc
         by reflexivity.
     rewrite Hassoc.
     apply (compliant_refinement _ _ (specification_derive (sr A e s) sig slave w_j)).
-    ++ rewrite <- (abstract_exec_exec_program_same (sr A e s)
-                                                   w_j
-                                                   (abstract_step slave)
-                                                   sig).
-       apply (compliant_correct_compliant _ _ _ sig Hcomp Hcp).
+    ++ now apply correct_program_compliant_semantics_compliant_semantics.
     ++ apply Hsyncpres.
        +++ exact Hcomp.
        +++ exact Hsync.
        +++ exact Hpre.
 Qed.
-
-(** * Pure Refinement
-
- *)
-
-Definition PureRefinement
-           (I J:  Interface)
-  := forall (A:  Type),
-    I A -> Program J A.
-
-Fixpoint refine
-         {I J:   Interface}
-         {A:     Type}
-         (p:     Program I A)
-         (ref:   PureRefinement I J)
-  : Program J A :=
-  match p with
-  | Pure x
-    => Pure x
-  | Request e f
-    => match (ref _ e) with
-       | Pure x
-         => refine (f x) ref
-       | Request e g
-         => Request e (fun x => pbind (g x) (fun y => refine (f y) ref))
-       end
-  end.
-
-Definition adapt
-           {I J K:  Interface}
-           {S:      Type}
-           (sref:      StatefulRefinement I J S)
-           (pref:      PureRefinement J K)
-  : StatefulRefinement I K S :=
-  fun (A:  Type)
-      (e:  I A)
-      (s:  S)
-  => refine (sref A e s) pref.

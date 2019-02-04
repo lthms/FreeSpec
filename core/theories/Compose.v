@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2018 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,10 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-(* begin hide *)
 Require Import Coq.Setoids.Setoid.
-(* end hide *)
 
+Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Specification.
@@ -30,45 +29,6 @@ Require Import Prelude.Equality.
 Require Import Prelude.Control.
 
 Local Open Scope prelude_scope.
-
-(** Often, one [Program] will rely on more than one [Interface]. Since
-    operational [Semantics] are dedicated to one interface, we need to
-    compose together the main components of the FreeSpec
-    Formalism. This library provides several operators to do so.
-
- *)
-
-(** * Generic Typeclass
-
-  The [Use] Typeclass will be used to implement extensible effects.
-
- *)
-
-Class Use
-      (i:   Type -> Type)
-      (ix:  Type -> Type)
-  := { lift_eff (a:  Type)
-                (e:  i a)
-       : ix a
-     }.
-
-Instance Instance_Use
-         (i:  Type -> Type)
-  : Use i i :=
-  { lift_eff := fun (a:  Type)
-                    (e:  i a)
-                => e
-  }.
-
-Arguments lift_eff [i ix _ a] (e).
-
-Definition request
-           {i:   Type -> Type}
-           {ix:  Type -> Type} `{Use i ix}
-           {a:   Type}
-           (e:   i a)
-  : Program ix a :=
-  Request (lift_eff e) (@pure _ _ a).
 
 (** * [Interface] Composition
 
@@ -126,19 +86,18 @@ Instance IntCompose_Use_R
 
 CoFixpoint mkCompSemantics
            {I J:    Interface}
-           (sig_i:  Semantics I)
-           (sig_j:  Semantics J)
-  : Semantics (I <+> J) :=
-  handler (fun {A:  Type}
-               (e:  (I <+> J) A)
-           => match e with
-              | InL e_i => ( evalEffect sig_i e_i
-                             , mkCompSemantics (execEffect sig_i e_i) sig_j
-                           )
-              | InR e_j => ( evalEffect sig_j e_j
-                             , mkCompSemantics sig_i (execEffect sig_j e_j)
-                           )
-              end).
+           (sig_i:  Sem.t I)
+           (sig_j:  Sem.t J)
+  : Sem.t (I <+> J) :=
+  Sem.handler (fun {A:  Type}
+                   (e:  (I <+> J) A)
+               => match e with
+                  | InL e_i => let res := handle sig_i e_i in
+                               Sem.mkRes (Sem.res res)
+                                         (mkCompSemantics (Sem.next res) sig_j)
+                  | InR e_j => Sem.mkRes (evalEffect sig_j e_j)
+                                         (mkCompSemantics sig_i (execEffect sig_j e_j))
+                  end).
 
 (** We define three morphisms. Just in case. By doing so, we will be
     able to use the [rewrite] tactic to replace one operational
@@ -149,7 +108,7 @@ CoFixpoint mkCompSemantics
 Add Parametric Morphism
     (I J:  Interface)
   : (@mkCompSemantics I J)
-    with signature (semantics_eq) ==> (semantics_eq) ==> (semantics_eq)
+    with signature (@equal (Sem.t I) _) ==> (@equal (Sem.t J) _) ==> (@equal (Sem.t $ I <+> J) _)
       as mk_comp_semantics_complete_morphism.
 Proof.
   cofix mk_comp_semantics_complete_morphism.
@@ -185,87 +144,10 @@ Proof.
                                                   H).
 Qed.
 
-(* TODO: are these two morphisms really needed? *)
-Add Parametric Morphism
-    (I J:  Interface)
-  : (@mkCompSemantics I J)
-    with signature (semantics_eq) ==> (eq) ==> (semantics_eq)
-      as mk_comp_semantics_left_morphism.
-Proof.
-  intros sig_1 sig_2 Heq sig'.
-  rewrite Heq.
-  reflexivity.
-Qed.
-
-Add Parametric Morphism
-    (I J:  Interface)
-  : (@mkCompSemantics I J)
-    with signature (eq) ==> (semantics_eq) ==> (semantics_eq)
-      as mk_comp_semantics_right_morphism.
-Proof.
-  intros sig sig_1' sig_2' Heq.
-  rewrite Heq.
-  reflexivity.
-Qed.
-
 Infix "<x>" :=
   (mkCompSemantics)
     (at level 50, left associativity)
   : free_scope.
-
-(** ** Effective Semantics
-
-    We also define a “maybe more efficient version” of
-    [mkCompSemantics] which uses the [let ... in] language
-    construction.
-
- *)
-
-CoFixpoint mkCompSemantics'
-           {I J:    Interface}
-           (sig_i:  Semantics I)
-           (sig_j:  Semantics J)
-  : Semantics (I <+> J) :=
-  handler (fun {A:  Type}
-               (e:  (I <+> J) A)
-           => match e with
-              | InL e_i => let (x, sig_i') := handle sig_i e_i
-                           in (x, mkCompSemantics' sig_i' sig_j)
-              | InR e_j => let (x, sig_j') := handle sig_j e_j
-                           in (x, mkCompSemantics' sig_i sig_j')
-              end).
-
-(** It can be shown that these two semantics composition operators are
-    equivalent.
-
- *)
-
-Fact mk_comp_semantics_equivalence
-     {I J:  Interface}
-  : forall (sig_i:  Semantics I)
-           (sig_j:  Semantics J),
-    sig_i <x> sig_j == mkCompSemantics' sig_i sig_j.
-Proof.
-  cofix mk_comp_semantics_equivalence.
-  intros sig_i sig_j.
-  constructor.
-  + intros A e.
-    induction e;
-      unfold mkCompSemantics, mkCompSemantics';
-      unfold evalEffect;
-      cbn; [ induction (handle sig_i e)
-           | induction (handle sig_j e)
-           ];
-      reflexivity.
-  + intros A e.
-    induction e;
-      unfold mkCompSemantics, mkCompSemantics', execEffect;
-      cbn; [
-        induction (handle sig_i e)
-      | induction (handle sig_j e)
-      ]; cbn;
-        apply mk_comp_semantics_equivalence.
-Qed.
 
 (** * Abstract Specification Composition
 
@@ -343,8 +225,8 @@ Infix "<·>" :=
 Lemma compliant_semantics_compose_compliant_semantics
       {W_I W_J:  Type}
       {I J:      Interface}
-  : forall (sig_i:  Semantics I)
-           (sig_j:  Semantics J)
+  : forall (sig_i:  Sem.t I)
+           (sig_j:  Sem.t J)
            (c_i:    Specification W_I I)
            (c_j:    Specification W_J J)
            (w_i:    W_I)
@@ -444,9 +326,9 @@ Lemma expand_compliant_left
            {I J:    Interface}
            {c:      Specification W I}
            {w:      W}
-           {sig_i:  Semantics I}
+           {sig_i:  Sem.t I}
            (Hcomp:  sig_i |= c[w])
-           (sig_j:  Semantics J),
+           (sig_j:  Sem.t J),
     sig_i <x> sig_j |= (expand_specification_left c J)[w].
 Proof.
   cofix expand_compliant_left.
@@ -535,9 +417,9 @@ Lemma expand_compliant_right
            {I J:    Interface}
            {c:      Specification W I}
            {w:      W}
-           {sig_i:  Semantics I}
+           {sig_i:  Sem.t I}
            (Hcomp:  sig_i |= c[w])
-           (sig_j:  Semantics J),
+           (sig_j:  Sem.t J),
     sig_j <x> sig_i |= (expand_specification_right c J)[w].
 Proof.
   cofix expand_compliant_right.

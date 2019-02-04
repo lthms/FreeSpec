@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2018 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ Definition escape_undefined_hell
  *)
 
 Lemma escape_undefined_hell_compliance
-      (int:  Semantics Undefined)
+      (int:  Sem.t Undefined)
   : int |= escape_undefined_hell [tt].
 Proof.
   constructor.

@@ -23,7 +23,6 @@ Require Import Prelude.Control.Classes.
 Require Import Prelude.Control.State.
 
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Abstract.
 Require Import FreeSpec.Compose.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
@@ -56,19 +55,19 @@ Module Airlock.
 
   Definition open_first_door
     : AirlockM unit :=
-    lift (singleton (InL Door.Open)).
+    lift (request (InL Door.Open)).
 
   Definition close_first_door
     : AirlockM unit :=
-    lift (singleton (InL Door.Close)).
+    lift (request (InL Door.Close)).
 
   Definition open_second_door
     : AirlockM unit :=
-    lift (singleton (InR Door.Open)).
+    lift (request (InR Door.Open)).
 
   Definition close_second_door
     : AirlockM unit :=
-    lift (singleton (InR Door.Close)).
+    lift (request (InR Door.Close)).
 
   Definition first_door_is_open
     : AirlockM bool :=
@@ -161,7 +160,7 @@ Module Airlock.
              (w:    Door.w * Door.w)
              (act:  i a),
       sync_and_sec st w
-      -> impl act st =| spec [w].
+      -> impl act st |> spec [w].
   Proof.
     intros a [d1 d2] [w1 w2] act Hsync.
     inversion Hsync;
@@ -173,7 +172,7 @@ Module Airlock.
     : forall {a:    Type}
              (st:   bool * bool)
              (w:    Door.w * Door.w)
-             (sem:  Semantics (Door.i <+> Door.i))
+             (sem:  Sem.t (Door.i <+> Door.i))
              (act:  i a),
       sync_and_sec st w
       -> sem |= spec [w]

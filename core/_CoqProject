@@ -2,21 +2,13 @@
 
 theories/Interface.v
 theories/Semantics.v
-theories/MonadSemantics.v
 theories/Program.v
-theories/Abstract.v
 theories/Specification.v
+theories/Component.v
 theories/Compose.v
-theories/Refine.v
-theories/TemporalLogic.v
-theories/TemporalLogic/Notations.v
 theories/Specification/Reference.v
-theories/Specification/Temporal.v
 theories/Specification/Undefined.v
 theories/Specification/Constant.v
 theories/Undefined.v
 theories/Tactics.v
 theories/Concurrent.v
-theories/Proxy.v
-theories/Open.v
-theories/Row.v

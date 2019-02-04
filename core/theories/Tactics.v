@@ -59,10 +59,10 @@ Ltac run_program sig :=
         remember (eff) as i;
         cut (precondition spec i state); [
           intro Hreq_i;
-          remember (fst (handle sig i)) as res eqn: Heq_res;
+          remember (Sem.res (handle sig i)) as res eqn: Heq_res;
           assert (Hprom_i:  postcondition spec i res state)
             by (rewrite Heq_res; apply H; exact Hreq_i);
-          remember (snd (handle sig i)) as int eqn: Heq_int;
+          remember (Sem.next (handle sig i)) as int eqn: Heq_int;
           remember (abstract_step spec i res state) as abs eqn: Heq_abs;
           assert (Henf_int:  int |= spec [abs])
             by (rewrite Heq_abs;
@@ -77,7 +77,7 @@ Ltac run_program sig :=
 
 Ltac simplify_postcondition :=
   match goal with
-  | [ Hres:  ?res = fst (handle _ ?eff) |- _]
+  | [ Hres:  ?res = Sem.res (handle _ ?eff) |- _]
     => match goal with
        | [ Heff:  eff = _ |- _ ]
          => match goal with

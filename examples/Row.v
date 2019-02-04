@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2018 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,13 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+Require Import Coq.Lists.List.
+
 Require Import FreeSpec.Interface.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Compose.
 Require Import FreeSpec.Semantics.
-Require Import FreeSpec.Row.
-Require Import Coq.Lists.List.
+
+Require Import FreeSpec.Experiment.Row.
 
 Require Import Prelude.Control.
 
@@ -70,7 +72,7 @@ Definition my_program
              log_nat y.
 
 Definition stack_sem
-  : Semantics NatStack :=
+  : Sem.t NatStack :=
   mkSemantics (fun (A:  Type)
                    (l:  list nat)
                    (e:  NatStack A)
@@ -87,7 +89,7 @@ Definition stack_sem
                   end) nil.
 
 Definition log_sem
-  : Semantics LogNat :=
+  : Sem.t LogNat :=
   mkSemantics (fun (A:  Type)
                    (l:  list nat)
                    (e:  LogNat A)
@@ -97,7 +99,7 @@ Definition log_sem
                   end) nil.
 
 Definition example_semantics :=
-  <| stack_sem; log_sem |>.
+  <<| stack_sem; log_sem |>>.
 
 Definition test :=
   evalProgram example_semantics (my_program 0).
@@ -113,13 +115,13 @@ Definition spec_stack
                            (x:  a)
                            (s:  nat)
                        => S s
-   ; precondition   := no_pre
-   ; postcondition  := fun (a:  Type)
-                           (e:  NatStack a)
-                           (x:  a)
-                           (s:  nat)
-                       => True
-   |}.
+  ; precondition   := no_pre
+  ; postcondition  := fun (a:  Type)
+                          (e:  NatStack a)
+                          (x:  a)
+                          (s:  nat)
+                      => True
+  |}.
 
 Definition spec_log
   : Specification nat LogNat :=
@@ -128,20 +130,20 @@ Definition spec_log
                            (x:  a)
                            (s:  nat)
                        => S s
-   ; precondition   := no_pre
-   ; postcondition  := fun (a:  Type)
-                           (e:  LogNat a)
-                           (x:  a)
-                           (s:  nat)
-                       => True
-   |}.
+  ; precondition   := no_pre
+  ; postcondition  := fun (a:  Type)
+                          (e:  LogNat a)
+                          (x:  a)
+                          (s:  nat)
+                      => True
+  |}.
 
 Definition example_specification :=
   |< spec_stack; spec_log >|.
 
 Definition full_stack :=
   specification_derive (my_program 0)
-                       <| stack_sem; log_sem |>
+                       <<| stack_sem; log_sem |>>
                        |< spec_stack; spec_log >|
                        << 0; 0 >>.
 
