@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2018 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,22 +20,17 @@
 
 (** * Regural [Interface]s
 
-    We consider an [Interface] as a set of _Instructions_. An
-    Instruction may take one or more arguments and is associated and,
-    once “executed”, returns an element of a given type.
-
-    An [Interface] can easily be defined using a coq inductive
-    type. You can have a look at [FreeSpec.Examples] if you want to
-    see some simple or more complex examples.
-
- *)
+    We consider an [Interface] to be a set of _operations_ whose
+    result type only is known. This is usually encoded thanks to a
+    parameterized type in functional programming language, where the
+    type parameter is the type of the result. *)
 
 Definition Interface := Type -> Type.
 
-(** That is, if [I] is an interface, [i : I A] is an instruction which
-    returns an element of [A] once handled.
+(** That is, if [I] is an interface, [o : I A] is an operation whose
+    result (computed by a handler) is expected to be of type [A]. *)
 
-    * Labeled [Interface]s
+(** * Labeled [Interface]s
 
     We can label an interface with a particular type to enrich a
     primitive call with a context. The main idea is this label will be

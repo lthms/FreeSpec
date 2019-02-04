@@ -20,3 +20,4 @@ Makefile.conf
 
 # generated docs
 html/
+docs/freespec

@@ -33,22 +33,24 @@ Require Import Prelude.Control.Classes.
 
 Local Open Scope prelude_scope.
 
-(** * The [Program] Monad
+(** * The [Program] Monad *)
 
-    In this section, we introduce the [Program] Monad. Its definition
-    is inspired by the Haskell #<a
+(** In this section, we introduce the [Program] Monad. Its definition
+    was originally inspired by the Haskell #<a
     href="https://hackage.haskell.org/package/operational">#operational#</a>#
-    package.  Thanks to the [Program] Monad, it becomes easy to
-    specify complex programs with effects which belong to a given
-    interface.
+    package, and then has been simplified following the example of the
+    [itree] (see “From C to Interaction Trees” by the DeepWeb
+    project).
 
-    To realize a given program, the [runProgram] function is
-    provided. This functions takes an operational [Semantics] in
+    Thanks to the [Program] Monad, it becomes easy to
+    specify complex programs with effects which belong to a given
+    interface. *)
+
+(*  To realize a given program, the [runProgram] function is
+    provided. This functions takes an operational [Sem.t] in
     addition to a [Program] and returns the result of the computation
     along with a new operational semantics. Two helpers functions
-    ([evalProgram] and [execProgram]) are provided.
-
- *)
+    ([evalProgram] and [execProgram]) are provided. *)
 
 (** ** Definition
 
@@ -56,17 +58,15 @@ Local Open Scope prelude_scope.
     and [A] the type of the result of a given program, the type of
     this computation specification is [Program I A].
 
-    Under the hood, a [Program] is an AST to wrap and chain several
-    call to an underlying interface. More precisely, a [Program] can
-    be:
+    Under the hood, an instance of the [Program] monad wraps and
+    chains several calls to an underlying interface. More precisely,
+    [Program] has two constructors:
 
-    - [Pure a], a pure value
-    - [Request i], a call to the underlying interface through the
-      instruction [i]
-    - [Bind p f], a first computation whose result determines the
-      following computation to execute
-
- *)
+    - [Pure a], which describes the (pure) computation of the value
+      [a]
+    - [Request i f], which describes a call to the underlying
+      interface through the instruction [i] and a continuation [f] to
+      process this result *)
 
 Inductive Program
           (I:  Interface)
@@ -81,49 +81,52 @@ Inductive Program
 Arguments Pure [I A] (a).
 Arguments Request [I A B] (e f).
 
-(** ** Realisation
+(** ** Working with Arbitrary Interfaces *)
 
-    To actually realise a program with effects [Program I A], one
-    needs a corresponding operational semantics [Semantics I] for the
-    interface described by [I].
+(** In practice, one computation may require more than one
+    [Interface]s, which means we need to be able to compose Interfaces
+    together. The Library [FreeSpec.Compose] provides several
+    abstraction to that end.
 
- *)
+    This poses a challenge in terms of [Program] specifications
+    reusability. Thanks to the [bind] function, [Program]
+    specifications can be composed together, but #<i>#they need to
+    share the same [Interface]#</i>#. To overcome this challenge, we
+    follow the example of the Haskell #<a
+    href="https://hackage.haskell.org/package/extensible-effects">#extensible-effects#</a>#
+    package. Thanks to the [Use] typeclass, we can specify which
+    interfaces a given [Program] specification uses, yet leave the
+    actual interface abstract. *)
+Class Use (i ix: Interface)
+  := { lift_eff (a:  Type): i a -> ix a
+     }.
 
-Fixpoint runProgram
-         {I:    Interface}
-         {A:    Type}
-         (sig:  Semantics I)
-         (p:    Program I A)
-  : (A * Semantics I) :=
-  match p with
-  | Pure a
-    => (a, sig)
-  | Request e f
-    => runProgram (snd (handle sig e)) (f (fst (handle sig e)))
-  end.
+(** The most obvious instance of [Use] is [Use i i]. *)
+Instance Instance_Use (i: Interface): Use i i :=
+  { lift_eff := fun _ => id
+  }.
 
-Definition singleton
-           {I:  Interface}
-           {A:  Type}
-           (e:  I A)
-  : Program I A :=
-  Request e (@Pure I A).
+Arguments lift_eff [i ix _ a] (e).
 
-Definition evalProgram
-           {I:    Interface}
-           {A:    Type}
-           (sig:  Semantics I)
-           (p:    Program I A)
-  : A :=
-  fst (runProgram sig p).
+(** Using the [Use] typeclass, we can implement a more generic
+    replacement of the old definition of the [Request]
+    constructor.
 
-Definition execProgram
-           {I:   Interface}
-           {A:   Type}
-           (sig: Semantics I)
-           (p:   Program I A)
-  : Semantics I :=
-  snd (runProgram sig p).
+    As a reminder, in the first iterations of FreeSpec, [Request] was
+    a constructor of type [i a -> Program i a], to model a computation
+    that consists in waiting for the result of an operation and
+    returning this very result.
+
+    We now introduce [request]. Its purposes is similar, but thanks to
+    [Use], this functions can be used more easily in a [Program]
+    specification with a different interface type. *)
+Definition request
+           {i:   Type -> Type}
+           {ix:  Type -> Type} `{Use i ix}
+           {a:   Type}
+           (e:   i a)
+  : Program ix a :=
+  Request (lift_eff e) (@Pure ix a).
 
 (** ** [Program]s Weak Equality
 
@@ -140,90 +143,6 @@ Instance program_Eq
   { equal := eq
   }.
 
-(** Also, we can easily show the [program_eq] property is strong
-    enough to be used to replace two equivalent programs in several
-    cases, by defining the related morphisms.
-
- *)
-
-Add Parametric Morphism
-    (I: Interface)
-    (A: Type)
-  : (runProgram)
-    with signature (@semantics_eq I) ==> (@equal (Program I A) _) ==> (@run_semantics_eq I A)
-  as run_program_morphism_2.
-Proof.
-  intros sig1 sig2 Heq_sig p q Heq_p.
-  induction Heq_p.
-  revert sig1 sig2 Heq_sig.
-  induction p; intros sig1 sig2 Heq_sig.
-  + constructor; [ reflexivity |].
-    apply Heq_sig.
-  + cbn.
-    assert (Hx: fst (handle sig1 e) = fst (handle sig2 e)) by apply Heq_sig.
-    rewrite Hx.
-    apply H.
-    apply Heq_sig.
-Qed.
-
-Add Parametric Morphism
-    (I:  Interface)
-    (A:  Type)
-  : (execProgram)
-    with signature (@equal (Semantics I) _) ==> (@equal (Program I A) _) ==> (@semantics_eq I)
-  as exec_program_morphism.
-Proof.
-  intros sig sig' Heqs p q Heqp.
-  unfold execProgram.
-  rewrite Heqs.
-  rewrite Heqp.
-  reflexivity.
-Qed.
-
-Add Parametric Morphism
-    (I:  Interface)
-    (A:  Type)
-  : (evalProgram)
-    with signature (@equal (Semantics I) _) ==> (@equal (Program I A) _) ==> eq
-  as eval_program_morphism.
-Proof.
-  intros sig sig' Heqs p q Heqp.
-  unfold evalProgram.
-  rewrite Heqs.
-  rewrite Heqp.
-  reflexivity.
-Qed.
-
-Lemma program_eq_sig_eq
-      {I:    Type -> Type}
-      {A:    Type} `{Equality A}
-      (p q:  Program I A)
-  : p == q
-    -> forall (sig sig':  Semantics I),
-      sig == sig'
-      -> evalProgram sig p == evalProgram sig' q.
-Proof.
-  intros Heq sig1 sig2 Heq_sig.
-  rewrite Heq_sig.
-  rewrite Heq.
-  reflexivity.
-Qed.
-
-Lemma program_eq_res_eq
-      {I:    Type -> Type}
-      {A:    Type}
-      (p q:  Program I A)
-  : p == q
-    -> forall (sig sig':  Semantics I),
-      sig == sig'
-      -> evalProgram sig p = evalProgram sig' q.
-Proof.
-  intros Heq sig1 sig2 Heq_sig.
-  rewrite Heq_sig.
-  rewrite Heq.
-  reflexivity.
-Qed.
-
 (** ** Monad Laws
 
     [Program] _is_ a Monad and therefore obeys the Monad laws.  The
@@ -235,11 +154,10 @@ Qed.
     will have more chance to behave the way its users may expect it
     to.
 
-    Fortunately, in our case, proving the Monad laws is straightforward.
+    Fortunately, in our case, proving the Monad laws is
+    straightforward. *)
 
- *)
-
-Fixpoint pbind
+Fixpoint program_bind
          {I:    Interface}
          {A B:  Type}
          (p:    Program I A)
@@ -247,63 +165,20 @@ Fixpoint pbind
   : Program I B :=
   match p with
   | Pure x => f x
-  | Request e g => Request e (fun x => pbind (g x) f)
+  | Request e g => Request e (fun x => program_bind (g x) f)
   end.
-
-Lemma run_program_bind_assoc
-      {I:    Interface}
-      {A B:  Type}
-      (sig:  Semantics I)
-      (p:    Program I A)
-      (f:    A -> Program I B)
-  : runProgram sig (pbind p f)
-    == runProgram (execProgram sig p) (f (evalProgram sig p)).
-Proof.
-  revert sig; induction p; intro sig.
-  + reflexivity.
-  + apply H.
-Qed.
-
-Lemma eval_program_bind_assoc
-      {I:    Interface}
-      {A B:  Type}
-      (sig:  Semantics I)
-      (p:    Program I A)
-      (f:    A -> Program I B)
-  : evalProgram sig (pbind p f)
-    = evalProgram (execProgram sig p) (f (evalProgram sig p)).
-Proof.
-  unfold evalProgram.
-  rewrite run_program_bind_assoc.
-  reflexivity.
-Qed.
-
-Lemma exec_program_bind_assoc
-      {I:    Interface}
-      {A B:  Type}
-      (sig:  Semantics I)
-      (p:    Program I A)
-      (f:    A -> Program I B)
-  : execProgram sig (pbind p f)
-    = execProgram (execProgram sig p) (f (evalProgram sig p)).
-Proof.
-  revert sig; induction p; intro sig.
-  + reflexivity.
-  + apply H.
-Qed.
 
 Lemma program_eq_append_pure
       {I:  Type -> Type}
       {A:  Type}
       (p:  Program I A)
-  : p = pbind p (@Pure I A).
+  : p = program_bind p (@Pure I A).
 Proof.
   induction p.
   + reflexivity.
   + cbn.
     apply functional_extensionality in H.
-    rewrite <- H.
-    reflexivity.
+    now rewrite <- H.
 Qed.
 
 Lemma program_eq_bind_assoc
@@ -312,7 +187,7 @@ Lemma program_eq_bind_assoc
       (p:      Program I A)
       (f:      A -> Program I B)
       (g:      B -> Program I C)
-  : pbind (pbind p f) g = pbind p (fun x => pbind (f x) g).
+  : program_bind (program_bind p f) g = program_bind p (fun x => program_bind (f x) g).
 Proof.
   induction p; [reflexivity |].
   cbn.
@@ -327,23 +202,23 @@ Definition program_map
            (f:    A -> B)
            (p:    Program I A)
   : Program I B :=
-  pbind p (fun x => Pure (f x)).
+  program_bind p (fun x => Pure (f x)).
 
-Instance program_Functor
-         (I:  Interface)
+Program Instance program_Functor
+        (I:  Interface)
   : Functor (Program I) :=
   { map := @program_map I
   }.
-Proof.
-  + intros A HA x.
-    unfold program_map.
-    rewrite <- program_eq_append_pure.
-    reflexivity.
-  + intros A B C HC u v x.
-    unfold compose.
-    unfold program_map.
-    rewrite program_eq_bind_assoc.
-    reflexivity.
+Next Obligation. (* program_map id x = id x *)
+  unfold program_map.
+  rewrite <- program_eq_append_pure.
+  reflexivity.
+Defined.
+Next Obligation. (* program_map (v >>> u) x = (program_map v >>> program_map u) x *)
+  unfold compose.
+  unfold program_map.
+  rewrite program_eq_bind_assoc.
+  reflexivity.
 Defined.
 
 Definition program_apply
@@ -352,7 +227,7 @@ Definition program_apply
            (pf:   Program I (A -> B))
            (p:    Program I A)
   : Program I B :=
-  pbind pf (fun f => pbind p (fun x => Pure (f x))).
+  program_bind pf (fun f => map f p).
 
 Definition program_pure
            {I:  Interface}
@@ -365,118 +240,190 @@ Lemma program_eq_bind
       {A B:  Type}
       (p:    Program I A)
       (f g:  A -> Program I B)
-  : f = g -> pbind p f = pbind p g.
+  : f = g -> program_bind p f = program_bind p g.
 Proof.
   intros R; rewrite R.
   reflexivity.
 Qed.
 
-Instance program_Applicative
-         (I:  Interface)
+Polymorphic Program Instance program_Applicative
+            (I:  Interface)
   : Applicative (Program I) :=
   { pure := @program_pure I
   ; apply := @program_apply I
   }.
-Proof.
-  + intros A HA p.
-    unfold program_apply, program_pure.
-    cbn.
-    rewrite <- program_eq_append_pure.
-    reflexivity.
-  + intros A B C HC u v p.
-    unfold program_apply, program_pure.
-    cbn.
-    repeat rewrite program_eq_bind_assoc.
-    cbn.
-    apply program_eq_bind.
-    apply functional_extensionality.
-    intros x.
-    repeat rewrite program_eq_bind_assoc.
-    apply program_eq_bind.
-    apply functional_extensionality.
-    intros y.
-    cbn.
-    repeat rewrite program_eq_bind_assoc.
-    apply program_eq_bind.
-    apply functional_extensionality.
-    intros z.
-    reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
+Next Obligation. (* program_apply (program_pure id) v = v *)
+  unfold program_apply, program_pure, program_bind.
+  now rewrite functor_identity.
+Defined.
+Next Obligation. (* program_apply (program_apply (program_apply (program_pure compose) u) v) w
+                    = program_apply u (program_apply v w) *)
+  unfold program_apply, program_pure.
+  cbn.
+  unfold program_map.
+  repeat rewrite program_eq_bind_assoc.
+  apply program_eq_bind.
+  apply functional_extensionality.
+  intros x.
+  cbn.
+  unfold program_map.
+  repeat rewrite program_eq_bind_assoc.
+  apply program_eq_bind.
+  apply functional_extensionality.
+  intros y.
+  cbn.
+  repeat rewrite program_eq_bind_assoc.
+  apply program_eq_bind.
+  apply functional_extensionality.
+  intros z.
+  cbn.
+  unfold compose.
+  reflexivity.
 Defined.
 
-Instance program_Monad
-         (I:  Interface)
+Program Instance program_Monad
+        (I:  Interface)
   : Monad (Program I) :=
-  { bind := @pbind I
+  { bind := @program_bind I
   }.
-Proof.
-  + reflexivity.
-  + intros A Ha p.
-    cbn.
-    rewrite <- program_eq_append_pure.
-    reflexivity.
-  + intros A B C HC x f g.
-    rewrite program_eq_bind_assoc.
-    reflexivity.
-  + intros A B HB p f g Heq.
-    cbn in Heq.
-    unfold function_equal in Heq.
-    cbn in Heq.
-    apply program_eq_bind.
-    now apply functional_extensionality.
-  + intros A B HB p f.
-    cbn.
-    reflexivity.
+Next Obligation.
+  now rewrite <- program_eq_append_pure.
+Defined.
+Next Obligation.
+  now rewrite program_eq_bind_assoc.
+Defined.
+Next Obligation.
+  unfold function_equal in H0.
+  cbn in H0.
+  apply program_eq_bind.
+  now apply functional_extensionality.
 Defined.
 
-(** ** Alternative [Program] Execution
+(** * [Program] Interpretation
 
-    We provide the function [runProgram'] as a probably more efficient
-    way to run a given Program. The difference is actually quite
-    simple: [runProgram] makes no use of the [let ... in] feature
-    because our tests have shown Coq sometimes have some trouble
-    dealing with this construction. As a consequence, some calls are
-    made twice or even more.
-
-    Thanks to the [run_program_equiv] lemma, one can use [runProgram]
-    for her proofs and extract [runProgram'].
-
+    To actually realise a program with effects [Program I A], one
+    needs a corresponding operational semantics [Sem.t I] for the
+    interface described by [I].
  *)
-Fixpoint runProgram'
+
+Fixpoint runProgram
          {I:    Interface}
          {A:    Type}
-         (sig:  Semantics I)
+         (sig:  Sem.t I)
          (p:    Program I A)
-  : (A * Semantics I) :=
+  : Sem.result I A :=
   match p with
   | Pure a
-    => (a, sig)
+    => Sem.mkRes a sig
   | Request e f
-    => let o := handle sig e
-       in runProgram' (snd o) (f (fst o))
+    => let res := handle sig e in
+       runProgram (Sem.next res) (f (Sem.res res))
   end.
 
-Lemma run_program_equiv
-      {I:   Interface}
-      {A:   Type}
-      (sig: Semantics I)
-      (p:   Program I A)
-  : runProgram sig p = runProgram' sig p.
+Definition evalProgram
+           {I:    Interface}
+           {A:    Type}
+           (sig:  Sem.t I)
+           (p:    Program I A)
+  : A :=
+  Sem.res (runProgram sig p).
+
+Definition execProgram
+           {I:   Interface}
+           {A:   Type}
+           (sig: Sem.t I)
+           (p:   Program I A)
+  : Sem.t I :=
+  Sem.next (runProgram sig p).
+
+(** Also, we can easily show the [program_eq] property is strong
+    enough to be used to replace two equivalent programs in several
+    cases, by defining the related morphisms.
+
+ *)
+Add Parametric Morphism
+    (I: Interface)
+    (A: Type)
+  : (runProgram)
+    with signature (@equal (Sem.t I) _) ==> (@equal (Program I A) _) ==> (@equal (Sem.result I A) _)
+  as run_program_morphism_2.
 Proof.
-  induction p; reflexivity.
+  intros sig1 sig2 Heq_sig p q Heq_p.
+  induction Heq_p.
+  revert sig1 sig2 Heq_sig.
+  induction p; intros sig1 sig2 Heq_sig.
+  + now constructor.
+  + cbn.
+    assert (Hx: Sem.res (handle sig1 e) = Sem.res (handle sig2 e)) by apply Heq_sig.
+    rewrite Hx.
+    apply H.
+    apply Heq_sig.
 Qed.
 
-Fixpoint interface_map
-         {I I':  Interface}
-         {A:     Type}
-         (p:     Program I A)
-         (map:   forall {A:  Type}, I A -> I' A)
-  : Program I' A :=
-  match p with
-  | Pure x
-    => Pure x
-  | Request e f
-    => Request (map e) (fun x => interface_map (f x) (fun _ x => map x))
-  end.
+Add Parametric Morphism
+    (I:  Interface)
+    (A:  Type)
+  : (execProgram)
+    with signature (@equal (Sem.t I) _) ==> (@equal (Program I A) _) ==> (@equal (Sem.t I) _)
+  as exec_program_morphism.
+Proof.
+  intros sig sig' Heqs p q Heqp.
+  unfold execProgram.
+  rewrite Heqs.
+  now rewrite Heqp.
+Qed.
+
+Add Parametric Morphism
+    (I:  Interface)
+    (A:  Type)
+  : (evalProgram)
+    with signature (@equal (Sem.t I) _) ==> (@equal (Program I A) _) ==> eq
+  as eval_program_morphism.
+Proof.
+  intros sig sig' Heqs p q Heqp.
+  unfold evalProgram.
+  rewrite Heqs.
+  now rewrite Heqp.
+Qed.
+
+Lemma run_program_bind_assoc
+      {I:    Interface}
+      {A B:  Type}
+      (sig:  Sem.t I)
+      (p:    Program I A)
+      (f:    A -> Program I B)
+  : runProgram sig (program_bind p f)
+    == runProgram (execProgram sig p) (f (evalProgram sig p)).
+Proof.
+  revert sig; induction p; intro sig.
+  + reflexivity.
+  + apply H.
+Qed.
+
+Lemma eval_program_bind_assoc
+      {I:    Interface}
+      {A B:  Type}
+      (sig:  Sem.t I)
+      (p:    Program I A)
+      (f:    A -> Program I B)
+  : evalProgram sig (program_bind p f)
+    = evalProgram (execProgram sig p) (f (evalProgram sig p)).
+Proof.
+  unfold evalProgram.
+  rewrite run_program_bind_assoc.
+  reflexivity.
+Qed.
+
+Lemma exec_program_bind_assoc
+      {I:    Interface}
+      {A B:  Type}
+      (sig:  Sem.t I)
+      (p:    Program I A)
+      (f:    A -> Program I B)
+  : execProgram sig (program_bind p f)
+    = execProgram (execProgram sig p) (f (evalProgram sig p)).
+Proof.
+  revert sig; induction p; intro sig.
+  + reflexivity.
+  + apply H.
+Qed.

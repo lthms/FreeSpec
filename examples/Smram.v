@@ -28,7 +28,7 @@ Require Import FreeSpec.Compose.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Refine.
+Require Import FreeSpec.Component.
 Require Import FreeSpec.Tactics.
 
 Require Import Prelude.Control.
@@ -145,24 +145,24 @@ Section SMRAM_EXAMPLE.
   Definition read_dram
              (a: Addr)
     : StateT MCH (Program (IDRAM <+> IVGA)) Value :=
-    lift (singleton (InL (Read a))).
+    lift (request (InL (Read a))).
 
   Definition read_vga
              (a: Addr)
     : StateT MCH (Program (IDRAM <+> IVGA)) Value :=
-    lift (singleton (InR (Read a))).
+    lift (request (InR (Read a))).
 
   Definition write_dram
              (a: Addr)
              (v: Value)
     : StateT MCH (Program (IDRAM <+> IVGA)) unit :=
-    lift (singleton (InL (Write a v))).
+    lift (request (InL (Write a v))).
 
   Definition write_vga
              (a: Addr)
              (v: Value)
     : StateT MCH (Program (IDRAM <+> IVGA)) unit :=
-    lift (singleton (InR (Write a v))).
+    lift (request (InR (Write a v))).
 
   (** Then, we define a [StatefulRefinement] from [IMCH] to [IDRAM <+>
       IVGA].
@@ -175,7 +175,7 @@ Section SMRAM_EXAMPLE.
     smram_lock <$> get.
 
   Definition mch_refine
-    : StatefulRefinement IMCH (IDRAM <+> IVGA) MCH :=
+    : Component IMCH MCH (IDRAM <+> IVGA) :=
     fun (A: Type)
         (i: IMCH A)
     =>  match i with
@@ -478,12 +478,12 @@ Section SMRAM_EXAMPLE.
    *)
 
   Lemma mch_specs_compliant_refinement
-    : correct_refinement mch_refine
-                         smram_specification
-                         smram_subspecification
-                         mch_dram_sync.
+    : correct_component mch_refine
+                        smram_specification
+                        smram_subspecification
+                        mch_dram_sync.
   Proof.
-    unfold correct_refinement.
+    unfold correct_component.
     intros si s so A i Hsync Hreq.
     induction i; induction smm; next; repeat destruct_if_when; next.
   Qed.
@@ -597,13 +597,13 @@ Section SMRAM_EXAMPLE.
   Qed.
 
   Lemma mch_refine_enforcer
-        {dram:      Semantics IDRAM}
+        {dram:      Sem.t IDRAM}
         {dram_ref:  DRAMState}
         (Hcomp:     dram |= dram_specification[dram_ref])
-    : forall (vga:        Semantics IVGA)
+    : forall (vga:        Sem.t IVGA)
              (smram_ref:  SmramState),
       mch_dram_sync smram_ref {| smram_lock := true |} dram_ref
-      -> (StatefulSemantics mch_refine
+      -> (ComponentSemantics mch_refine
                             {| smram_lock := true |}
                             (dram <x> vga))
            |= smram_specification [smram_ref].

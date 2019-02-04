@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2018 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ Require Import Coq.Setoids.Setoid.
 
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Abstract.
+Require Import FreeSpec.Specification.
 
 Require Import Prelude.PropBool.
 Require Import Prelude.Equality.
@@ -480,25 +480,25 @@ Qed.
 Definition deriveFormula
            {I: Interface}
            {A: Type}
-           (sig: Semantics I)
+           (sig: Sem.t I)
            (p: Program I A)
            (tl: Formula (ISet I)) :=
-    deriveAbstraction tl (fun (R: Type) (e: I R) (_: R) => tl_step (effect e)) sig p.
+    witnessInstrumentedProgram (fun (R: Type) (e: I R) (_: R) => tl_step (effect e)) tl sig p.
 
 Definition runFormula
            {I: Interface}
            {A: Type}
-           (sig: Semantics I)
+           (sig: Sem.t I)
            (p: Program I A)
            (tl: Formula (ISet I)) :=
-    abstractRun tl (fun (R: Type) (e: I R) (_: R) => tl_step (effect e)) sig p.
+    runInstrumentedProgram (fun (R: Type) (e: I R) (_: R) => tl_step (effect e)) tl sig p.
 
 Lemma Formula_run_is_runFormula
   : forall {I: Type -> Type}
            {A: Type}
            (p: Program I A)
            (tl: Formula (ISet I))
-           (sig: Semantics I),
+           (sig: Sem.t I),
     Formula_run tl (deriveFormula sig p tl).
 Proof.
   induction p.
@@ -507,8 +507,7 @@ Proof.
     apply tl_run_refl.
   + intros tl sig.
     cbn.
-    eapply (tl_run_trans tl
-                        (tl_step (effect e) tl)).
+    eapply (tl_run_trans tl (tl_step (effect e) tl)).
     ++ constructor.
        apply Formula_step_is_tl_step.
     ++ apply H.
@@ -716,7 +715,7 @@ Corollary Formula_derive_is_runFormula
            {A: Type}
            (p: Program I A)
            (tl: Formula (ISet I))
-           (sig: Semantics I),
+           (sig: Sem.t I),
     Formula_derive tl (deriveFormula sig p tl).
 Proof.
   intros I A p tl sig.

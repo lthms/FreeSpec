@@ -7,6 +7,10 @@ Haskell, and uses so-called abstract specifications to specify, for each effect,
 expected properties for the effect result, independently of any underlying
 effect handler.
 
+FreeSpec formalism has been described in depth in [an academic
+paper](https://hal.inria.fr/hal-01799712/document) published at the [Formal
+Methods 2018 conference](https://www.win.tue.nl/~evink/FM2018/).
+
 ## Overview
 
 This repository is organized as follows:
@@ -15,10 +19,10 @@ This repository is organized as follows:
   `Semantics` and `Specification`.
 - `exec/`: an extension to FreeSpec that adds a new command to Coq, `Exec`, to
   execute `Program` instances (only certain interfaces shall be supported).
-
-FreeSpec formalism has been described in depth in [an academic
-paper](https://hal.inria.fr/hal-01799712/document) published at the [Formal
-Methods 2018 conference](https://www.win.tue.nl/~evink/FM2018/).
+- `experiment/`: a collection of experiments whose future (and potential
+  integration inside the core framework) remains uncertain.
+- `examples/`: a collection of examples which leverages FreeSpec and its
+  extensions
 
 ## Getting Started
 
@@ -43,15 +47,6 @@ cd core/
 make install # regarding your setup, you may need to use `sudo` here
 ```
 
-Once the framework has been correctly installed, you can have a look at the
-example files provided in this repository. They should compile just fine.
-
-```bash
-# from the root of this repository
-cd core/examples/
-make
-```
-
 ### FreeSpec.Exec
 
 The plugin does not require any particular dependency to work, except the Coq
@@ -66,3 +61,17 @@ make install # root privileges might be required if you do not use `opam'
 ```
 To load the plugin, use `Require Import FreeSpec.Exec.Plugin`. The supported
 interfaces (only `Console.i`) will be made accessible in `FreeSpec.Exec.Interfaces`.
+
+### FreeSpec.Exec
+
+Once the framework and its extensions has been correctly installed, you can have
+a look at the example files provided in this repository. They should compile
+just fine.
+
+```bash
+# from the root of this repository
+cd examples/
+make
+# and for trying the exec plugin
+coqc hello.v
+```

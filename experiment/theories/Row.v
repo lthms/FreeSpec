@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2018 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,13 +19,14 @@
  *)
 
 Require Import FreeSpec.Interface.
-Require Import FreeSpec.Open.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Specification.
 Require Import FreeSpec.Compose.
 
 Require Import Prelude.Control.
+Require Import Prelude.Data.Open.
+Require Import Prelude.Data.Void.
 
 Require Import Omega.
 
@@ -45,7 +46,7 @@ Fixpoint getr
   | S n, _ :: set'
     => getr set' n
   | _, _
-    => fun _ => uninhabited
+    => fun _ => Void
   end.
 
 Fixpoint specialize
@@ -202,7 +203,7 @@ Defined.
 
 Definition semanticsRowSteps
            (set:   list (Type -> Type))
-  : @PS (row set) (product (generalize Semantics set)).
+  : @PS (row set) (product (generalize Sem.t set)).
   unfold PS.
   intros a sems e.
   refine (
@@ -214,27 +215,27 @@ Definition semanticsRowSteps
   rewrite <- specialize_cardinal in Hb.
   rewrite get_spec_getr_eq in Ht.
   subst.
-  refine (visit sems (fun s => handle s x)).
+  refine (visit sems (fun s => let res := handle s x in (Sem.res res, Sem.next res))).
   apply HasEffect_indexed.
   exact Hb.
 Defined.
 
 Definition mkSemanticsForRow
            {set:  list (Type -> Type)}
-           (sems:  product (generalize Semantics set))
-  : Semantics (row set) :=
+           (sems:  product (generalize Sem.t set))
+  : Sem.t (row set) :=
   mkSemantics (semanticsRowSteps set) sems.
 
 Definition push_sem
            {eff:   list (Type -> Type)}
            {I:     Type -> Type}
-           (sem:   Semantics I)
-           (sems:  product (generalize Semantics eff))
-  : product (generalize Semantics (I :: eff)) :=
+           (sem:   Sem.t I)
+           (sems:  product (generalize Sem.t eff))
+  : product (generalize Sem.t (I :: eff)) :=
   Acons sem sems.
 
 Definition sem_nil
-  : product (generalize Semantics nil) :=
+  : product (generalize Sem.t nil) :=
   Anil.
 
 Notation "<< x >>" :=
@@ -244,10 +245,10 @@ Notation "<< x ; y ; .. ; z >>" :=
   (Acons x (Acons y .. (Acons z Anil) ..))
   : free_row_scope.
 
-Notation "<| x |>" :=
+Notation "<<| x |>>" :=
   (mkSemanticsForRow (push_sem x sem_nil)) (only parsing)
   : free_row_scope.
-Notation "<| x ; y ; .. ; z |>" :=
+Notation "<<| x ; y ; .. ; z |>>" :=
   (mkSemanticsForRow (push_sem x (push_sem y .. (push_sem z sem_nil) ..))) (only parsing)
   : free_row_scope.
 
