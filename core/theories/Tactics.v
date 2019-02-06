@@ -87,3 +87,20 @@ Ltac simplify_postcondition :=
             end
        end
   end.
+
+Ltac prove_program :=
+  repeat (cbn; try destruct_if_when);
+  lazymatch goal with
+  | [ |- Request ?op ?f |> ?c[?w] ]
+    => let Hpre := fresh "Hpre" in
+       cut (precondition c op w); [ intro Hpre;
+                                    constructor; [apply Hpre |];
+                                    let sig := fresh "sig" in
+                                    let Hsig := fresh "Hsig" in
+                                    intros sig Hsig;
+                                    let Hpost := fresh "Hpost" in
+                                    assert (Hpost: postcondition c op (evalEffect sig op) w) by now apply Hsig;
+                                    clear Hsig
+                                  |]
+  | [ |- program_pure ?op |> ?c[?w] ] => constructor
+  end.
