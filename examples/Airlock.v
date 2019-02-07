@@ -18,170 +18,208 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+Require Import Coq.Program.Equality.
+
 Require Import Prelude.Control.
 Require Import Prelude.Control.Classes.
-Require Import Prelude.Control.State.
 
-Require Import FreeSpec.Specification.
-Require Import FreeSpec.Compose.
+Require Import FreeSpec.Tactics.
+Require Import FreeSpec.Interface.
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
+Require Import FreeSpec.Compose.
+Require Import FreeSpec.Component.
+Require Import FreeSpec.Specification.
 
 Local Open Scope prelude_scope.
 Local Open Scope free_scope.
 
-Module Door.
-  Inductive i
-    : Type -> Type :=
-    Open
-    : i unit
-  | Close
-    : i unit.
+(** The objective of the present document is to give an example of the
+    FreeSpec methodology. The object of study is a simple airlock
+    controller that controls two doors. The system to model and verify is depicted in the following
+    figure:
 
-  Inductive w := IsOpen | IsClose.
-End Door.
+    #<img src="controller.svg" style="display: block; margin:auto;"/>#
 
-Module Airlock.
-  Inductive i
-    : Type -> Type :=
-  | Open1
-    : i unit
-  | Open2
-    : i unit.
+    The traditional security policy targeted by a airlock system is to
+    prevent both doors to be open at the same time. This example is
+    interesting because it is subject to the so-called _temporary
+    violation problem_ (see Example 6.1 of this #<a
+    href="https://lthms.xyz/docs/manuscript.pdf">#PhD manuscript#</a>#
+    if you are not familiar with this challenge). We therefore
+    demonstrate how FreeSpec can be used in order to prevent such
+    pitfall. *)
 
-  Notation "'AirlockM' A" :=
-    (StateT (bool * bool) (Program (Door.i <+> Door.i)) A)
-      (at level 50).
+(** * Controller Interface *)
 
-  Definition open_first_door
-    : AirlockM unit :=
-    lift (request (InL Door.Open)).
+Inductive door := In | Out.
 
-  Definition close_first_door
-    : AirlockM unit :=
-    lift (request (InL Door.Close)).
+Definition co (d: door): door :=
+  match d with In => Out | Out => In end.
 
-  Definition open_second_door
-    : AirlockM unit :=
-    lift (request (InR Door.Open)).
+Module controller.
+  Inductive i: Interface :=
+  | Tick: i unit
+  | OpenDoor: door -> i unit.
 
-  Definition close_second_door
-    : AirlockM unit :=
-    lift (request (InR Door.Close)).
+  Definition tick {Ix} `{Use i Ix}: Program Ix unit :=
+    request Tick.
 
-  Definition first_door_is_open
-    : AirlockM bool :=
-    fst <$> get.
+  Definition open_door {Ix} `{Use i Ix}: door -> Program Ix unit :=
+    request <<< OpenDoor.
+End controller.
 
-  Definition second_door_is_open
-    : AirlockM bool :=
-    snd <$> get.
+(** * Door Interface *)
 
-  Definition update_state_open1
-    : AirlockM unit :=
-    put (true, false).
+Module door.
+  Inductive i {L} (l: L): Interface :=
+  | IsOpen: i l bool
+  | Toggle: i l unit.
 
-  Definition update_state_open2
-    : AirlockM unit :=
-    put (false, true).
+  Arguments IsOpen {L l}.
+  Arguments Toggle {L l}.
 
-  Definition impl
-             {a:    Type}
-             (act:  i a)
-    : StateT (bool * bool) (Program (Door.i <+> Door.i)) a :=
-    match act with
-    | Open1
-      => d2_open <- second_door_is_open                              ;
-         when d2_open close_second_door                             ;;
-         open_first_door                                            ;;
-         update_state_open1
-    | Open2
-      => d1_open <- first_door_is_open                               ;
-         when d1_open close_first_door                              ;;
-         open_second_door                                           ;;
-         update_state_open2
+  Definition is_open {L Ix} (l: L) `{Use (i l) Ix}: Program Ix bool :=
+    request IsOpen.
+
+  Definition toggle {L Ix} (l: L) `{Use (i l) Ix}: Program Ix unit :=
+    request Toggle.
+End door.
+
+(** * Controller Model *)
+
+Definition open_door {L Ix} (l: L) `{Use (door.i l) Ix}: Program Ix unit :=
+  d <- door.is_open l;
+  when (negb d) $ door.toggle l.
+
+Definition close_door {L Ix} (l: L) `{Use (door.i l) Ix}: Program Ix unit :=
+  d <- door.is_open l;
+  when d $ door.toggle l.
+
+Definition controller: Component controller.i nat (door.i In <+> door.i Out) :=
+  fun _ op =>
+    match op with
+    | controller.Tick
+      => c <- get;
+         if Nat.ltb c 15
+         then lift (close_door In);;
+              lift (close_door Out);;
+              put 0
+         else put (S c)
+    | controller.OpenDoor In
+      => lift (close_door Out);;
+         lift (open_door In);;
+         put 0
+    | controller.OpenDoor Out
+      => lift (close_door In);;
+         lift (open_door Out);;
+         put 0
     end.
 
-  Definition two_doors_step
-             (a:    Type)
-             (act:  (Door.i <+> Door.i) a)
-             (_:    a)
-             (w:    Door.w * Door.w)
-    : Door.w * Door.w :=
-    match act with
-    | InL Door.Open
-      => (Door.IsOpen, snd w)
-    | InL Door.Close
-      => (Door.IsClose, snd w)
-    | InR Door.Open
-      => (fst w, Door.IsOpen)
-    | InR Door.Close
-      => (fst w, Door.IsClose)
-    end.
+(** * Controller Verification *)
 
-  Inductive two_doors_pre
-    : forall (a:  Type), (Door.i <+> Door.i) a -> Door.w * Door.w -> Prop :=
-  | open_one_two_is_close (f:  Door.w)
-    : two_doors_pre unit (InL Door.Open) (f, Door.IsClose)
-  | open_two_one_is_close (s:  Door.w)
-    : two_doors_pre unit (InR Door.Open) (Door.IsClose, s)
-  | always_close_one (s s':  Door.w)
-    : two_doors_pre unit (InL Door.Close) (s, s')
-  | always_close_two (s s':  Door.w)
-    : two_doors_pre unit (InR Door.Close) (s, s').
+(** ** Abstract Step Function *)
 
-  Definition two_doors_post
-             (a:    Type)
-             (act:  (Door.i <+> Door.i) a)
-             (x:    a)
-             (w:    Door.w * Door.w)
-    : Prop :=
-    True.
+Definition doors_abs_step {A}
+           (op:  (door.i In <+> door.i Out) A)
+           (x:   A)
+           (b:   bool * bool)
+  : bool * bool :=
+  match op with
+  | InL door.Toggle => (negb (fst b), snd b)
+  | InR door.Toggle => (fst b, negb (snd b))
+  | _  => b
+  end.
 
-  Definition spec
-    : Specification (Door.w * Door.w) (Door.i <+> Door.i) :=
-    {| abstract_step := two_doors_step
-     ; precondition  := two_doors_pre
-     ; postcondition := two_doors_post
-    |}.
+(** ** Precondition *)
 
-  Inductive sync_and_sec
-    : (bool * bool) -> (Door.w * Door.w) -> Prop :=
-  | sync1
-    : sync_and_sec (false, false) (Door.IsClose, Door.IsClose)
-  | sync2
-    : sync_and_sec (true, false) (Door.IsOpen, Door.IsClose)
-  | sync3
-    : sync_and_sec (false, true) (Door.IsClose, Door.IsOpen).
+Inductive doors_pre
+  : forall {A}, (door.i In <+> door.i Out) A -> (bool * bool) -> Prop :=
+(* ------------------------------------------------------------ *)
+(** To open the inside door ([i = false]), the outside door needs to
+    be closed ([o = false]). *)
+| doors_pre_toggle_in
+    (i o:  bool)
+    (Ho:   i = false -> o = false)
+  : doors_pre (InL door.Toggle) (i, o)
+(* ------------------------------------------------------------ *)
+(** To open the outside door ([o = false]), the inside door needs to
+    be closed ([i = false]). *)
+| doors_pre_toggle_out
+    (i o:  bool)
+    (Ho:   o = false -> i = false)
+  : doors_pre (InR door.Toggle) (i, o)
+(* ------------------------------------------------------------ *)
+(** It is always allowed to request the state of the inside door. *)
+| doors_pre_is_open_in
+    (i o:  bool)
+  : doors_pre (InL door.IsOpen) (i, o)
+(* ------------------------------------------------------------ *)
+(** It is always allowed to request the state of the outside door. *)
+| doors_pre_is_open_out
+    (i o:  bool)
+  : doors_pre (InR door.IsOpen) (i, o).
 
-  Theorem airlock_secure_one_step
-    : forall {a:    Type}
-             (st:   bool * bool)
-             (w:    Door.w * Door.w)
-             (act:  i a),
-      sync_and_sec st w
-      -> impl act st |> spec [w].
-  Proof.
-    intros a [d1 d2] [w1 w2] act Hsync.
-    inversion Hsync;
-      induction act;
-      repeat constructor.
-  Qed.
+(** ** Postcondition *)
 
-  Theorem airlock_secure_inv
-    : forall {a:    Type}
-             (st:   bool * bool)
-             (w:    Door.w * Door.w)
-             (sem:  Sem.t (Door.i <+> Door.i))
-             (act:  i a),
-      sync_and_sec st w
-      -> sem |= spec [w]
-      -> sync_and_sec (snd (evalProgram sem (impl act st)))
-                      (specification_derive (impl act st) sem spec w).
-  Proof.
-    intros a [d1 d2] [w1 w2] sem act Hsync Hcomp.
-    inversion Hsync;
-      induction act;
-      repeat constructor.
-  Qed.
-End Airlock.
+Inductive doors_post
+  : forall {A}, (door.i In <+> door.i Out) A -> A -> (bool * bool) -> Prop :=
+(* ------------------------------------------------------------ *)
+(** No expectation as [door.Toggle] does not return meaningful results
+ *)
+| doors_post_toggle_in
+    (i o:  bool)
+  : doors_post (InL door.Toggle) tt (i, o)
+(* ------------------------------------------------------------ *)
+(** No expectation as [door.Toggle] does not return meaningful results
+ *)
+| doors_post_toggle_out
+    (i o:  bool)
+  : doors_post (InR door.Toggle) tt (i, o)
+(* ------------------------------------------------------------ *)
+(** The inside door state is expected not to have changed since the
+    last time we have toggled it *)
+| doors_is_open_in
+    (i o:  bool)
+  : doors_post (InL door.IsOpen) i  (i, o)
+(* ------------------------------------------------------------ *)
+(** The outside door state is expected not to have changed since the
+    last time we have toggled it *)
+| doors_is_open_out
+    (i o:  bool)
+  : doors_post (InR door.IsOpen) o  (i, o).
+
+(** ** The Abstract Specification *)
+
+Definition doors_specs: Specification (bool * bool) (door.i In <+> door.i Out) :=
+  {| abstract_step := @doors_abs_step
+  ;  precondition := @doors_pre
+  ;  postcondition := @doors_post
+  |}.
+
+(** * Proof of Correctness *)
+
+(** It is expected that our airlock system is _safe_, independently
+    from how it is being used by its environment. Therefore, the
+    statement to prove does not mention any abstract specification for
+    [controller.i].
+
+    We leverage the [prove_program] defined by FreeSpec to explore the
+    different control flow pathes of the [controller] programs, and
+    the only goals to prove are related to precondition compliance. *)
+
+Lemma controller_is_correct
+      (b:   bool * bool)
+      (c:   nat)
+  : forall {A} (op: controller.i A),
+    controller A op c |> doors_specs[b].
+Proof.
+  intros A op.
+  induction op;
+    prove_program;
+    induction b;
+    constructor; ( inversion Hpost;
+                   simpl_existTs;
+                   now subst
+                 ).
+Qed.
