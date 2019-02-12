@@ -62,7 +62,7 @@ make install # root privileges might be required if you do not use `opam'
 To load the plugin, use `Require Import FreeSpec.Exec.Plugin`. The supported
 interfaces (only `Console.i`) will be made accessible in `FreeSpec.Exec.Interfaces`.
 
-### FreeSpec.Exec
+### FreeSpec.Examples
 
 Once the framework and its extensions has been correctly installed, you can have
 a look at the example files provided in this repository. They should compile
