@@ -4,6 +4,7 @@
 theories/Interfaces.v
 theories/Plugin.v
 
+src/interfaces.ml
 src/exec.ml
 src/exec_plugin.mlpack
 src/console.ml
