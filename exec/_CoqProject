@@ -7,8 +7,6 @@ theories/Plugin.v
 src/interfaces.ml
 src/exec.ml
 src/exec_plugin.mlpack
-src/console.ml
 src/g_exec.ml4
 src/query.ml
-src/coqstr.ml
 src/utils.ml

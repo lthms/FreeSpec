@@ -27,7 +27,6 @@ let reduce_all env evm trm =
   EConstr.to_constr evm (Reductionops.nf_all env evm (EConstr.of_constr trm))
 
 let exec_request instr_t instr_trm func_trm =
-  Lazy.force install_interfaces;
   let (instr_trm, args) = app_full instr_trm in
   match kind instr_trm with
   | Construct (c, _) ->
@@ -37,6 +36,7 @@ let exec_request instr_t instr_trm func_trm =
      raise UnsupportedInterface
 
 let rec exec env evm def =
+  Interfaces.force_interface_registering ();
   let def = Reduction.whd_all env def in
   let (def, args) = app_full def in
   match kind def with

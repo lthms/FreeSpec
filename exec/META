@@ -1,0 +1,11 @@
+package "freespec-exec" (
+
+    description = "Freespec Exec Plugin"
+    version     = "8.10"
+
+    directory   = "src"
+
+    archive(byte)    = "exec_plugin.cmo"
+    archive(native)  = "exec_plugin.cmx"
+
+)

@@ -20,14 +20,19 @@
 
 open Query
 open Utils
-open Coqstr
 
+(**
+
+   The OCaml interpretation of an effectful primitive is an
+   effectful OCaml function from Coq terms to Coq term.
+
+*)
 type effectful_semantic = Constr.constr list -> Constr.constr
 
-let primitive_semantics = ref Names.Constrmap.empty
+let primitive_semantics : effectful_semantic Names.Constrmap.t ref =
+  ref Names.Constrmap.empty
 
 let new_primitive m c p =
-  let m = exec_instr_pkg m in
   match Coqlib.gen_reference_in_modules contrib [m] c with
     | Names.GlobRef.ConstructRef c ->
        primitive_semantics := Names.Constrmap.add c p !primitive_semantics
@@ -39,13 +44,14 @@ let primitive_semantic : Names.constructor -> effectful_semantic =
     Names.Constrmap.find c !primitive_semantics
   with Not_found -> raise UnsupportedInterface
 
-let install_interfaces = lazy (
-  new_primitive "Console" "Scan" (function [] ->
-    coqstr_of_str (Console.scan ())
-  | _ -> assert false);
+let initializers = Queue.create ()
 
-  new_primitive "Console" "Echo" (function [str] ->
-    Console.echo (str_of_coqstr str);
-    Ind.Unit.mkConstructor "tt"
-  | _ -> assert false)
-)
+let register_interfaces interface_initializer =
+  Queue.add interface_initializer initializers
+
+let force_interface_registering () =
+  Queue.(
+    while not (is_empty initializers) do
+      Lazy.force (Queue.pop initializers)
+    done
+  )
