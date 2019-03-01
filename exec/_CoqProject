@@ -8,5 +8,6 @@ src/interfaces.ml
 src/exec.ml
 src/exec_plugin.mlpack
 src/g_exec.ml4
+src/coqstr.ml
 src/query.ml
 src/utils.ml
