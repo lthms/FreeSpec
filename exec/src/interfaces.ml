@@ -52,6 +52,6 @@ let register_interfaces interface_initializer =
 let force_interface_registering () =
   Queue.(
     while not (is_empty initializers) do
-      Lazy.force (Queue.pop initializers)
+      pop initializers ()
     done
   )

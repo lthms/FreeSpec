@@ -1,7 +1,7 @@
 (* FreeSpec
  * Copyright (C) 2018–2019 ANSSI
  *
- * Contributors:
+
  * 2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify

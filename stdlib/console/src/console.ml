@@ -22,12 +22,13 @@ open Exec_plugin.Coqstr
 open Exec_plugin.Interfaces
 open Exec_plugin.Query
 
+
 let scan = read_line
 let echo = print_string
 
 let path = ["FreeSpec"; "Stdlib"; "Console"; "Console"]
 
-let install_interfaces = Exec_plugin.Interfaces.register_interfaces @@ lazy (
+let install_interfaces = register_interfaces @@ fun () -> (
   new_primitive path "Scan" (function [] ->
     coqstr_of_str (scan ())
   | _ -> assert false);
