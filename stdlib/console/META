@@ -1,6 +1,6 @@
 package "freespec-stdlib-console" (
 
-    description = "Freespec Stdlib/Console Plugin"
+    description = "Freespec.Stdlib/Console Plugin"
     version     = "8.9"
 
     requires    = "freespec-exec"
