@@ -38,7 +38,7 @@ let exec_request instr_t instr_trm func_trm =
      raise UnsupportedInterface
 
 let rec exec env evm def =
-  Interfaces.force_interface_registering ();
+  Interfaces.force_interface_initializers ();
   let def = Reduction.whd_all env def in
   let (def, args) = app_full def in
   match kind def with

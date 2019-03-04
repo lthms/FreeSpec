@@ -44,12 +44,29 @@ let primitive_semantic : Names.constructor -> effectful_semantic =
     Names.Constrmap.find c !primitive_semantics
   with Not_found -> raise UnsupportedInterface
 
+(**
+
+   An initializer binds the constructor identifier of the interface
+   request to an OCaml function that implements its semantics.
+
+   To register a new interface, a plugin must install an initializer
+   that will be triggered at [Exec] time. The initializer cannot be
+   run at [Declare Module] time because the identifiers of the
+   constructors might not be properly bound in Coq environment at this
+   moment.
+
+*)
+
+(** A queue for initializers to be triggered at [Exec] time. *)
 let initializers = Queue.create ()
 
+(** [register_interfaces i]. *)
 let register_interfaces interface_initializer =
   Queue.add interface_initializer initializers
 
-let force_interface_registering () =
+(** [force_interface_initializers ()] initialize the interfaces that
+    have been registered by [register_interfaces]. *)
+let force_interface_initializers () =
   Queue.(
     while not (is_empty initializers) do
       pop initializers ()
