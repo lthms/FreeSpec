@@ -1,6 +1,6 @@
 package "freespec-exec" (
 
-    description = "Freespec Exec Plugin"
+    description = "Freespec.Exec Plugin"
     version     = "8.10"
 
     directory   = "src"
