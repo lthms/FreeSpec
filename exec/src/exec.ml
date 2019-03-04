@@ -30,6 +30,8 @@ let exec_request instr_t instr_trm func_trm =
   let (instr_trm, args) = app_full instr_trm in
   match kind instr_trm with
   | Construct (c, _) ->
+     (* [primitive_semantic] may raise [UnsupportedInterface] if [c]
+        is not a registered request constructors.  *)
      let res = primitive_semantic c args in
      mkApp (func_trm, Array.of_list [res])
   | _ ->
