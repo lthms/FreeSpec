@@ -16,6 +16,7 @@
 
 **/Makefile
 Makefile.conf
+!docs/Makefile
 .merlin
 
 # generated docs
