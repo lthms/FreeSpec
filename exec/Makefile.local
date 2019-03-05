@@ -1,0 +1,5 @@
+install-extra::
+	ocamlfind install freespec-exec META src/exec_plugin.*
+
+uninstall::
+	ocamlfind remove freespec-exec

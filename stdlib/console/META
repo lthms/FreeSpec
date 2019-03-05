@@ -1,0 +1,12 @@
+package "freespec-stdlib-console" (
+
+    description = "Freespec.Stdlib/Console Plugin"
+    version     = "8.9"
+
+    requires    = "freespec-exec"
+    directory   = "src"
+
+    archive(byte)    = "stdlib_console_plugin.cmo"
+    archive(native)  = "stdlib_console_plugin.cmx"
+
+)

@@ -18,5 +18,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+open Exec_plugin.Coqstr
+open Exec_plugin.Interfaces
+open Exec_plugin.Query
+
+
 let scan = read_line
 let echo = print_string
+
+let path = ["FreeSpec"; "Stdlib"; "Console"; "Console"]
+
+let install_interfaces = register_interfaces @@ fun () -> (
+  new_primitive path "Scan" (function [] ->
+    coqstr_of_str (scan ())
+  | _ -> assert false);
+
+  new_primitive path "Echo" (function [str] ->
+    echo (str_of_coqstr str);
+    Ind.Unit.mkConstructor "tt"
+  | _ -> assert false)
+)

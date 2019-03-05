@@ -21,39 +21,31 @@
 open Constr
 open Query
 open Utils
-open Coqstr
+open Interfaces
 
 let reduce_all env evm trm =
   EConstr.to_constr evm (Reductionops.nf_all env evm (EConstr.of_constr trm))
 
 let exec_request instr_t instr_trm func_trm =
-  match kind instr_t with
-  | Ind (i, _)
-    -> if Ind.ConsoleI.ref_is i
-       then let (instr_trm, args) = app_full instr_trm in
-            (match kind instr_trm with
-             | Construct (c, _)
-               -> let res =
-                    match (Ind.ConsoleI.constructor_of c, args) with
-                    | (Some Scan_console, [])
-                      -> coqstr_of_str (Console.scan ())
-                    | (Some Echo_console, [str])
-                      -> Console.echo (str_of_coqstr str);
-                         Ind.Unit.mkConstructor "tt"
-                    | _
-                      -> raise (Anomaly "Unknown [Console.i] constructor")
-                  in mkApp (func_trm, Array.of_list [res])
-             | _ -> raise (UnsupportedTerm "Trying to execute an axiomatic [Console.i]"))
-       else raise UnsupportedInterface
-  | _ -> raise UnsupportedInterface
+  let (instr_trm, args) = app_full instr_trm in
+  match kind instr_trm with
+  | Construct (c, _) ->
+     (* [primitive_semantic] may raise [UnsupportedInterface] if [c]
+        is not a registered request constructors.  *)
+     let res = primitive_semantic c args in
+     mkApp (func_trm, Array.of_list [res])
+  | _ ->
+     raise UnsupportedInterface
 
 let rec exec env evm def =
+  Interfaces.force_interface_initializers ();
   let def = Reduction.whd_all env def in
   let (def, args) = app_full def in
   match kind def with
   | Construct (c, _)
     -> (match (Ind.Program.constructor_of c, args) with
-        | (Some Request_program, [instr_t; _ret_t; _instr_ret_t; instr_trm; func_trm])
+        | (Some Request_program,
+           [instr_t; _ret_t; _instr_ret_t; instr_trm; func_trm])
           -> let instr_trm = reduce_all env evm instr_trm in
              exec env evm (exec_request instr_t instr_trm func_trm)
         | (Some Pure_program, _)
