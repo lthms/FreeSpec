@@ -12,5 +12,7 @@ src/coqstr.mli
 src/coqstr.ml
 src/coqbool.mli
 src/coqbool.ml
+src/coqnum.mli
+src/coqnum.ml
 src/query.ml
 src/utils.ml

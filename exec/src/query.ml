@@ -61,6 +61,8 @@ end
 type program_constructor = Pure_program | Request_program
 type string_constructor = EmptyString_string | String_string
 type ascii_constructor = Ascii_ascii
+type positive_constructor = XI_positive | XO_positive | XH_positive
+type z_constructor = Z0_Z | Zpos_Z | Zneg_Z
 
 module Ind = struct
   module Program =
@@ -69,6 +71,22 @@ module Ind = struct
         let type_name = "Program"
         let modlist = ["FreeSpec"; "Program"]
         let names = [("Pure", Pure_program); ("Request", Request_program)]
+      end)
+
+  module Positive =
+    Inductive.Make(struct
+        type constructor = positive_constructor
+        let type_name = "positive"
+        let modlist = ["Coq"; "Numbers"; "BinNums"]
+        let names = [("xI", XI_positive); ("xO", XO_positive); ("xH", XH_positive)]
+      end)
+
+  module Z =
+    Inductive.Make(struct
+        type constructor = z_constructor
+        let type_name = "Z"
+        let modlist = ["Coq"; "Numbers"; "BinNums"]
+        let names = [("Z0", Z0_Z); ("Zpos", Zpos_Z); ("Zneg", Zneg_Z)]
       end)
 
   module String =
