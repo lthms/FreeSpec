@@ -25,23 +25,18 @@ open Constr
 let char_of_coqascii ascii =
   let (c, args) = app_full ascii in
   match kind c with
-  | Construct _ (* this should be bool *)
-    -> let coqbool_to_int = fun acc x ->
-         match kind x with
-         | Construct (c, _) ->
-            (match Ind.Bool.constructor_of c with
-             | Some x -> 2 * acc + if x then 1 else 0
-             | _ -> raise (UnsupportedTerm "not a [bool] constructor"))
-         | _ -> raise (UnsupportedTerm "Axiomatic [bool]")
+  | Construct _ (* this should be ascii *)
+    -> let of_coqascii_aux = fun acc x ->
+         2 * acc + if (Coqbool.bool_of_coqbool x) then 1 else 0
        in
-       char_of_int (List.fold_left coqbool_to_int 0 (List.rev args))
+       char_of_int (List.fold_left of_coqascii_aux 0 (List.rev args))
   | _
     -> raise (UnsupportedTerm "Trying to use an axiomatic [ascii]")
 
 let char_to_coqascii char =
   let src = int_of_char char in
-  let cTrue = Ind.Bool.mkConstructor "true" in
-  let cFalse = Ind.Bool.mkConstructor "false" in
+  let cTrue = Coqbool.bool_to_coqbool true in
+  let cFalse = Coqbool.bool_to_coqbool false in
   let cAscii = Ind.Ascii.mkConstructor "Ascii" in
   let coqbool_of_bool b = if b then cTrue else cFalse in
   let rec int_to_bool_l depth x acc =

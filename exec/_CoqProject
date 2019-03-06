@@ -10,5 +10,7 @@ src/exec_plugin.mlpack
 src/g_exec.ml4
 src/coqstr.mli
 src/coqstr.ml
+src/coqbool.mli
+src/coqbool.ml
 src/query.ml
 src/utils.ml
