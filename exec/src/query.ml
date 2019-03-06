@@ -59,7 +59,6 @@ module Inductive = struct
 end
 
 type program_constructor = Pure_program | Request_program
-type console_constructor = Scan_console | Echo_console
 type string_constructor = EmptyString_string | String_string
 type ascii_constructor = Ascii_ascii
 
@@ -70,14 +69,6 @@ module Ind = struct
         let type_name = "Program"
         let modlist = ["FreeSpec"; "Program"]
         let names = [("Pure", Pure_program); ("Request", Request_program)]
-      end)
-
-  module ConsoleI =
-    Inductive.Make(struct
-        type constructor = console_constructor
-        let type_name = "i"
-        let modlist = exec_instr_pkg "Console"
-        let names = [("Scan", Scan_console); ("Echo", Echo_console)]
       end)
 
   module String =
