@@ -22,7 +22,7 @@ open Query
 open Utils
 open Constr
 
-let char_of_ascii ascii =
+let char_of_coqascii ascii =
   let (c, args) = app_full ascii in
   match kind c with
   | Construct _ (* this should be bool *)
@@ -38,7 +38,7 @@ let char_of_ascii ascii =
   | _
     -> raise (UnsupportedTerm "Trying to use an axiomatic [ascii]")
 
-let char_to_ascii char =
+let char_to_coqascii char =
   let src = int_of_char char in
   let cTrue = Ind.Bool.mkConstructor "true" in
   let cFalse = Ind.Bool.mkConstructor "false" in
@@ -51,10 +51,6 @@ let char_to_ascii char =
   let l = List.rev (int_to_bool_l 8 src []) in
   mkApp (cAscii, Array.of_list (List.map coqbool_of_bool l))
 
-let rec print_lchar = function
-  | x :: rst -> print_char x; print_lchar rst
-  | [] -> ()
-
 let rec lchar_of_coqstr coq_str =
   let (c, args) = app_full coq_str in
   match kind c with
@@ -62,7 +58,7 @@ let rec lchar_of_coqstr coq_str =
     -> (match (Ind.String.constructor_of c, args) with
         | (Some EmptyString_string, []) -> []
         | (Some String_string, [ascii; rst])
-          -> char_of_ascii ascii :: lchar_of_coqstr rst
+          -> char_of_coqascii ascii :: lchar_of_coqstr rst
         | _ -> raise (Anomaly "Unknown [string] constructor"))
   | _
     -> raise (UnsupportedTerm "Trying to print an axiomatic [string]")
@@ -73,7 +69,7 @@ let rec str_of_lchar = function
 
 let rec coqstr_of_lchar = function
   | x :: rst
-    -> let x = char_to_ascii x in
+    -> let x = char_to_coqascii x in
        let rst = coqstr_of_lchar rst in
        mkApp (Ind.String.mkConstructor "String", Array.of_list [x; rst])
   | _ -> Ind.String.mkConstructor "EmptyString"
@@ -83,5 +79,5 @@ let lchar_of_str s =
     if i < 0 then l else exp (i - 1) (s.[i] :: l)
   in exp (String.length s - 1) []
 
-let coqstr_of_str s = coqstr_of_lchar (lchar_of_str s)
+let str_to_coqstr s = coqstr_of_lchar (lchar_of_str s)
 let str_of_coqstr s = str_of_lchar (lchar_of_coqstr s)
