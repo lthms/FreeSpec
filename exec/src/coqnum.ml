@@ -35,7 +35,7 @@ let int_of_coqpositive =
     | _ -> raise (UnsupportedTerm "not a constructor of [positive]")
   in of_coqpositive_aux 0 1
 
-let int_to_coqpositive =
+let int_to_coqpositive _ =
   raise (UnsupportedTerm "To be implemented")
 
 let int_of_coqz z =
@@ -50,5 +50,5 @@ let int_of_coqz z =
   | _ -> raise (UnsupportedTerm "not a constructor of [Z]")
 
 
-let int_to_coqz =
+let int_to_coqz _ =
   raise (UnsupportedTerm "To be implemented")
