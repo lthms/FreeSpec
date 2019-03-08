@@ -25,13 +25,10 @@ open Constr
 let int_of_coqpositive =
   let rec of_coqpositive_aux acc depth p =
     let (p, args) = app_full p in
-    match kind p with
-    | Construct (p, _)
-      -> (match (Ind.Positive.constructor_of p, args) with
-          | (Some XH_positive, []) -> acc + depth
-          | (Some XO_positive, [next]) -> of_coqpositive_aux acc (2 * depth) next
-          | (Some XI_positive, [next]) -> of_coqpositive_aux (acc + depth) (2 * depth) next
-          | _ -> raise (UnsupportedTerm "not a constructor of [positive]"))
+    match (Ind.Positive.constructor_of p, args) with
+    | (Some XH_positive, []) -> acc + depth
+    | (Some XO_positive, [next]) -> of_coqpositive_aux acc (2 * depth) next
+    | (Some XI_positive, [next]) -> of_coqpositive_aux (acc + depth) (2 * depth) next
     | _ -> raise (UnsupportedTerm "not a constructor of [positive]")
   in of_coqpositive_aux 0 1
 
@@ -53,13 +50,10 @@ let int_to_coqpositive i =
 
 let int_of_coqz z =
   let (z, args) = app_full z in
-  match kind z with
-  | Construct (z, _)
-    -> (match (Ind.Z.constructor_of z, args) with
-        | (Some Z0_Z, []) -> 0
-        | (Some Zpos_Z, [p]) -> int_of_coqpositive p
-        | (Some Zneg_Z, [p]) -> -1 * int_of_coqpositive p
-        | _ -> raise (UnsupportedTerm "not a constructor of [Z]"))
+  match (Ind.Z.constructor_of z, args) with
+  | (Some Z0_Z, []) -> 0
+  | (Some Zpos_Z, [p]) -> int_of_coqpositive p
+  | (Some Zneg_Z, [p]) -> -1 * int_of_coqpositive p
   | _ -> raise (UnsupportedTerm "not a constructor of [Z]")
 
 let int_to_coqz = function

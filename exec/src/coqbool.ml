@@ -20,15 +20,11 @@
 
 open Query
 open Utils
-open Constr
 
 let bool_of_coqbool cbool =
-  match kind cbool with
-  | Construct (c, _) ->
-     (match Ind.Bool.constructor_of c with
-      | Some b -> b
-      | _ -> raise (UnsupportedTerm "not a [bool] constructor"))
-  | _ -> raise (UnsupportedTerm "not a constructor")
+  match Ind.Bool.constructor_of cbool with
+  | Some b -> b
+  | _ -> raise (UnsupportedTerm "not a [bool] constructor")
 
 let bool_to_coqbool = function
   | true -> Ind.Bool.mkConstructor "true"

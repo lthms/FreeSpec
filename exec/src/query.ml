@@ -32,9 +32,12 @@ module Inductive = struct
   module Make (I: InductiveSpec) = struct
     let constructor_of c =
       let constructor_is = fun cstr ->
-        Names.GlobRef.equal
-          (Globnames.ConstructRef c)
-          (Coqlib.gen_reference_in_modules contrib [I.modlist] cstr)
+        match Constr.kind c with
+        | Constr.Construct (c, _)
+          -> Names.GlobRef.equal
+               (Globnames.ConstructRef c)
+               (Coqlib.gen_reference_in_modules contrib [I.modlist] cstr)
+        | _ -> false
       in
       let rec aux = function
         | (str, descr) :: rst

@@ -54,15 +54,11 @@ let bytes_fold_chars_rev str f =
 let coqstr_fold_chars coqstr f =
   let rec aux coqstr acc =
     let (c, args) = app_full coqstr in
-    match kind c with
-    | Construct (c, _)
-      -> (match (Ind.String.constructor_of c, args) with
-          | (Some EmptyString_string, []) -> acc
-          | (Some String_string, [ascii; rst])
-            -> aux rst (f acc (char_of_coqascii ascii))
-          | _ -> raise (Anomaly "Unknown [string] constructor"))
-    | _
-      -> raise (UnsupportedTerm "Trying to print an axiomatic [string]")
+      match (Ind.String.constructor_of c, args) with
+      | (Some EmptyString_string, []) -> acc
+      | (Some String_string, [ascii; rst])
+        -> aux rst (f acc (char_of_coqascii ascii))
+      | _ -> raise (Anomaly "Unknown [string] constructor")
   in aux coqstr
 
 let bytes_to_coqstr str =
