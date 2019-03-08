@@ -18,9 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+open Array
+open Constr
 open Query
 open Utils
-open Constr
 
 let char_of_coqascii ascii =
   let (c, args) = app_full ascii in
@@ -35,44 +36,41 @@ let char_of_coqascii ascii =
 
 let char_to_coqascii char =
   let src = int_of_char char in
-  let cTrue = Coqbool.bool_to_coqbool true in
-  let cFalse = Coqbool.bool_to_coqbool false in
   let cAscii = Ind.Ascii.mkConstructor "Ascii" in
-  let coqbool_of_bool b = if b then cTrue else cFalse in
-  let rec int_to_bool_l depth x acc =
+  let rec int_to_booll depth x acc =
     if depth != 0
-    then int_to_bool_l (depth-1) (x/2) ((if x mod 2 == 1 then true else false) :: acc)
-    else acc in
-  let l = List.rev (int_to_bool_l 8 src []) in
-  mkApp (cAscii, Array.of_list (List.map coqbool_of_bool l))
+    then int_to_booll (depth-1) (x/2) (Coqbool.bool_to_coqbool (x mod 2 == 1)::acc)
+    else acc
+  in
+  mkApp (cAscii, of_list @@ List.rev (int_to_booll 8 src []))
 
-let rec lchar_of_coqstr coq_str =
-  let (c, args) = app_full coq_str in
-  match kind c with
-  | Construct (c, _)
-    -> (match (Ind.String.constructor_of c, args) with
-        | (Some EmptyString_string, []) -> []
-        | (Some String_string, [ascii; rst])
-          -> char_of_coqascii ascii :: lchar_of_coqstr rst
-        | _ -> raise (Anomaly "Unknown [string] constructor"))
-  | _
-    -> raise (UnsupportedTerm "Trying to print an axiomatic [string]")
+(* val str_fold_chars: string -> ('b -> char -> 'b) -> 'b -> 'b *)
+let str_fold_chars_rev str f =
+  let rec aux i acc =
+    if 0 <= i then aux (i-1) (f acc str.[i]) else acc
+  in aux (String.length str - 1)
 
-let rec str_of_lchar = function
-  | x :: rst -> String.make 1 x ^ str_of_lchar rst
-  | _ -> ""
+(* val coqstr_fold_chars: Constr.constr -> ('b -> char -> 'b) -> 'b -> 'b *)
+let coqstr_fold_chars coqstr f =
+  let rec aux coqstr acc =
+    let (c, args) = app_full coqstr in
+    match kind c with
+    | Construct (c, _)
+      -> (match (Ind.String.constructor_of c, args) with
+          | (Some EmptyString_string, []) -> acc
+          | (Some String_string, [ascii; rst])
+            -> aux rst (f acc (char_of_coqascii ascii))
+          | _ -> raise (Anomaly "Unknown [string] constructor"))
+    | _
+      -> raise (UnsupportedTerm "Trying to print an axiomatic [string]")
+  in aux coqstr
 
-let rec coqstr_of_lchar = function
-  | x :: rst
-    -> let x = char_to_coqascii x in
-       let rst = coqstr_of_lchar rst in
-       mkApp (Ind.String.mkConstructor "String", Array.of_list [x; rst])
-  | _ -> Ind.String.mkConstructor "EmptyString"
+let str_to_coqstr str =
+  let cString = Ind.String.mkConstructor "String" in
+  let cEmpty = Ind.String.mkConstructor "EmptyString" in
+  let aux acc c = mkApp (cString, of_list [char_to_coqascii c; acc]) in
+  str_fold_chars_rev str aux cEmpty
 
-let lchar_of_str s =
-  let rec exp i l =
-    if i < 0 then l else exp (i - 1) (s.[i] :: l)
-  in exp (String.length s - 1) []
-
-let str_to_coqstr s = coqstr_of_lchar (lchar_of_str s)
-let str_of_coqstr s = str_of_lchar (lchar_of_coqstr s)
+let str_of_coqstr coqstr =
+  let aux acc c = acc ^ String.make 1 c in
+  coqstr_fold_chars coqstr aux ""
