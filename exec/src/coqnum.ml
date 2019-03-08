@@ -35,8 +35,21 @@ let int_of_coqpositive =
     | _ -> raise (UnsupportedTerm "not a constructor of [positive]")
   in of_coqpositive_aux 0 1
 
-let int_to_coqpositive _ =
-  raise (UnsupportedTerm "To be implemented")
+let int_to_coqpositive i =
+  let rec int_to_lbool acc x =
+    if x != 0
+    then int_to_lbool ((if x mod 2 == 1 then true else false) :: acc) (x/2)
+    else acc in
+  let bool_to_coqpositivec b =
+    if b then Ind.Positive.mkConstructor "xI" else Ind.Positive.mkConstructor "xO" in
+  let rec coqpositive_of_lbool = function
+    | x1 :: x2 :: rst
+      -> let rst = coqpositive_of_lbool (x2 :: rst) in
+         let c = bool_to_coqpositivec x1 in
+         mkApp (c, Array.of_list [rst])
+    | true :: [] -> Ind.Positive.mkConstructor "xH"
+    | _ -> raise (UnsupportedTerm "not a positive integer") in
+  coqpositive_of_lbool (int_to_lbool [] i)
 
 let int_of_coqz z =
   let (z, args) = app_full z in
@@ -49,6 +62,7 @@ let int_of_coqz z =
         | _ -> raise (UnsupportedTerm "not a constructor of [Z]"))
   | _ -> raise (UnsupportedTerm "not a constructor of [Z]")
 
-
-let int_to_coqz _ =
-  raise (UnsupportedTerm "To be implemented")
+let int_to_coqz = function
+  | x when x > 0 -> mkApp (Ind.Z.mkConstructor "Zpos", Array.of_list [int_to_coqpositive x])
+  | 0 -> Ind.Z.mkConstructor "Z0"
+  | x -> mkApp (Ind.Z.mkConstructor "Zneg", Array.of_list [int_to_coqpositive (-1 * x)])
