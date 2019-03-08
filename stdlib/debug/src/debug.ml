@@ -24,25 +24,20 @@ open Exec_plugin.Coqnum
 open Exec_plugin.Interfaces
 open Exec_plugin.Query
 open Exec_plugin.Utils
-open Constr
 
 let path = ["FreeSpec"; "Stdlib"; "Debug"; "Debug"]
 
 let install_interfaces = register_interfaces @@ fun () -> (
   new_primitive path "Inspect" (function [term_type; _instance; term] ->
-     (match kind term_type with
-      | Ind (t, _)
-        -> if Ind.Z.ref_is t
-           then print_int (int_of_coqz term)
-           else if Ind.Bool.ref_is t
-           then print_string (if (bool_of_coqbool term) then "true" else "false")
-           else if Ind.Ascii.ref_is t
-           then print_char (char_of_coqascii term)
-           else if Ind.String.ref_is t
-           then print_bytes (bytes_of_coqstr term)
-           else raise (UnsupportedTerm "There is no available isomorphism for this type");
-           Ind.Unit.mkConstructor "tt"
-      | _
-        -> raise (UnsupportedTerm "There is no available isomorphism for this type"))
+     if Ind.Z.ref_is term_type
+     then print_int (int_of_coqz term)
+     else if Ind.Bool.ref_is term_type
+     then print_string (if (bool_of_coqbool term) then "true" else "false")
+     else if Ind.Ascii.ref_is term_type
+     then print_char (char_of_coqascii term)
+     else if Ind.String.ref_is term_type
+     then print_bytes (bytes_of_coqstr term)
+     else raise (UnsupportedTerm "There is no available isomorphism for this type");
+     Ind.Unit.mkConstructor "tt"
   | _ -> assert false);
 )

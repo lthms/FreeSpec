@@ -54,9 +54,12 @@ module Inductive = struct
       | _ -> raise (Utils.Anomaly "Could not construct the term")
 
     let ref_is i =
-      Names.GlobRef.equal
-        (Globnames.IndRef i)
-        (Coqlib.gen_reference_in_modules contrib [I.modlist] I.type_name)
+      match Constr.kind i with
+      | Constr.Ind (i, _)
+        -> Names.GlobRef.equal
+             (Globnames.IndRef i)
+             (Coqlib.gen_reference_in_modules contrib [I.modlist] I.type_name)
+      | _ -> false
 
   end
 end
