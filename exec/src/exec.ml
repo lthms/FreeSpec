@@ -27,15 +27,25 @@ let reduce_all env evm trm =
   EConstr.to_constr evm (Reductionops.nf_all env evm (EConstr.of_constr trm))
 
 let exec_request instr_t instr_trm func_trm =
-  let (instr_trm, args) = app_full instr_trm in
-  match kind instr_trm with
-  | Construct (c, _) ->
-     (* [primitive_semantic] may raise [UnsupportedInterface] if [c]
-        is not a registered request constructors.  *)
-     let res = primitive_semantic c args in
-     mkApp (func_trm, Array.of_list [res])
-  | _ ->
-     raise UnsupportedInterface
+  let rec find_primitive instr_trm =
+    let (instr_trm, args) = app_full instr_trm in
+    match (kind instr_trm, args) with
+    | (Construct (c, _), args)
+      -> (match (Ind.IntCompose.constructor_of c, args) with
+          | (Some _, [_; _; _; trm])
+            -> find_primitive trm
+          | _
+            -> (c, args))
+    | (Case _, [_; trm]) | (LetIn _, [_; trm])
+      -> find_primitive trm
+    | _
+      -> raise (UnsupportedTerm "Unsupported primitive shape")
+  in
+  let (c, args) = find_primitive instr_trm in
+  (* [primitive_semantic] may raise [UnsupportedInterface] if [c] is not a
+     registered request constructors.  *)
+  let res = primitive_semantic c args in
+  mkApp (func_trm, Array.of_list [res])
 
 let rec exec env evm def =
   Interfaces.force_interface_initializers ();

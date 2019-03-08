@@ -59,6 +59,7 @@ module Inductive = struct
 end
 
 type program_constructor = Pure_program | Request_program
+type intcompose_constructor = InL_intcompose | InR_intcompose
 type string_constructor = EmptyString_string | String_string
 type ascii_constructor = Ascii_ascii
 type positive_constructor = XI_positive | XO_positive | XH_positive
@@ -71,6 +72,14 @@ module Ind = struct
         let type_name = "Program"
         let modlist = ["FreeSpec"; "Program"]
         let names = [("Pure", Pure_program); ("Request", Request_program)]
+      end)
+
+  module IntCompose =
+    Inductive.Make(struct
+        type constructor = intcompose_constructor
+        let type_name = "IntCompose"
+        let modlist = ["FreeSpec"; "Compose"]
+        let names = [("InL", InL_intcompose); ("InR", InR_intcompose)]
       end)
 
   module Positive =
