@@ -18,8 +18,5 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-val int_of_coqpositive: Constr.constr -> int
-val int_to_coqpositive: int -> Constr.constr
-
 val int_of_coqz: Constr.constr -> int
 val int_to_coqz: int -> Constr.constr

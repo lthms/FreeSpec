@@ -34,8 +34,6 @@ let install_interfaces = register_interfaces @@ fun () -> (
       | Ind (t, _)
         -> if Ind.Z.ref_is t
            then print_int (int_of_coqz term)
-           else if Ind.Positive.ref_is t
-           then print_int (int_of_coqpositive term)
            else if Ind.Bool.ref_is t
            then print_string (if (bool_of_coqbool term) then "true" else "false")
            else if Ind.Ascii.ref_is t

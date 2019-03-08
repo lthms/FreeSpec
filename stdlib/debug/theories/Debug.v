@@ -33,7 +33,6 @@ Class HasExecIsomorphism (A: Type).
 
 Instance bool_ExecIso: HasExecIsomorphism bool.
 Instance Z_ExecIso: HasExecIsomorphism Z.
-Instance positive_ExecIso: HasExecIsomorphism positive.
 Instance ascii_ExecIso: HasExecIsomorphism ascii.
 Instance string_ExecIso: HasExecIsomorphism string.
 
