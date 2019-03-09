@@ -44,11 +44,11 @@ let char_to_coqascii char =
   in
   mkApp (cAscii, of_list @@ List.rev (int_to_booll 8 src []))
 
-(* val str_fold_chars: string -> ('b -> char -> 'b) -> 'b -> 'b *)
-let str_fold_chars_rev str f =
+(* val bytes_fold_chars: bytes -> ('b -> char -> 'b) -> 'b -> 'b *)
+let bytes_fold_chars_rev str f =
   let rec aux i acc =
-    if 0 <= i then aux (i-1) (f acc str.[i]) else acc
-  in aux (String.length str - 1)
+    if 0 <= i then aux (i-1) (f acc @@ Bytes.get str i) else acc
+  in aux (Bytes.length str - 1)
 
 (* val coqstr_fold_chars: Constr.constr -> ('b -> char -> 'b) -> 'b -> 'b *)
 let coqstr_fold_chars coqstr f =
@@ -65,12 +65,18 @@ let coqstr_fold_chars coqstr f =
       -> raise (UnsupportedTerm "Trying to print an axiomatic [string]")
   in aux coqstr
 
-let str_to_coqstr str =
+let bytes_to_coqstr str =
   let cString = Ind.String.mkConstructor "String" in
   let cEmpty = Ind.String.mkConstructor "EmptyString" in
   let aux acc c = mkApp (cString, of_list [char_to_coqascii c; acc]) in
-  str_fold_chars_rev str aux cEmpty
+  bytes_fold_chars_rev str aux cEmpty
 
-let str_of_coqstr coqstr =
-  let aux acc c = acc ^ String.make 1 c in
-  coqstr_fold_chars coqstr aux ""
+let bytes_of_coqstr coqstr =
+  let size = coqstr_fold_chars coqstr (fun x _ -> x + 1) 0 in
+  let buffer = Bytes.create size in
+  let aux idx c =
+    let _ = Bytes.set buffer idx c in
+    idx + 1
+  in
+  let _ = coqstr_fold_chars coqstr aux 0 in
+  buffer

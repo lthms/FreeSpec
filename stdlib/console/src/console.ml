@@ -24,17 +24,17 @@ open Exec_plugin.Query
 
 
 let scan = read_line
-let echo = print_string
+let echo = print_bytes
 
 let path = ["FreeSpec"; "Stdlib"; "Console"; "Console"]
 
 let install_interfaces = register_interfaces @@ fun () -> (
   new_primitive path "Scan" (function [] ->
-    str_to_coqstr (scan ())
+    bytes_to_coqstr (Bytes.of_string @@ scan ())
   | _ -> assert false);
 
   new_primitive path "Echo" (function [str] ->
-    echo (str_of_coqstr str);
+    echo (bytes_of_coqstr str);
     Ind.Unit.mkConstructor "tt"
   | _ -> assert false)
 )

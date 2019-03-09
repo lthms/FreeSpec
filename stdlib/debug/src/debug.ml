@@ -39,7 +39,7 @@ let install_interfaces = register_interfaces @@ fun () -> (
            else if Ind.Ascii.ref_is t
            then print_char (char_of_coqascii term)
            else if Ind.String.ref_is t
-           then print_string (str_of_coqstr term)
+           then print_bytes (bytes_of_coqstr term)
            else raise (UnsupportedTerm "There is no available isomorphism for this type");
            Ind.Unit.mkConstructor "tt"
       | _
