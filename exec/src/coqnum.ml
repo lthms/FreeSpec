@@ -22,6 +22,23 @@ open Query
 open Utils
 open Constr
 
+(* fold_bits: int -> ('b -> 'c) -> ('b -> bool -> 'b) -> ('b -> 'c) -> 'b -> 'c *)
+let fold_bits input fzero fiter flast init =
+(* Fold over [input] bits, from the least to the most significant bit, using
+   [init] as its initial value:
+     - [fzero] is called if [input] is 0
+     - [fiter] is called for the least significant bits
+     - [flast] is called for the most significant bit *)
+  if input == 0
+  then fzero init
+  else let rec fold_bit_aux input acc =
+         let next = input lsr 1 in
+         let bit = input land 1 == 1 in
+         if next == 0
+         then flast acc
+         else fold_bit_aux next (fiter acc bit)
+       in fold_bit_aux input init
+
 let int_of_coqpositive =
   (* This function does not implement any special protection against integer
      overflow. Because Coq [positive] terms are not bounded, there is no
@@ -36,20 +53,16 @@ let int_of_coqpositive =
   in of_coqpositive_aux 0 1
 
 let int_to_coqpositive i =
-  let rec int_to_lbool acc x =
-    if x != 0
-    then int_to_lbool ((if x mod 2 == 1 then true else false) :: acc) (x/2)
-    else acc in
-  let bool_to_coqpositivec b =
-    if b then Ind.Positive.mkConstructor "xI" else Ind.Positive.mkConstructor "xO" in
-  let rec coqpositive_of_lbool = function
-    | x1 :: x2 :: rst
-      -> let rst = coqpositive_of_lbool (x2 :: rst) in
-         let c = bool_to_coqpositivec x1 in
-         mkApp (c, Array.of_list [rst])
-    | true :: [] -> Ind.Positive.mkConstructor "xH"
-    | _ -> raise (UnsupportedTerm "not a positive integer") in
-  coqpositive_of_lbool (int_to_lbool [] i)
+  let cXI = Ind.Positive.mkConstructor "xI" in
+  let cXO = Ind.Positive.mkConstructor "xO" in
+  let cXH = Ind.Positive.mkConstructor "xH" in
+  let not_zero _ =
+    raise (UnsupportedTerm "integer is not strictly positive") in
+  let fiter cont bit =
+    let c = if bit then cXI else cXO in
+    fun next -> cont (mkApp (c, (Array.of_list [next]))) in
+  let flast cont = cont cXH in
+  fold_bits i not_zero fiter flast (fun x -> x)
 
 let int_of_coqz z =
   let (z, args) = app_full z in
