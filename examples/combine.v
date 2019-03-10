@@ -19,9 +19,8 @@
  *)
 
 Require Import Coq.Strings.String.
-Require Import FreeSpec.Exec.Plugin.
+Require Import FreeSpec.Exec.
 Require Import FreeSpec.Stdlib.Console.
-Require Import FreeSpec.Stdlib.Debug.
 Require Import FreeSpec.Program.
 Require Import Prelude.Control.
 

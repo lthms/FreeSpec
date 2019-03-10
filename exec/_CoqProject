@@ -1,13 +1,14 @@
 -I src
--R theories FreeSpec.Exec
+-R theories FreeSpec
 
-theories/Interfaces.v
-theories/Plugin.v
+theories/Exec.v
+theories/Exec/Debug.v
 
 src/interfaces.mli
 src/interfaces.ml
 src/extends.mli
 src/extends.ml
+src/debug.ml
 src/exec.ml
 src/exec_plugin.mlpack
 src/g_exec.ml4

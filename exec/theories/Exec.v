@@ -18,20 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import Coq.Strings.String.
-Require Import FreeSpec.Program.
+Require Export FreeSpec.Exec.Debug.
 Require Import FreeSpec.Compose.
 
-Module Console.
-  Inductive i: Type -> Type :=
-  | Scan: i string
-  | Echo: string -> i unit.
-
-  Definition scan {ix} `{Use i ix}
-    : Program ix string :=
-    request Scan.
-
-  Definition echo {ix} `{Use i ix} (str: string)
-    : Program ix unit :=
-    request (Echo str).
-End Console.
+Declare ML Module "exec_plugin".

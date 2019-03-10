@@ -18,16 +18,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Exec_plugin.Coqstr
-open Exec_plugin.Coqbool
-open Exec_plugin.Coqnum
-open Exec_plugin.Extends
-open Exec_plugin.Query
-open Exec_plugin.Utils
+open Coqstr
+open Coqbool
+open Coqnum
+open Extends
+open Query
+open Utils
 
-let path = ["FreeSpec"; "Stdlib"; "Debug"; "Debug"]
+let path = ["FreeSpec"; "Exec"; "Debug"; "Debug"]
 
-let install_interface =
+let install_debug_interface =
   let inspect = function
     | [term_type; _instance; term]
       -> if Ind.Z.ref_is term_type

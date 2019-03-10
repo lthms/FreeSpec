@@ -5,5 +5,6 @@ Coqbool
 Coqstr
 Interfaces
 Extends
+Debug
 Exec
 G_exec

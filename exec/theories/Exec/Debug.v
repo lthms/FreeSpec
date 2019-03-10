@@ -3,7 +3,6 @@
  *
  * Contributors:
  * 2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
- * 2019 Yann Régis-Gianas <yrg@irif.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,18 +18,27 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import Coq.ZArith.ZArith.
 Require Import FreeSpec.Program.
-Require Import FreeSpec.Compose.
-Require Import Prelude.Control.
 
-Require Import FreeSpec.Stdlib.Debug.
+Require Import Prelude.Control.
+Require Import Coq.Numbers.BinNums.
+Require Import Coq.Strings.Ascii.
+Require Import Coq.Strings.String.
 
 Local Open Scope prelude_scope.
-Local Open Scope Z_scope.
 
-Definition inspect_terms {ix} `{Use Debug.i ix} : Program ix unit :=
-  Debug.inspect (120 * -1) ;;
-  Debug.inspect true.
+Class HasExecIsomorphism (A: Type).
 
-Exec inspect_terms.
+Instance bool_ExecIso: HasExecIsomorphism bool.
+Instance Z_ExecIso: HasExecIsomorphism Z.
+Instance ascii_ExecIso: HasExecIsomorphism ascii.
+Instance string_ExecIso: HasExecIsomorphism string.
+
+Module Debug.
+  Inductive i: Type -> Type :=
+  | Inspect: forall {A} `{HasExecIsomorphism A}, A -> i unit.
+
+  Definition inspect {ix} `{Use i ix} {A} `{HasExecIsomorphism A}
+    : A -> Program ix unit :=
+    request <<< Inspect.
+End Debug.

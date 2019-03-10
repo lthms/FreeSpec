@@ -1,6 +1,0 @@
--I src
--R theories FreeSpec.Stdlib
-
-theories/Debug.v
-src/debug.ml
-src/stdlib_debug_plugin.mlpack
