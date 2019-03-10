@@ -18,18 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Exec_plugin.Coqstr
-open Exec_plugin.Extends
-open Exec_plugin.Query
+open Interfaces
 
-let path = ["FreeSpec"; "Stdlib"; "Console"; "Console"]
-
-let install_interface =
-  let scan = function
-    | [] -> bytes_to_coqstr (Bytes.of_string @@ read_line ())
-    | _ -> assert false in
-  let echo = function
-    | [str] -> print_bytes (bytes_of_coqstr str);
-               Ind.Unit.mkConstructor "tt"
-    | _ -> assert false in
-  register_interface path [("Scan", scan); ("Echo", echo)]
+let register_interface path semantics =
+  let reg _ = function
+      | (name, sem) -> new_primitive path name sem
+  in
+  add_register_handler @@ fun _ -> List.fold_left reg () semantics

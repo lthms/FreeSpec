@@ -18,18 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Exec_plugin.Coqstr
-open Exec_plugin.Extends
-open Exec_plugin.Query
+type effectful_semantic = Constr.constr list -> Constr.constr
 
-let path = ["FreeSpec"; "Stdlib"; "Console"; "Console"]
+val new_primitive: string list -> string -> effectful_semantic -> unit
+val primitive_semantic : Names.constructor -> effectful_semantic
 
-let install_interface =
-  let scan = function
-    | [] -> bytes_to_coqstr (Bytes.of_string @@ read_line ())
-    | _ -> assert false in
-  let echo = function
-    | [str] -> print_bytes (bytes_of_coqstr str);
-               Ind.Unit.mkConstructor "tt"
-    | _ -> assert false in
-  register_interface path [("Scan", scan); ("Echo", echo)]
+val force_interface_initializers: unit -> unit
+val add_register_handler: (unit -> unit) -> unit

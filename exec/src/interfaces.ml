@@ -3,6 +3,7 @@
  *
  * Contributors:
  * 2019 Yann Régis-Gianas <yrg@irif.fr>
+ * 2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,8 +61,8 @@ let primitive_semantic : Names.constructor -> effectful_semantic =
 (** A queue for initializers to be triggered at [Exec] time. *)
 let initializers = Queue.create ()
 
-(** [register_interfaces i]. *)
-let register_interfaces interface_initializer =
+(** [add_register_handler i]. *)
+let add_register_handler interface_initializer =
   Queue.add interface_initializer initializers
 
 (** [force_interface_initializers ()] initialize the interfaces that
