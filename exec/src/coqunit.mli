@@ -18,18 +18,4 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Exec_plugin.Coqstr
-open Exec_plugin.Extends
-open Exec_plugin.Coqunit
-
-let path = ["FreeSpec"; "Stdlib"; "Console"; "Console"]
-
-let install_interface =
-  let scan = function
-    | [] -> string_to_coqstr (read_line ())
-    | _ -> assert false in
-  let echo = function
-    | [str] -> print_bytes (bytes_of_coqstr str);
-               coqtt
-    | _ -> assert false in
-  register_interface path [("Scan", scan); ("Echo", echo)]
+val coqtt: Constr.constr

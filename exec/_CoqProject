@@ -12,6 +12,8 @@ src/debug.ml
 src/exec.ml
 src/exec_plugin.mlpack
 src/g_exec.ml4
+src/coqunit.mli
+src/coqunit.ml
 src/coqstr.mli
 src/coqstr.ml
 src/coqbool.mli

@@ -3,6 +3,7 @@ Query
 Coqnum
 Coqbool
 Coqstr
+Coqunit
 Interfaces
 Extends
 Debug
