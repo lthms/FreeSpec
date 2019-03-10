@@ -26,7 +26,7 @@ let path = ["FreeSpec"; "Stdlib"; "Console"; "Console"]
 
 let install_interface =
   let scan = function
-    | [] -> bytes_to_coqstr (Bytes.of_string @@ read_line ())
+    | [] -> string_to_coqstr (read_line ())
     | _ -> assert false in
   let echo = function
     | [str] -> print_bytes (bytes_of_coqstr str);

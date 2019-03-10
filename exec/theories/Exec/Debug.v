@@ -36,9 +36,19 @@ Instance string_ExecIso: HasExecIsomorphism string.
 
 Module Debug.
   Inductive i: Type -> Type :=
-  | Inspect: forall {A} `{HasExecIsomorphism A}, A -> i unit.
+  | Iso: forall {A} `{HasExecIsomorphism A}, A -> i A
+  | Inspect: forall {A} `{HasExecIsomorphism A}, A -> i string.
 
+  (** Get a string which describes the argument (from the
+      Exec plugin perspective). *)
   Definition inspect {ix} `{Use i ix} {A} `{HasExecIsomorphism A}
-    : A -> Program ix unit :=
+    : A -> Program ix string :=
     request <<< Inspect.
+
+  (** Should acts as [id] as long as there is no bug in the
+      FreeSpec.Exec plugin (primilarly intended to write test cases
+      for conversion functions in Coq) *)
+  Definition iso {ix} `{Use i ix} {A} `{HasExecIsomorphism A}
+    : A -> Program ix A :=
+    request <<< Iso.
 End Debug.

@@ -24,11 +24,14 @@ Require Import FreeSpec.Stdlib.Console.
 Require Import FreeSpec.Program.
 Require Import Prelude.Control.
 
+Require Import Coq.ZArith.ZArith.
+Local Open Scope Z_scope.
+
 Local Open Scope prelude_scope.
 
 Definition combine {ix} `{Use Console.i ix} `{Use Debug.i ix}: Program ix unit :=
-  Console.echo "Tell me? ";;
-  Console.scan >>= Debug.inspect.
+  Debug.iso 10 >>= Debug.inspect >>= Console.echo ;;
+  Debug.iso true >>= Debug.inspect >>= Console.echo.
 
 (* for Console.i <+> Debug.i *)
 Exec combine.

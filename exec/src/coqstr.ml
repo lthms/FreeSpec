@@ -44,11 +44,11 @@ let char_to_coqascii char =
   in
   mkApp (cAscii, of_list @@ List.rev (int_to_booll 8 src []))
 
-(* val bytes_fold_chars: bytes -> ('b -> char -> 'b) -> 'b -> 'b *)
-let bytes_fold_chars_rev str f =
+(* val fold_chars: 'a -> int -> ('a -> int -> char) -> ('b -> char -> 'b) -> 'b -> 'b *)
+let fold_chars_rev buffer size get f =
   let rec aux i acc =
-    if 0 <= i then aux (i-1) (f acc @@ Bytes.get str i) else acc
-  in aux (Bytes.length str - 1)
+    if 0 <= i then aux (i-1) (f acc @@ get buffer i) else acc
+  in aux (size - 1)
 
 (* val coqstr_fold_chars: Constr.constr -> ('b -> char -> 'b) -> 'b -> 'b *)
 let coqstr_fold_chars coqstr f =
@@ -61,11 +61,17 @@ let coqstr_fold_chars coqstr f =
       | _ -> raise (Anomaly "Unknown [string] constructor")
   in aux coqstr
 
-let bytes_to_coqstr str =
+let to_coqstr size get str =
   let cString = Ind.String.mkConstructor "String" in
   let cEmpty = Ind.String.mkConstructor "EmptyString" in
   let aux acc c = mkApp (cString, of_list [char_to_coqascii c; acc]) in
-  bytes_fold_chars_rev str aux cEmpty
+  fold_chars_rev str size get aux cEmpty
+
+let bytes_to_coqstr str =
+  to_coqstr (Bytes.length str) Bytes.get str
+
+let string_to_coqstr str =
+  to_coqstr (String.length str) String.get str
 
 let bytes_of_coqstr coqstr =
   let size = coqstr_fold_chars coqstr (fun x _ -> x + 1) 0 in

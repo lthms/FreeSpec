@@ -27,18 +27,38 @@ open Utils
 
 let path = ["FreeSpec"; "Exec"; "Debug"; "Debug"]
 
+let map_iso_type term_type term fint fbool fchar fstring =
+  if Ind.Z.ref_is term_type
+  then fint (int_of_coqz term)
+  else if Ind.Bool.ref_is term_type
+  then fbool (bool_of_coqbool term)
+  else if Ind.Ascii.ref_is term_type
+  then fchar (char_of_coqascii term)
+  else if Ind.String.ref_is term_type
+  then fstring (bytes_of_coqstr term)
+  else raise (UnsupportedTerm "There is no available isomorphism for this type")
+
 let install_debug_interface =
   let inspect = function
     | [term_type; _instance; term]
-      -> if Ind.Z.ref_is term_type
-         then print_int (int_of_coqz term)
-         else if Ind.Bool.ref_is term_type
-         then print_string (if (bool_of_coqbool term) then "true" else "false")
-         else if Ind.Ascii.ref_is term_type
-         then print_char (char_of_coqascii term)
-         else if Ind.String.ref_is term_type
-         then print_bytes (bytes_of_coqstr term)
-         else raise (UnsupportedTerm "There is no available isomorphism for this type");
-         Ind.Unit.mkConstructor "tt"
+      -> let str = map_iso_type
+                     term_type
+                     term
+                     string_of_int
+                     string_of_bool
+                     (String.make 1)
+                     Bytes.to_string
+         in string_to_coqstr str
     | _ -> assert false in
-  register_interface path [("Inspect", inspect)]
+  let iso = function
+    | [term_type; _instance; term]
+      -> let cstr = map_iso_type
+                      term_type
+                      term
+                      int_to_coqz
+                      bool_to_coqbool
+                      char_to_coqascii
+                      bytes_to_coqstr
+         in cstr
+    | _ -> assert false in
+  register_interface path [("Inspect", inspect); ("Iso", iso)]

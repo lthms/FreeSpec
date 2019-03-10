@@ -23,3 +23,5 @@ val char_to_coqascii: char -> Constr.constr
 
 val bytes_of_coqstr: Constr.constr -> bytes
 val bytes_to_coqstr: bytes -> Constr.constr
+
+val string_to_coqstr: string -> Constr.constr
