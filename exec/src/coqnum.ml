@@ -23,6 +23,9 @@ open Utils
 open Constr
 
 let int_of_coqpositive =
+  (* This function does not implement any special protection against integer
+     overflow. Because Coq [positive] terms are not bounded, there is no
+     guarantee that [int_of_coqpositive] will be equivalent to its argument. *)
   let rec of_coqpositive_aux acc depth p =
     let (p, args) = app_full p in
     match (Ind.Positive.constructor_of p, args) with
