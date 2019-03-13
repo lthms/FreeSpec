@@ -1,0 +1,12 @@
+package "freespec-stdlib-commandLine" (
+
+    description = "Freespec.Stdlib/CommandLine Plugin"
+    version     = "8.9"
+
+    requires    = "freespec-exec"
+    directory   = "src"
+
+    archive(byte)    = "stdlib_commandLine_plugin.cmo"
+    archive(native)  = "stdlib_commandLine_plugin.cmx"
+
+)

@@ -1,11 +1,8 @@
-#!/usr/bin/env fsrun
-
 (* FreeSpec
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
- * 2019 Yann Régis-Gianas <yrg@irif.fr>
+ * 2019 Vincent Tourneur <vincent.tourneur@inria.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,13 +18,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Stdlib.Console.
+Require Import FreeSpec.Exec.
+Require Export Coq.Strings.String.
 Require Import FreeSpec.Program.
-Require Import Prelude.Control.
+Require Import BinInt.
 
-Local Open Scope prelude_scope.
+Module CommandLine.
+  Inductive i: Type -> Type :=
+  | Argc: i Z
+  | Arg: Z -> i string.
 
-Definition hello {ix} `{Use Console.i ix} : Program ix unit :=
-  Console.echo "Hello, world".
+  Definition argc {ix} `{Use i ix}
+    : Program ix Z :=
+    request Argc.
 
-Definition main := hello.
+  Definition arg {ix} `{Use i ix} (n: Z)
+    : Program ix string :=
+    request (Arg n).
+End CommandLine.
+
+Declare ML Module "stdlib_commandLine_plugin".

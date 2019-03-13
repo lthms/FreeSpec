@@ -1,11 +1,8 @@
-#!/usr/bin/env fsrun
-
 (* FreeSpec
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
- * 2019 Yann Régis-Gianas <yrg@irif.fr>
+ * 2019 Vincent Tourneur <vincent.tourneur@inria.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,13 +18,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Stdlib.Console.
-Require Import FreeSpec.Program.
-Require Import Prelude.Control.
+open Exec_plugin.Coqstr
+open Exec_plugin.Extends
+open Exec_plugin.Coqnum
 
-Local Open Scope prelude_scope.
+let path = ["FreeSpec"; "Stdlib"; "CommandLine"; "CommandLine"]
 
-Definition hello {ix} `{Use Console.i ix} : Program ix unit :=
-  Console.echo "Hello, world".
-
-Definition main := hello.
+let install_interface =
+  let argc = function
+    | [] -> int_to_coqz (int_of_string (Sys.getenv "FREESPEC_RUN_ARGC"))
+    | _ -> assert false in
+  let arg = function
+    | [n] -> string_to_coqstr (Sys.getenv ("FREESPEC_RUN_ARG_" ^ (string_of_int (int_of_coqz n))))
+    | _ -> assert false in
+  register_interface path [("Argc", argc); ("Arg", arg)]

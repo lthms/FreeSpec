@@ -4,8 +4,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
- * 2019 Yann Régis-Gianas <yrg@irif.fr>
+ * Vincent Tourneur <vincent.tourneur@inria.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +21,23 @@
  *)
 
 Require Import FreeSpec.Stdlib.Console.
+Require Import FreeSpec.Stdlib.CommandLine.
 Require Import FreeSpec.Program.
 Require Import Prelude.Control.
+Require Import BinInt.
+Require Import String.
+Require Import Ascii.
 
 Local Open Scope prelude_scope.
 
-Definition hello {ix} `{Use Console.i ix} : Program ix unit :=
-  Console.echo "Hello, world".
+Definition new_line := String "010"%char EmptyString.
 
-Definition main := hello.
+Fixpoint print_args_aux {ix} `{Use Console.i ix} `{Use CommandLine.i ix} (t: Z) (n: nat) : Program ix unit :=
+  match n with
+  | S m => CommandLine.arg (t - ((Z.of_nat m) + 1)) >>= Console.echo;; Console.echo " ";; print_args_aux t m
+  | _ => Console.echo new_line
+  end.
+Definition print_args {ix} `{Use Console.i ix} `{Use CommandLine.i ix} (n: Z) := print_args_aux n (Z.to_nat n).
+
+Definition main {ix} `{Use Console.i ix} `{Use CommandLine.i ix} :=
+  CommandLine.argc >>= print_args.

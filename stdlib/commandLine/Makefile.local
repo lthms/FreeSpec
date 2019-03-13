@@ -1,0 +1,10 @@
+CAMLPKGS := -package freespec-exec
+
+install-extra::
+	ocamlfind install freespec-stdlib-commandLine META src/stdlib_commandLine_plugin.*
+
+uninstall::
+	ocamlfind remove freespec-stdlib-commandLine
+
+merlin-hook::
+	echo 'PKG freespec-exec' >> .merlin

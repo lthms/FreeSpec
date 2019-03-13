@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+	echo "Usage: $0 program [args]"
+	exit 1
+fi
+
+input=$1
+
+mkdir -p /tmp/FreeSpecRun
+tmpfile=p$(uuidgen | cut -d'-' -f1)
+
+if [ $(head -c2 "$input") == "#!" ]; then
+	tail -n+2 "$input" > /tmp/FreeSpecRun/$tmpfile.v
+else
+	cp "$input" /tmp/FreeSpecRun/$tmpfile.v
+fi
+
+echo 'Exec main.' >> /tmp/FreeSpecRun/$tmpfile.v
+
+export FREESPEC_RUN_ARGC=$#
+for n in $(seq 1 $#); do
+	export FREESPEC_RUN_ARG_$((n - 1))="${!n}"
+done
+
+cd /tmp/FreeSpecRun
+
+coqc $tmpfile.v
+rm -f $tmpfile.v $tmpfile.glob $tmpfile.vo .$tmpfile.aux

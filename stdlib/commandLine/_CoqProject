@@ -1,0 +1,6 @@
+-I src
+-R theories FreeSpec.Stdlib
+
+theories/CommandLine.v
+src/commandLine.ml
+src/stdlib_commandLine_plugin.mlpack
