@@ -14,10 +14,11 @@
 *.cmi
 *.cmx
 
-Makefile
+**/Makefile
 Makefile.conf
 .merlin
 
 # generated docs
 html/
 docs/freespec
+mlihtml/
