@@ -1,5 +1,3 @@
-#!/usr/bin/env fsrun
-
 (* FreeSpec
  * Copyright (C) 2018–2019 ANSSI
  *

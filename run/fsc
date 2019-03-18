@@ -1,0 +1,28 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+	echo "Usage: $0 program_files"
+	exit 1
+fi
+
+output=$(echo $1 | cut -d'.' -f1)
+
+mkdir -p /tmp/FreeSpecCompile
+
+tmpfile=P$(uuidgen | cut -d'-' -f1)
+mkdir /tmp/FreeSpecCompile/$tmpfile
+
+for input in $@; do
+	cp "$input" /tmp/FreeSpecCompile/$tmpfile/
+	cd /tmp/FreeSpecCompile/$tmpfile
+	tar -rf ../$tmpfile.tar "$input"
+	rm -f "$input"
+	cd - > /dev/null
+done
+
+echo '#!/usr/bin/env fsrun' > $output
+cat /tmp/FreeSpecCompile/$tmpfile.tar >> $output
+chmod u+x $output
+
+rm -f /tmp/FreeSpecCompile/$tmpfile.tar
+rmdir /tmp/FreeSpecCompile/$tmpfile

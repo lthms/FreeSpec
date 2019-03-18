@@ -8,22 +8,28 @@ fi
 input=$1
 
 mkdir -p /tmp/FreeSpecRun
-tmpfile=p$(uuidgen | cut -d'-' -f1)
+tmpfile=P$(uuidgen | cut -d'-' -f1)
 
-if [ $(head -c2 "$input") == "#!" ]; then
-	tail -n+2 "$input" > /tmp/FreeSpecRun/$tmpfile.v
-else
-	cp "$input" /tmp/FreeSpecRun/$tmpfile.v
-fi
+tail -n+2 "$input" > /tmp/FreeSpecRun/$tmpfile.tar
 
-echo 'Exec main.' >> /tmp/FreeSpecRun/$tmpfile.v
+mkdir /tmp/FreeSpecRun/$tmpfile
+cd /tmp/FreeSpecRun/$tmpfile
+
+progfile=$(tar -xvf ../$tmpfile.tar | cut -d'.' -f1)
+
+echo Require Import FreeSpec.Exec. > ../$tmpfile.v
+for file in $progfile; do
+	echo Require Import $file. >> ../$tmpfile.v
+done
+echo Exec main. >> ../$tmpfile.v
 
 export FREESPEC_RUN_ARGC=$#
 for n in $(seq 1 $#); do
 	export FREESPEC_RUN_ARG_$((n - 1))="${!n}"
 done
 
-cd /tmp/FreeSpecRun
+coqc ../$tmpfile.v
+rm -f *.vo ../$tmpfile.tar ../$tmpfile.v ../$tmpfile.glob ../$tmpfile.vo ../.$tmpfile.aux
 
-coqc $tmpfile.v
-rm -f $tmpfile.v $tmpfile.glob $tmpfile.vo .$tmpfile.aux
+cd - > /dev/null
+rmdir /tmp/FreeSpecRun/$tmpfile
