@@ -19,6 +19,8 @@ Makefile.conf
 .merlin
 
 # generated docs
-html/
+html/*
+!html/index.html
+**/html
 docs/freespec
 mlihtml/
