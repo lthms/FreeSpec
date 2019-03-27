@@ -204,8 +204,9 @@ Definition program_map
   : Program I B :=
   program_bind p (fun x => Pure (f x)).
 
-Program Instance program_Functor
-        (I:  Interface)
+#[program]
+Instance program_Functor
+         (I:  Interface)
   : Functor (Program I) :=
   { map := @program_map I
   }.
@@ -246,8 +247,9 @@ Proof.
   reflexivity.
 Qed.
 
-Polymorphic Program Instance program_Applicative
-            (I:  Interface)
+#[polymorphic, program]
+Instance program_Applicative
+         (I:  Interface)
   : Applicative (Program I) :=
   { pure := @program_pure I
   ; apply := @program_apply I
@@ -281,8 +283,9 @@ Next Obligation. (* program_apply (program_apply (program_apply (program_pure co
   reflexivity.
 Defined.
 
-Program Instance program_Monad
-        (I:  Interface)
+#[program]
+Instance program_Monad
+         (I:  Interface)
   : Monad (Program I) :=
   { bind := @program_bind I
   }.

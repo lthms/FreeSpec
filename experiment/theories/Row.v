@@ -255,10 +255,11 @@ Notation "<<| x ; y ; .. ; z |>>" :=
 (** * Specification
  *)
 
-Polymorphic Fixpoint generalize'
-            (f:      Type -> (Type -> Type) -> Type)
-            (specs:  list Type)
-            (row:    list (Type -> Type))
+#[polymorphic]
+Fixpoint generalize'
+         (f:      Type -> (Type -> Type) -> Type)
+         (specs:  list Type)
+         (row:    list (Type -> Type))
   : list Type :=
   match specs, row with
   | w :: rst, i :: rst'
