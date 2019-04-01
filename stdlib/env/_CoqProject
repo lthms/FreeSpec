@@ -1,0 +1,6 @@
+-I src
+-R theories FreeSpec.Stdlib
+
+theories/Env.v
+src/env.ml
+src/stdlib_env_plugin.mlpack

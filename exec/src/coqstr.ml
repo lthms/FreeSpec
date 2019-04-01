@@ -82,3 +82,6 @@ let bytes_of_coqstr coqstr =
   in
   let _ = coqstr_fold_chars coqstr aux 0 in
   buffer
+
+let string_of_coqstr str =
+  Bytes.to_string (bytes_of_coqstr str)

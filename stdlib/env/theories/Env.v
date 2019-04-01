@@ -18,11 +18,31 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-val char_of_coqascii: Constr.constr -> char
-val char_to_coqascii: char -> Constr.constr
+Require Export Coq.Strings.String.
 
-val bytes_of_coqstr: Constr.constr -> bytes
-val bytes_to_coqstr: bytes -> Constr.constr
+Require Import Prelude.Control.
 
-val string_to_coqstr: string -> Constr.constr
-val string_of_coqstr: Constr.constr -> string
+Require Import FreeSpec.Exec.
+Require Import FreeSpec.Program.
+
+#[local]
+Open Scope prelude_scope.
+
+Module Env.
+  Inductive i: Type -> Type :=
+  | GetVar: string -> i string
+  | SetVar: string -> string -> i unit.
+
+  Definition get
+             {ix} `{Use i ix}
+    : string -> Program ix string :=
+    request <<< GetVar.
+
+  Definition set
+             {ix} `{Use i ix}
+             (var: string)
+    : string -> Program ix unit :=
+    request <<< (SetVar var).
+End Env.
+
+Declare ML Module "stdlib_env_plugin".
