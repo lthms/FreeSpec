@@ -19,7 +19,6 @@
  *)
 
 let contrib = "exec"
-let exec_instr_pkg istr = ["FreeSpec"; "Exec"; "Interfaces"; istr]
 
 module type InductiveSpec = sig
   type constructor

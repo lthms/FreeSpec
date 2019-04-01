@@ -27,7 +27,11 @@ let path = ["FreeSpec"; "Stdlib"; "Env"; "Env"]
 let install_interface =
   let get = function
     | [var]
-      -> string_to_coqstr (Unix.getenv (string_of_coqstr var))
+      -> let str = try
+             Unix.getenv (string_of_coqstr var)
+           with
+           | _ -> ""
+         in string_to_coqstr str
     | _
       -> assert false in
   let set = function

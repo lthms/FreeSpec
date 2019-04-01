@@ -24,7 +24,7 @@ exec: install-core
 stdlib: stdlib-console stdlib-env
 
 stdlib-env: install-exec
-	make -C stdlib/console
+	make -C stdlib/env
 
 stdlib-console: install-exec
 	make -C stdlib/console
