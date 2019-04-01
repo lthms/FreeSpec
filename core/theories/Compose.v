@@ -89,15 +89,18 @@ CoFixpoint mkCompSemantics
            (sig_i:  Sem.t I)
            (sig_j:  Sem.t J)
   : Sem.t (I <+> J) :=
-  Sem.handler (fun {A:  Type}
-                   (e:  (I <+> J) A)
-               => match e with
-                  | InL e_i => let res := handle sig_i e_i in
-                               Sem.mkRes (Sem.res res)
-                                         (mkCompSemantics (Sem.next res) sig_j)
-                  | InR e_j => Sem.mkRes (evalEffect sig_j e_j)
-                                         (mkCompSemantics sig_i (execEffect sig_j e_j))
-                  end).
+  Sem.handler
+    (fun {A: Type} (e: I <+> J $ A)
+     => match e with
+        | InL e_i
+          => let res := handle sig_i e_i in
+             Sem.mkRes (Sem.res res)
+                       (mkCompSemantics (Sem.next res) sig_j)
+        | InR e_j
+          =>  let res := handle sig_j e_j in
+              Sem.mkRes (Sem.res res)
+                        (mkCompSemantics sig_i (Sem.next res))
+        end).
 
 (** We define three morphisms. Just in case. By doing so, we will be
     able to use the [rewrite] tactic to replace one operational
