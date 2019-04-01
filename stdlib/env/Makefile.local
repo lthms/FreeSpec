@@ -1,0 +1,10 @@
+CAMLPKGS := -package freespec-exec
+
+install-extra::
+	ocamlfind install freespec-stdlib-env META src/stdlib_env_plugin.*
+
+uninstall::
+	ocamlfind remove freespec-stdlib-env
+
+merlin-hook::
+	echo 'PKG freespec-exec' >> .merlin

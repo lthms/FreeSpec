@@ -18,11 +18,25 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-val char_of_coqascii: Constr.constr -> char
-val char_to_coqascii: char -> Constr.constr
+open Exec_plugin.Coqstr
+open Exec_plugin.Extends
+open Exec_plugin.Coqunit
 
-val bytes_of_coqstr: Constr.constr -> bytes
-val bytes_to_coqstr: bytes -> Constr.constr
+let path = ["FreeSpec"; "Stdlib"; "Env"; "Env"]
 
-val string_to_coqstr: string -> Constr.constr
-val string_of_coqstr: Constr.constr -> string
+let install_interface =
+  let get = function
+    | [var]
+      -> let str = try
+             Unix.getenv (string_of_coqstr var)
+           with
+           | _ -> ""
+         in string_to_coqstr str
+    | _
+      -> assert false in
+  let set = function
+    | [var; value]
+      -> Unix.putenv (string_of_coqstr var) (string_of_coqstr value);
+         coqtt
+    | _ -> assert false
+  in register_interface path [("GetVar", get); ("SetVar", set)]
