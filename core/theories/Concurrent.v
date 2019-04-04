@@ -215,9 +215,6 @@ Proof.
     constructor.
     ++ now apply Hni.
     ++ intros sig Hsig.
-       assert (R: abstract_step c e (evalEffect sig e) w = w)
-         by now apply Hni.
-       rewrite R.
        apply IHHseq.
   + constructor.
 Qed.
