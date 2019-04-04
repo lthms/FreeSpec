@@ -436,11 +436,11 @@ Inductive correct_program
                     (e:     I A)
                     (f:     A -> Program I B)
                     (Hreq:  precondition c e w)
-                    (Hnext:  forall (sig: Sem.t I)
-                                    (Henf: sig |= c[w]),
+                    (Hnext:  forall (x:    A)
+                                    (Hpost: postcondition c e x w),
                         correct_program c
-                                        (abstract_step c e (evalEffect sig e) w)
-                                        (f (evalEffect sig e)))
+                                        (abstract_step c e x w)
+                                        (f x))
   : correct_program c w (Request e f).
 
 Notation "p '|>' c '[' w ']'" :=
@@ -464,7 +464,6 @@ Proof.
   induction Hp.
   + auto.
   + intros sig Hsig.
-    apply (H sig Hsig).
-    destruct Hsig.
-    now apply Henf.
+    apply H;
+      now apply Hsig.
 Qed.

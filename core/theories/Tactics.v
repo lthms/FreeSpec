@@ -96,15 +96,9 @@ Ltac prove_program :=
                                     constructor; [apply Hpre |];
                                     let sig := fresh "sig" in
                                     let Hsig := fresh "Hsig" in
-                                    intros sig Hsig;
-                                    let Hpost := fresh "Hpost" in
-                                    assert (Hpost: postcondition c op (evalEffect sig op) w) by (now apply Hsig);
                                     let res := fresh "res" in
-                                    let Heq_res := fresh "Heq_res" in
-                                    remember (evalEffect sig op) as res eqn:Heq_res;
-                                    clear Heq_res;
-                                    clear Hsig;
-                                    clear sig;
+                                    let Hpost := fresh "Hpost" in
+                                    intros res Hpost;
                                     prove_program
                                   |]
   | [ |- program_pure ?op |> ?c[?w] ] => constructor
