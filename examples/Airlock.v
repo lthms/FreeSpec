@@ -86,6 +86,16 @@ Module door.
     request Toggle.
 End door.
 
+#[program]
+Instance use_door
+         (l: door)
+  : Use (door.i l) (door.i In <+> door.i Out) :=
+  { lift_eff :=  match l with
+                 | In => fun _ op => InL op
+                 | Out => fun _ op => InR op
+                 end
+  }.
+
 (** * Controller Model *)
 
 Definition open_door {L Ix} (l: L) `{Use (door.i l) Ix}: Program Ix unit :=
@@ -106,13 +116,9 @@ Definition controller: Component controller.i nat (door.i In <+> door.i Out) :=
               lift (close_door Out);;
               put 0
          else put (S c)
-    | controller.OpenDoor In
-      => lift (close_door Out);;
-         lift (open_door In);;
-         put 0
-    | controller.OpenDoor Out
-      => lift (close_door In);;
-         lift (open_door Out);;
+    | controller.OpenDoor l
+      => lift (close_door (co l));;
+         lift (open_door l);;
          put 0
     end.
 
