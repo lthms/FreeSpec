@@ -467,3 +467,54 @@ Proof.
     apply H;
       now apply Hsig.
 Qed.
+
+Inductive run
+          {I:    Type -> Type}
+          {A W:  Type}
+          (c:    Specification W I)
+          (w:    W)
+  : Program I A -> A -> W -> Prop :=
+| run_pure (x: A)
+  : run c w (Pure x) x w
+| run_compliant_request {B:   Type}
+                        (op:  I B)
+                        (Hop: precondition c op w)
+                        (x:   B)
+                        (Hx:  postcondition c op x w)
+                        (f:   B -> Program I A)
+                        (y:   A)
+                        (w':  W)
+                        (Hf:  run c (abstract_step c op x w) (f x) y w')
+  : run c w (Request op f) y w'.
+
+Lemma correct_program_compliant_run
+      {I:         Type -> Type}
+      {A B W:     Type}
+      (c:         Specification W I)
+      (w:         W)
+      (p:         Program I A)
+      (f:         A -> Program I B)
+  : p |> c[w]
+    -> (forall x w', run c w p x w' -> f x |> c[w'])
+    -> program_bind p f |> c[w].
+Proof.
+  revert f w.
+  induction p; intros g w Hp Hg.
+  + apply Hg.
+    constructor.
+  + cbn.
+    inversion Hp.
+    apply Eqdep.EqdepTheory.inj_pair2 in H3.
+    apply Eqdep.EqdepTheory.inj_pair2 in H4.
+    apply Eqdep.EqdepTheory.inj_pair2 in H4.
+    subst.
+    constructor.
+    ++ exact Hreq.
+    ++ intros y Hpost.
+       apply H.
+       +++ now apply Hnext.
+       +++ intros z w'.
+           intros Hrun.
+           apply Hg.
+           now apply run_compliant_request with (x:=y).
+Qed.
