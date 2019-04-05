@@ -214,6 +214,104 @@ Definition doors_specs: Specification (bool * bool) (door.i In <+> door.i Out) :
     different control flow pathes of the [controller] programs, and
     the only goals to prove are related to precondition compliance. *)
 
+Lemma close_door_is_correct
+      (b:   bool * bool)
+      (l:   door)
+  : close_door l |> doors_specs [b].
+Proof.
+  induction l;
+    prove_program.
+  + induction b;
+      constructor.
+  + inversion Hpost.
+    apply Eqdep.EqdepTheory.inj_pair2 in H.
+    subst.
+    constructor.
+    now intro F.
+  + induction b;
+      constructor.
+  + inversion Hpost.
+    apply Eqdep.EqdepTheory.inj_pair2 in H.
+    subst.
+    constructor.
+    now intro F.
+Qed.
+
+Definition get_state
+           (d: door)
+  : bool * bool -> bool :=
+  match d with
+  | In => fst
+  | Out => snd
+  end.
+
+Lemma close_door_specs
+      (b w:  bool * bool)
+      (l:    door)
+      (r:    unit)
+  : run doors_specs b (close_door l) r w -> get_state l w = false.
+Proof.
+  intros H.
+  induction l;
+    cbn in H.
+  + inversion H; subst.
+    apply Eqdep.EqdepTheory.inj_pair2 in H2.
+    apply Eqdep.EqdepTheory.inj_pair2 in H3.
+    subst.
+    induction x.
+    ++ cbn in Hf.
+       inversion Hx.
+       apply Eqdep.EqdepTheory.inj_pair2 in H0.
+       subst.
+       inversion Hf; subst.
+       apply Eqdep.EqdepTheory.inj_pair2 in H2.
+       apply Eqdep.EqdepTheory.inj_pair2 in H3.
+       subst.
+       inversion Hf0; subst.
+       reflexivity.
+    ++ cbn in Hf.
+       inversion Hx.
+       apply Eqdep.EqdepTheory.inj_pair2 in H0.
+       subst.
+       inversion Hf; subst.
+       reflexivity.
+  + inversion H; subst.
+    apply Eqdep.EqdepTheory.inj_pair2 in H2.
+    apply Eqdep.EqdepTheory.inj_pair2 in H3.
+    subst.
+    induction x.
+    ++ cbn in Hf.
+       inversion Hx.
+       apply Eqdep.EqdepTheory.inj_pair2 in H0.
+       subst.
+       inversion Hf; subst.
+       apply Eqdep.EqdepTheory.inj_pair2 in H2.
+       apply Eqdep.EqdepTheory.inj_pair2 in H3.
+       subst.
+       inversion Hf0; subst.
+       reflexivity.
+    ++ cbn in Hf.
+       inversion Hx.
+       apply Eqdep.EqdepTheory.inj_pair2 in H0.
+       subst.
+       inversion Hf; subst.
+       reflexivity.
+Qed.
+
+Lemma open_door_is_correct
+      (b:   bool * bool)
+      (l:   door)
+  : get_state (co l) b = false -> open_door l |> doors_specs [b].
+Proof.
+  intro H.
+  destruct b.
+  induction l; cbn in H; subst;
+    prove_program; now (constructor + auto).
+Qed.
+
+#[local] Opaque open_door.
+#[local] Opaque close_door.
+
 Lemma controller_is_correct
       (b:   bool * bool)
       (c:   nat)
@@ -222,10 +320,11 @@ Lemma controller_is_correct
 Proof.
   intros A op.
   induction op;
-    prove_program;
-    induction b;
-    constructor; ( inversion Hpost;
-                   simpl_existTs;
-                   now subst
-                 ).
+    prove_program.
+  + apply close_door_is_correct.
+  + apply close_door_is_correct.
+  + apply close_door_is_correct.
+  + apply open_door_is_correct.
+    eapply close_door_specs.
+    exact Hrun.
 Qed.
