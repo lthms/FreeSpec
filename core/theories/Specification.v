@@ -515,3 +515,27 @@ Proof.
            apply Hg.
            now apply run_compliant_request with (x:=y).
 Qed.
+
+Lemma correct_program_with_compliant_semantics_run
+      {I:    Type -> Type}
+      {A W:  Type}
+      (c:    Specification W I)
+      (w:    W)
+      (p:    Program I A)
+      (sig:  Sem.t I)
+  : p |> c[w]
+    -> sig |= c[w]
+    -> run c w p (evalProgram sig p) (specification_derive p sig c w).
+Proof.
+  revert w sig.
+  induction p; intros w sig.
+  + constructor.
+  + intros Hp Hsig.
+    inversion Hp; ssubst.
+    econstructor.
+    ++ exact Hreq.
+    ++ destruct Hsig.
+       apply Hprom in Hreq.
+       exact Hreq.
+    ++ apply H; [apply Hnext |]; now apply Hsig.
+Qed.
