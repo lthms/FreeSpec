@@ -22,6 +22,7 @@ Require Import Coq.Program.Equality.
 
 Require Import Prelude.Control.
 Require Import Prelude.Control.Classes.
+Require Import Prelude.Tactics.
 
 Require Import FreeSpec.Tactics.
 Require Import FreeSpec.Interface.
@@ -223,16 +224,12 @@ Proof.
     prove_program.
   + induction b;
       constructor.
-  + inversion Hpost.
-    apply Eqdep.EqdepTheory.inj_pair2 in H.
-    subst.
+  + inversion Hpost; ssubst.
     constructor.
     now intro F.
   + induction b;
       constructor.
-  + inversion Hpost.
-    apply Eqdep.EqdepTheory.inj_pair2 in H.
-    subst.
+  + inversion Hpost; ssubst.
     constructor.
     now intro F.
 Qed.
@@ -254,46 +251,26 @@ Proof.
   intros H.
   induction l;
     cbn in H.
-  + inversion H; subst.
-    apply Eqdep.EqdepTheory.inj_pair2 in H2.
-    apply Eqdep.EqdepTheory.inj_pair2 in H3.
-    subst.
+  + inversion H; ssubst.
     induction x.
     ++ cbn in Hf.
-       inversion Hx.
-       apply Eqdep.EqdepTheory.inj_pair2 in H0.
-       subst.
-       inversion Hf; subst.
-       apply Eqdep.EqdepTheory.inj_pair2 in H2.
-       apply Eqdep.EqdepTheory.inj_pair2 in H3.
-       subst.
-       inversion Hf0; subst.
+       inversion Hx; ssubst.
+       inversion Hf; ssubst.
+       inversion Hf0; ssubst.
        reflexivity.
     ++ cbn in Hf.
-       inversion Hx.
-       apply Eqdep.EqdepTheory.inj_pair2 in H0.
-       subst.
+       inversion Hx; ssubst.
        inversion Hf; subst.
        reflexivity.
-  + inversion H; subst.
-    apply Eqdep.EqdepTheory.inj_pair2 in H2.
-    apply Eqdep.EqdepTheory.inj_pair2 in H3.
-    subst.
+  + inversion H; ssubst.
     induction x.
     ++ cbn in Hf.
-       inversion Hx.
-       apply Eqdep.EqdepTheory.inj_pair2 in H0.
-       subst.
-       inversion Hf; subst.
-       apply Eqdep.EqdepTheory.inj_pair2 in H2.
-       apply Eqdep.EqdepTheory.inj_pair2 in H3.
-       subst.
-       inversion Hf0; subst.
+       inversion Hx; ssubst.
+       inversion Hf; ssubst.
+       inversion Hf0; ssubst.
        reflexivity.
     ++ cbn in Hf.
-       inversion Hx.
-       apply Eqdep.EqdepTheory.inj_pair2 in H0.
-       subst.
+       inversion Hx; ssubst.
        inversion Hf; subst.
        reflexivity.
 Qed.
