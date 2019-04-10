@@ -24,6 +24,7 @@ Require Import Coq.Setoids.Setoid.
 Require Import Coq.Logic.Classical.
 
 Require Import Prelude.Equality.
+Require Import Prelude.Tactics.
 
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Semantics.
@@ -503,11 +504,7 @@ Proof.
   + apply Hg.
     constructor.
   + cbn.
-    inversion Hp.
-    apply Eqdep.EqdepTheory.inj_pair2 in H3.
-    apply Eqdep.EqdepTheory.inj_pair2 in H4.
-    apply Eqdep.EqdepTheory.inj_pair2 in H4.
-    subst.
+    inversion Hp; ssubst.
     constructor.
     ++ exact Hreq.
     ++ intros y Hpost.
