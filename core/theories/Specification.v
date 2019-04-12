@@ -469,26 +469,68 @@ Proof.
       now apply Hsig.
 Qed.
 
-Inductive run
+(** We now introduce the notion of so-called correct run, to reason about the
+    execution of a correct program without the need to use a compliant
+    semantics. *)
+Inductive correct_run
           {I:    Type -> Type}
           {A W:  Type}
           (c:    Specification W I)
           (w:    W)
   : Program I A -> A -> W -> Prop :=
-| run_pure (x: A)
-  : run c w (Pure x) x w
-| run_compliant_request {B:   Type}
-                        (op:  I B)
-                        (Hop: precondition c op w)
-                        (x:   B)
-                        (Hx:  postcondition c op x w)
-                        (f:   B -> Program I A)
-                        (y:   A)
-                        (w':  W)
-                        (Hf:  run c (abstract_step c op x w) (f x) y w')
-  : run c w (Request op f) y w'.
+| correct_run_pure (x: A)
+  : correct_run c w (Pure x) x w
+| correct_run_compliant_request {B:   Type}
+                                (op:  I B)
+                                (Hop: precondition c op w)
+                                (x:   B)
+                                (Hx:  postcondition c op x w)
+                                (f:   B -> Program I A)
+                                (y:   A)
+                                (w':  W)
+                                (Hf:  correct_run c (abstract_step c op x w) (f x) y w')
+  : correct_run c w (Request op f) y w'.
 
-Lemma correct_program_compliant_run
+(** That is, [correct_run] is a predicate which maps a program with a set of
+    possible results, along with a set of possible resulting witness states. We
+    can easily demonstrate that. *)
+Lemma compliant_semantics_gives_correct_run
+      {I:     Type -> Type}
+      {A W:   Type}
+      (c:     Specification W I)
+      (w:     W)
+      (p:     Program I A)
+      (Hp:    p |> c[w])
+      (sig:   Sem.t I)
+      (Hsig:  sig |= c[w])
+  : correct_run
+      c
+      w
+      p
+      (evalInstrumentedProgram (abstract_step c) w sig p)
+      (witnessInstrumentedProgram (abstract_step c) w sig p).
+Proof.
+  revert sig Hsig Hp.
+  revert w.
+  induction p; intros w sig Hsig Hp.
+  + constructor.
+  + econstructor.
+    now (inversion Hp; ssubst).
+    now (inversion Hp; ssubst; apply Hsig).
+    apply H.
+    apply Hsig.
+    now (inversion Hp; ssubst).
+    now (inversion Hp; ssubst; apply Hnext; apply Hsig).
+Qed.
+
+(** We show that this notion of [correct_run] allows us to reason
+    about the correctness of a program constructed with
+    [program_bind], without the need to enumerate all the requests
+    made by each subprograms. In other words, [correct_run] enables
+    modularity of proofs: once a program has been shown to be correct
+    with respect to a given abstract specification, it is possible to
+    reuse this proof when it is used to construct a larger one. *)
+Lemma correct_program_correct_run_correct_bind
       {I:         Type -> Type}
       {A B W:     Type}
       (c:         Specification W I)
@@ -496,7 +538,7 @@ Lemma correct_program_compliant_run
       (p:         Program I A)
       (f:         A -> Program I B)
   : p |> c[w]
-    -> (forall x w', run c w p x w' -> f x |> c[w'])
+    -> (forall x w', correct_run c w p x w' -> f x |> c[w'])
     -> program_bind p f |> c[w].
 Proof.
   revert f w.
@@ -513,10 +555,13 @@ Proof.
        +++ intros z w'.
            intros Hrun.
            apply Hg.
-           now apply run_compliant_request with (x:=y).
+           now apply correct_run_compliant_request with (x:=y).
 Qed.
 
-Lemma correct_program_with_compliant_semantics_run
+(** This lemma is used in the [prove_program] tactics (in
+    the [FreeSpec.Tactics] module). *)
+
+Lemma correct_program_with_compliant_semantics_correct_run
       {I:    Type -> Type}
       {A W:  Type}
       (c:    Specification W I)
@@ -525,7 +570,7 @@ Lemma correct_program_with_compliant_semantics_run
       (sig:  Sem.t I)
   : p |> c[w]
     -> sig |= c[w]
-    -> run c w p (evalProgram sig p) (specification_derive p sig c w).
+    -> correct_run c w p (evalProgram sig p) (specification_derive p sig c w).
 Proof.
   revert w sig.
   induction p; intros w sig.

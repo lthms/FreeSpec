@@ -111,7 +111,8 @@ Ltac prove_program :=
          => let x := fresh "x" in
             let w := fresh "w" in
             let Hrun := fresh "Hrun" in
-            apply correct_program_compliant_run; [| intros x w Hrun; prove_program]
+            apply correct_program_correct_run_correct_bind;
+              [| intros x w Hrun; prove_program]
        | [ |- _ ]
          => prove_program
        end

@@ -246,7 +246,7 @@ Lemma close_door_specs
       (b w:  bool * bool)
       (l:    door)
       (r:    unit)
-  : run doors_specs b (close_door l) r w -> get_state l w = false.
+  : correct_run doors_specs b (close_door l) r w -> get_state l w = false.
 Proof.
   intros H.
   induction l;
