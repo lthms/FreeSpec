@@ -1,8 +1,8 @@
 Specifying and Composing Components
 ===================================
 
-Specifying Interfaces
-^^^^^^^^^^^^^^^^^^^^^
+Interfaces
+^^^^^^^^^^
 
 .. coqtop:: none
 
@@ -67,17 +67,17 @@ represents the type of the operation result.
 
       End Ex1.
 
-Specifying Computations That Leverages Interfaces
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Interface-based Computations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :g:`Program` Monad has been originally introduced by the _operational
 Haskell package, and FreeSpec used the very same implementation in its first
 iterations. Since December 2018, FreeSpec uses an alternative implementation
 for the :g:`Program` monad, as depicted by Nicolas Koh *et al.* in `“From C to
-Interaction
-Trees” <https://www.cis.upenn.edu/~bcpierce/papers/deepweb-overview.pdf>`_. That
-being stated, FreeSpec users are not expected to use the :g:`Program`
-constructors explicitely.
+Interaction Trees”
+<https://www.cis.upenn.edu/~bcpierce/papers/deepweb-overview.pdf>`_. That being
+stated, FreeSpec users are not expected to use the :g:`Program` constructors
+explicitely.
 
 .. _operational: https://hackage.haskell.org/package/operational
 
@@ -186,6 +186,35 @@ functions to use the newly introduced operations more easily.
 Components
 ^^^^^^^^^^
 
+In FreeSpec, a component is primarily identified by the interface it exposes,
+and secondarily by its private, internal state and the interfaces it uses. To
+model this in Gallina, we rely on two monads:
+
+  - The :g:`Program` monad allows us to model interactions between the component
+    and other components, abstracted away thanks to their interfaces
+  - The :g:`State` monad allows us to handle the internal state of the component
+    without the burden to carry it explicitly
+
+Composing these two monads can be achieve thanks to the monad transformer
+abstraction. The resulting monad is :g:`StateT S (Program I)` where :g:`S` is
+the type specifying the internal state of the component, and `I` the type
+describing the interface used by the component (which can be the composition of
+several smaller interfaces *via* the :g:`<+>` operator).
+
+This monad comes with three monadic operations:
+
+.. coqdoc::
+
+   lift : ∀ {S A I}, Program I A → StateT S (Program I) A
+
+   get : ∀ {S}, StateT S (Program I) S
+   put : ∀ {S}, S → StateT S (Program I) S
+
+A component which exposes an interface :g:`I`, uses an interface :g:`J` and
+carries an internal state :g:`S` is therefore modeled as a function which maps
+operations of :g:`I` to monadic computations inside the monad :g:`StateT S
+(Program J)`.
+
 .. coqtop:: none
 
    Require Import FreeSpec.Component.
@@ -194,3 +223,55 @@ Components
 .. coqtop:: out
 
    Print Component.
+
+.. example::
+
+   .. coqtop:: in
+
+      Axioms (Addr Byte: Type).
+
+   .. coqtop:: in
+
+      Module DRAM.
+       Inductive i: Interface :=
+       | mkDRAMOp {A: Type} (op:  map_i HardAddr Byte A)
+         : i A.
+
+   .. coqtop:: in
+
+       Definition read
+                  {ix} `{Use i ix}
+                  (ha:  HardAddr)
+         : Program ix Byte :=
+         request (mkDRAMOp (Read HardAddr Byte ha)).
+
+   .. coqtop:: in
+
+       Definition write
+                  {ix} `{Use i ix}
+                  (ha:  HardAddr)
+                  (b:   Byte)
+         : Program ix unit :=
+         request (mkDRAMOp (Write HardAddr Byte ha b)).
+      End DRAM.
+
+   .. coqtop:: none
+
+      Module VGA.
+       Inductive i: Interface :=
+       | mkVGAOp {A: Type} (op:  map_i HardAddr Byte A)
+         : i A.
+
+       Definition read
+                  {ix} `{Use i ix}
+                  (ha:  HardAddr)
+         : Program ix Byte :=
+         request (mkVGAOp (Read HardAddr Byte ha)).
+
+       Definition write
+                  {ix} `{Use i ix}
+                  (ha:  HardAddr)
+                  (b:   Byte)
+         : Program ix unit :=
+         request (mkVGAOp (Write HardAddr Byte ha b)).
+      End VGA.
