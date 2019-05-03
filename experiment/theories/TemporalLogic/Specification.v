@@ -35,6 +35,7 @@ Definition temporal_precondition
       (e:  I R)
   => effect_satisfies (effect e).
 
+#[program]
 Definition temporal_specification
            {I:        Interface}
            (postcondition: forall (R: Type)
@@ -46,6 +47,7 @@ Definition temporal_specification
    ; postcondition  := fun (R: Type) => @postcondition R
    |}.
 
+#[program]
 Definition temporal_precondition_preserves_inv
            {I:      Interface}
            {State:  Type}

@@ -29,7 +29,6 @@ Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Program.
 Require Import FreeSpec.Specification.
 
-Require Import Prelude.PropBool.
 Require Import Prelude.Equality.
 
 (** * Temporal Logic [Formula]
@@ -45,12 +44,11 @@ Require Import Prelude.Equality.
 Record Dec
        (A: Type) :=
   { prop: A -> Prop
-  ; prop_bool: A -> bool
-  ; is_prop_bool:> PropBool1 prop prop_bool
+  ; prop_dec (x:  A): { prop x } + { ~ prop x }
   }.
 
 Arguments prop [A] (_ _).
-Arguments prop_bool [A] (_ _).
+Arguments prop_dec [A] (_ _).
 
 
 (** We define two notations, [p? a] and [p.? a] to use either the
@@ -58,32 +56,51 @@ Arguments prop_bool [A] (_ _).
 
  *)
 
-Notation "p ? a" := (prop_bool p a) (at level 51): dec_scope.
+Notation "p ? a" := (prop_dec p a) (at level 51): dec_scope.
 Notation "p .? a" := (prop p a) (at level 51): dec_scope.
 
 Local Open Scope dec_scope.
 
-Lemma prop_bool_prop
+Inductive sat
+          (A B:  Prop)
+  : { A } + { B } -> Prop :=
+| IsSat (x: A)
+  : sat A B (left x).
+
+Arguments sat {A B} (_).
+Arguments IsSat {A B} (_).
+
+Inductive unsat
+          (A B:  Prop)
+  : { A } + { B } -> Prop :=
+| IsUnsat (x: B)
+  : unsat A B (right x).
+
+Arguments unsat {A B} (_).
+Arguments IsUnsat {A B} (_).
+
+Lemma prop_dec_prop
       {A: Type}
       (p: Dec A)
       (a: A)
-  : p? a = true <-> p.? a.
+  : sat (p? a) <-> p.? a.
 Proof.
-  induction p.
-  cbn.
-  apply pred_bool_pred_1.
+  split.
+  + now intros [H].
+  + intros H.
+    now destruct (p ? a).
 Qed.
 
 Lemma prop_bool_false
       {A: Type}
       (p: Dec A)
       (a: A)
-  : p? a = false <-> ~ p.? a.
+  : unsat (p? a) <-> ~ p.? a.
 Proof.
-  induction p.
-  cbn.
-  apply pred_bool_false_1.
-  exact is_prop_bool0.
+  split.
+  + now intros [H] F.
+  + intros H.
+    now destruct (p? a).
 Qed.
 
 Local Open Scope prelude_scope.
@@ -128,37 +145,17 @@ Fixpoint halt_satisfies
   | _ => True
   end.
 
-Fixpoint halt_satisfies_bool
+#[program]
+Fixpoint halt_satisfies_dec
          {A: Type}
          (tl: Formula A)
-  : bool :=
+  : { halt_satisfies tl } + { ~ halt_satisfies tl } :=
   match tl with
-  | eventually _ => false
-  | next _ => false
-  | switch before _ _ => halt_satisfies_bool before
-  | _ => true
+  | eventually _ => ltac:(right)
+  | next _ => ltac:(right)
+  | switch before _ _ => halt_satisfies_dec before
+  | ltrue | lfalse | globally _ => ltac:(left)
   end.
-
-Instance halt_satisfies_PropBool
-         (A: Type)
-  : PropBool1 (@halt_satisfies A) (@halt_satisfies_bool A).
-Proof.
-  constructor.
-  intros a.
-  split.
-  + intro Heq.
-    induction a; try constructor.
-    ++ discriminate Heq.
-    ++ discriminate Heq.
-    ++ cbn in *.
-       apply (IHa1 Heq).
-  + intro Hhalt.
-    induction a; cbn; try reflexivity.
-    ++ destruct Hhalt.
-    ++ destruct Hhalt.
-    ++ cbn in *.
-       apply (IHa1 Hhalt).
-Defined.
 
 Inductive Formula_step
           {A: Type}
@@ -223,147 +220,113 @@ Fixpoint effect_satisfies
        /\ (~prop.? a -> effect_satisfies a before)
   end.
 
-Fixpoint effect_satisfies_bool
+Ltac anddec a b := refine (if sumbool_and _ _ _ _ a b then ltac:(left) else ltac:(right)).
+Ltac sat a := refine (if a then ltac:(left) else ltac:(right)).
+
+#[program]
+Fixpoint effect_satisfies_dec
          {A: Type}
          (a: A)
          (tl: Formula A)
-  : bool :=
+  : { effect_satisfies a tl } + { ~ effect_satisfies a tl } :=
   match tl with
   | ltrue
-    => true
+    => ltac:(left)
   | lfalse
-    => false
+    => ltac:(right)
   | globally prop
     => prop? a
   | eventually prop
-    => true
+    => ltac:(left)
   | next _
-    => true
+    => ltac:(left)
   | switch before p after
     => if p? a
-       then (andb (effect_satisfies_bool a after)
-                  (halt_satisfies_bool before))
-       else (effect_satisfies_bool a before)
+       then ltac:(anddec (effect_satisfies_dec _ a after)
+                         (halt_satisfies_dec before))
+       else ltac:(sat (effect_satisfies_dec _ a before))
   end.
 
-Instance effect_satisfies_PropBool
-         (A: Type)
-  : PropBool2 (@effect_satisfies A) (@effect_satisfies_bool A).
-Proof.
-  constructor.
-  intros a tl.
-  split.
-  + intro Heq.
-    induction tl.
-    ++ constructor.
-    ++ discriminate Heq.
-    ++ case_eq (prop0? a); intro Heq_a.
-       +++ apply prop_bool_prop in Heq_a.
-           cbn.
-           exact Heq_a.
-       +++ cbn in *.
-           rewrite Heq_a in Heq.
-           discriminate Heq.
-    ++ constructor.
-    ++ constructor.
-    ++ cbn in *.
-       case_eq (prop0? a); intro Heq_a.
-       +++ rewrite Heq_a in Heq.
-           split.
-           ++++ intro Heq_a'.
-                apply andb_prop in Heq.
-                destruct Heq as [H1 H2].
-                apply IHtl2 in H1.
-                apply pred_bool_pred_1 in H2.
-                split; [ exact H1 | exact H2 ].
-           ++++ intro F.
-                apply prop_bool_prop in Heq_a.
-                apply F in Heq_a.
-                destruct Heq_a.
-       +++ rewrite Heq_a in Heq.
-           split.
-           ++++ intro F.
-                apply prop_bool_false in Heq_a.
-                apply Heq_a in F.
-                destruct F.
-           ++++ apply IHtl1 in Heq.
-                intro _H.
-                exact Heq.
-  + intro Hsat.
-    induction tl.
-    ++ reflexivity.
-    ++ destruct Hsat.
-    ++ cbn in *.
-       apply prop_bool_prop.
-       exact Hsat.
-    ++ reflexivity.
-    ++ reflexivity.
-    ++ cbn in *.
-       destruct Hsat as [H H'].
-       case_eq (prop0? a); intro Heq.
-       +++ apply andb_true_intro.
-           apply prop_bool_prop in Heq.
-           apply H in Heq.
-           destruct Heq as [H1 H2].
-           split.
-           ++++ apply IHtl2.
-                exact H1.
-           ++++ apply pred_bool_pred_1.
-                exact H2.
-       +++ apply prop_bool_false in Heq.
-           apply H' in Heq.
-           apply IHtl1.
-           exact Heq.
+Next Obligation.
+  now repeat split.
 Defined.
 
+Next Obligation.
+  destruct H0 as [not_effect | not_halt];
+    now intros [[H1 H2] H3].
+Defined.
+
+Next Obligation.
+  now repeat split.
+Defined.
+
+Next Obligation.
+  intros [H1 H2].
+  now apply H2 in H.
+Defined.
+
+#[program]
 Fixpoint tl_step
          {A: Type}
          (a: A)
          (tl: Formula A)
-  : Formula A :=
-  if effect_satisfies_bool a tl
-  then match tl with
-       | next tl
-         => tl
-       | switch before p after
-         => if p? a
-            then after
-            else switch (tl_step a before) p after
-       | eventually p
-         => if p ? a
-            then ltrue
-            else eventually p
-       | x
-         => x
-       end
-  else lfalse.
+  : { tl' | Formula_step tl tl' } :=
+  match tl with
+  | next tl
+    => tl
+  | switch before p after
+    => if p? a
+       then after
+       else switch (tl_step a before) p after
+  | eventually p
+    => if p ? a
+       then ltrue
+       else eventually p
+  | globally p
+    => if p ? a
+       then globally p
+       else lfalse
+  | ltrue
+    => ltrue
+  | lfalse
+    => lfalse
+  end.
 
-Lemma Formula_step_is_tl_step
-      {A: Type}
-      (a: A)
-      (tl: Formula A)
-  : Formula_step tl (tl_step a tl).
-Proof.
-  induction tl.
-  + constructor.
-  + constructor.
-  + cbn; destruct (prop0 ? a); constructor.
-  + cbn; destruct (prop0 ? a); constructor.
-  + cbn; constructor.
-  + cbn.
-    destruct (prop0 ? a).
-    ++ destruct (effect_satisfies_bool a tl2);
-         destruct (halt_satisfies_bool tl1);
-         cbn.
-       +++ constructor.
-       +++ constructor.
-       +++ constructor.
-       +++ constructor.
-    ++ destruct (effect_satisfies_bool a tl1).
-       +++ constructor.
-           exact IHtl1.
-       +++ constructor.
-Qed.
+Next Obligation.
+  constructor.
+Defined.
+
+Next Obligation.
+  constructor.
+Defined.
+
+Next Obligation.
+  now constructor.
+Defined.
+
+Next Obligation.
+  constructor.
+Defined.
+
+Next Obligation.
+  constructor.
+Defined.
+
+Next Obligation.
+  constructor.
+Defined.
+
+Next Obligation.
+  constructor.
+Defined.
+
+Next Obligation.
+  constructor.
+Defined.
+
+Next Obligation.
+  constructor.
+Defined.
 
 Inductive ISet
           (I: Type -> Type)
@@ -477,6 +440,7 @@ Proof.
     ++ exact IHHderive.
 Qed.
 
+#[program]
 Definition deriveFormula
            {I: Interface}
            {A: Type}
@@ -485,6 +449,7 @@ Definition deriveFormula
            (tl: Formula (ISet I)) :=
     witnessInstrumentedProgram (fun (R: Type) (e: I R) (_: R) => tl_step (effect e)) tl sig p.
 
+#[program]
 Definition runFormula
            {I: Interface}
            {A: Type}
@@ -507,9 +472,9 @@ Proof.
     apply tl_run_refl.
   + intros tl sig.
     cbn.
-    eapply (tl_run_trans tl (tl_step (effect e) tl)).
+    eapply (tl_run_trans tl (proj1_sig (tl_step (effect e) tl))).
     ++ constructor.
-       apply Formula_step_is_tl_step.
+       apply (proj2_sig (tl_step (effect e) tl)).
     ++ apply H.
 Qed.
 
