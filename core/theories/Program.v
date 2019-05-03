@@ -296,8 +296,6 @@ Next Obligation.
   now rewrite program_eq_bind_assoc.
 Defined.
 Next Obligation.
-  unfold function_equal in H0.
-  cbn in H0.
   apply program_eq_bind.
   now apply functional_extensionality.
 Defined.
