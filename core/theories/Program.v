@@ -128,21 +128,6 @@ Definition request
   : Program ix a :=
   Request (lift_eff e) (@Pure ix a).
 
-(** ** [Program]s Weak Equality
-
-    Two [Program] are equal when they always gives both the exact same
-    result and two equivalent semantics (according to [semantics_eq]),
-    no matter the input semantics.
-
- *)
-
-Instance program_Eq
-         (I:  Interface)
-         (A:  Type)
-  : Equality (Program I A) :=
-  { equal := eq
-  }.
-
 (** ** Monad Laws
 
     [Program] _is_ a Monad and therefore obeys the Monad laws.  The
