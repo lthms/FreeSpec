@@ -29,7 +29,7 @@ Require Export FreeSpec.Exec.Debug.
 Local Open Scope free_scope.
 Local Open Scope prelude_scope.
 
-Declare ML Module "exec_plugin".
+Declare ML Module "freespec_exec".
 
 #[local]
 Fixpoint extends

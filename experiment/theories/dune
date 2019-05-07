@@ -1,0 +1,5 @@
+(coqlib
+  (name Experiment)
+  (public_name freespec-experiment.theories))
+
+(include_subdirs qualified)

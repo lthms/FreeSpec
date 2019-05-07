@@ -14,8 +14,7 @@
 *.cmi
 *.cmx
 
-**/Makefile
-Makefile.conf
+# merlin
 .merlin
 
 # generated docs
@@ -24,3 +23,7 @@ html/*
 **/html
 docs/freespec
 mlihtml/
+
+# dune
+*.install
+_build/

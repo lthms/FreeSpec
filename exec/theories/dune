@@ -1,0 +1,8 @@
+(coqlib
+  (name FreeSpec)
+  (public_name freespec-exec.theories)
+  (libraries freespec-exec.plugin)
+  (modules Exec
+           Exec.Debug))
+
+(include_subdirs qualified)

@@ -36,4 +36,4 @@ Module Console.
     request (Echo str).
 End Console.
 
-Declare ML Module "stdlib_console_plugin".
+Declare ML Module "freespec_stdlib_console".

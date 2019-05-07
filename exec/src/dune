@@ -1,0 +1,11 @@
+(library
+  (name freespec_exec)
+  (public_name freespec-exec.plugin)
+  (synopsis "Turn coqc into an effectfull interpreter")
+  (flags :standard -rectypes -w -27)
+  (libraries coq.stm))
+
+(rule
+ (targets g_freespec_exec.ml)
+ (deps (:pp-file g_freespec_exec.ml4) )
+ (action (bash "camlp5 pa_o.cmo pr_o.cmo %{lib:coq.grammar:grammar.cma} -loc loc -impl %{pp-file} -o %{targets}")))

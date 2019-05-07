@@ -20,7 +20,8 @@
 
 Require Import FreeSpec.Semantics.
 Require Import FreeSpec.Specification.
-Require Import FreeSpec.Experiment.TemporalLogic.
+
+Require Import Experiment.TemporalLogic.
 
 Definition temporal_step
            (I: Interface) :=

@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-DECLARE PLUGIN "exec"
+DECLARE PLUGIN "freespec_exec"
 
 open Stdarg
 

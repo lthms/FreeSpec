@@ -1,0 +1,7 @@
+(coqlib
+  (name Stdlib)
+  (public_name freespec-stdlib.console.theories)
+  (libraries freespec-stdlib.console.plugin)
+  (modules Console))
+
+(include_subdirs qualified)

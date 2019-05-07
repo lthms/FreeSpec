@@ -19,7 +19,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Stdlib.Console.
+Require Import Stdlib.Console.
 Require Import FreeSpec.Program.
 Require Import Prelude.Control.
 

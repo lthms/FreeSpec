@@ -1,0 +1,16 @@
+(coqlib
+  (name FreeSpec)
+  (public_name freespec-core.theories)
+  (modules Interface
+           Undefined
+           Semantics
+           Program
+           Component
+           Specification
+           Specification.Constant
+           Specification.Reference
+           Specification.Undefined
+           Compose
+           Tactics))
+
+(include_subdirs qualified)

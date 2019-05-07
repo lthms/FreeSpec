@@ -42,9 +42,7 @@ install:
     cd -
 
 script:
-  - ./configure.sh
-  - make install
-  - make html
+  - make
 
 deploy:
   provider: pages

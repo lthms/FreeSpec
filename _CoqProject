@@ -1,0 +1,7 @@
+-Q core/theories FreeSpec
+-Q exec/theories FreeSpec
+-Q stdlib/console/theories Stdlib
+-Q experiment/theories Experiment
+
+-I exec/src
+-I stdlib/console/src
