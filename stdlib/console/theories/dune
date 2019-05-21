@@ -1,4 +1,4 @@
-(coqlib
+(coq.theory
   (name Stdlib)
   (public_name freespec-stdlib.console.theories)
   (libraries freespec-stdlib.console.plugin)

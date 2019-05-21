@@ -1,4 +1,4 @@
-(coqlib
+(coq.theory
   (name FreeSpec)
   (public_name freespec-exec.theories)
   (libraries freespec-exec.plugin)
