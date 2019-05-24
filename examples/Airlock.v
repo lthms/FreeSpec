@@ -242,37 +242,24 @@ Definition get_state
   | Out => snd
   end.
 
+Ltac sinversion H := inversion H; try ssubst.
+
 Lemma close_door_specs
       (b w:  bool * bool)
       (l:    door)
       (r:    unit)
-  : correct_run doors_specs b (close_door l) r w -> get_state l w = false.
+  : correct_run doors_specs b (close_door l) r w
+    -> get_state l w = false.
 Proof.
   intros H.
   induction l;
-    cbn in H.
-  + inversion H; ssubst.
-    induction x.
-    ++ cbn in Hf.
-       inversion Hx; ssubst.
-       inversion Hf; ssubst.
-       inversion Hf0; ssubst.
-       reflexivity.
-    ++ cbn in Hf.
-       inversion Hx; ssubst.
-       inversion Hf; subst.
-       reflexivity.
-  + inversion H; ssubst.
-    induction x.
-    ++ cbn in Hf.
-       inversion Hx; ssubst.
-       inversion Hf; ssubst.
-       inversion Hf0; ssubst.
-       reflexivity.
-    ++ cbn in Hf.
-       inversion Hx; ssubst.
-       inversion Hf; subst.
-       reflexivity.
+    induction b;
+    sinversion H;
+    induction x;
+    sinversion Hx;
+    sinversion Hf;
+    try sinversion Hf0;
+    reflexivity.
 Qed.
 
 Lemma open_door_is_correct
