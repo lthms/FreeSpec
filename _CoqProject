@@ -1,7 +1,7 @@
--Q core/theories FreeSpec
--Q exec/theories FreeSpec
--Q stdlib/console/theories Stdlib
--Q experiment/theories Experiment
+-Q core/_build/default/theories FreeSpec
+-Q exec/_build/default/theories FreeSpec
+-Q stdlib/_build/default/console/theories Stdlib
+-Q experiment/_build/default/theories Experiment
 
 -I exec/src
 -I stdlib/console/src
