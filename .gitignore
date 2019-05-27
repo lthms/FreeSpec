@@ -5,6 +5,10 @@
 *.vo
 .lia.cache
 
+# coq_makefile
+Makefile.coq
+Makefile.coq.conf
+
 # Ocaml
 *.a
 *.cmxa

@@ -1,0 +1,1 @@
+COQDOCFLAGS := -interpolate --charset utf-8 --no-index

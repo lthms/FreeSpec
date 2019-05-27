@@ -3,5 +3,27 @@
 -Q stdlib/_build/default/console/theories Stdlib
 -Q experiment/_build/default/theories Experiment
 
--I exec/src
--I stdlib/console/src
+-I exec/_build/default/src
+-I stdlib/_build/default/console/src
+
+core/_build/default/theories/Interface.v
+core/_build/default/theories/Undefined.v
+core/_build/default/theories/Semantics.v
+core/_build/default/theories/Program.v
+core/_build/default/theories/Component.v
+core/_build/default/theories/Specification.v
+core/_build/default/theories/Specification/Constant.v
+core/_build/default/theories/Specification/Reference.v
+core/_build/default/theories/Specification/Undefined.v
+core/_build/default/theories/Compose.v
+core/_build/default/theories/Tactics.v
+
+exec/_build/default/theories/Exec.v
+exec/_build/default/theories/Exec/Debug.v
+
+stdlib/_build/default/console/theories/Console.v
+
+experiment/_build/default/theories/Row.v
+experiment/_build/default/theories/TemporalLogic.v
+experiment/_build/default/theories/TemporalLogic/Notations.v
+experiment/_build/default/theories/TemporalLogic/Specification.v

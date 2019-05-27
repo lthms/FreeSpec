@@ -1,4 +1,4 @@
-.PHONY: dune clean install
+.PHONY: dune clean install html
 
 dune:
 	cd core;       dune build; dune install; cd ..
@@ -14,3 +14,7 @@ uninstall:
 	cd exec;       dune uninstall; cd ..
 	cd stdlib;     dune uninstall; cd ..
 	cd experiment; dune uninstall; cd ..
+
+html: dune
+	coq_makefile -f _CoqProject -o Makefile.coq
+	make -f Makefile.coq html
