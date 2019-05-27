@@ -7,7 +7,7 @@ dune:
 	cd experiment; dune build; dune install; cd ..
 
 clean:
-	git clean -fX
+	git clean -fXd
 
 uninstall:
 	cd core;       dune uninstall; cd ..
