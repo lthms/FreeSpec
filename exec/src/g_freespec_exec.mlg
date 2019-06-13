@@ -20,13 +20,15 @@
 
 DECLARE PLUGIN "freespec_exec"
 
+{
 open Stdarg
+}
 
 VERNAC COMMAND EXTEND Exec CLASSIFIED AS SIDEFF
-    | [ "Exec" constr(def) ] ->
-    [ let (evm, env) = Pfedit.get_current_context () in
+    | [ "Exec" constr(def) ] -> {
+      let (evm, env) = Pfedit.get_current_context () in
       let (def, _) = Constrintern.interp_constr env evm def in
       let def = EConstr.to_constr evm def in
       Exec.exec env evm def
-    ]
-END;;
+    }
+END
