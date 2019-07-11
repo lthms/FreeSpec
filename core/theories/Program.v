@@ -108,6 +108,33 @@ Instance Instance_Use (i: Interface): Use i i :=
 
 Arguments lift_eff [i ix _ a] (e).
 
+Class Cons
+      (X Rst: Type)
+  : Type :=
+  { proj_x:    X
+  ; proj_rst:  Rst
+  }.
+
+Class Nil: Type.
+
+Ltac use_many :=
+  match goal with
+  | |- Cons _ _ => constructor; [typeclasses eauto | use_many]
+  | |- Nil => constructor
+  end.
+
+Hint Extern 20 (Cons _ _) => use_many: typeclass_instances.
+Hint Extern 10 (Use _ _) => (match goal with
+                             | H: context[Use ?i ?ix] |- Use ?i ?ix => apply H
+                             end) : typeclass_instances.
+
+Notation "ix ':|' i1 ',' i2 ',' .. ',' i3" :=
+  (Cons (Use i1 ix) (Cons (Use i2 ix) .. (Cons (Use i3 ix) Nil) ..))
+    (at level 78, i1, i2, i3 at next level, no associativity).
+Notation "ix ':|' i" :=
+  (Use i ix)
+    (at level 78, i at next level, no associativity).
+
 (** Using the [Use] typeclass, we can implement a more generic
     replacement of the old definition of the [Request]
     constructor.
@@ -122,7 +149,7 @@ Arguments lift_eff [i ix _ a] (e).
     specification with a different interface type. *)
 Definition request
            {i:   Type -> Type}
-           {ix:  Type -> Type} `{Use i ix}
+           {ix:  Type -> Type} `{ix :| i}
            {a:   Type}
            (e:   i a)
   : Program ix a :=

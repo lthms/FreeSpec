@@ -60,7 +60,7 @@ Inductive Undefined
  *)
 
 Definition undef
-           {ix:  Type -> Type} `{Use Undefined ix}
+           {ix:  Type -> Type} `{ix :| Undefined}
            {a:   Type}
   : Program ix a :=
   request undefined.

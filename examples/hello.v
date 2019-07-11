@@ -24,7 +24,7 @@ Require Import Prelude.Control.
 
 Local Open Scope prelude_scope.
 
-Definition hello {ix} `{Use Console.i ix} : Program ix unit :=
+Definition hello {ix} `{ix :| Console.i} : Program ix unit :=
   Console.echo "Hello, world".
 
 Exec hello.

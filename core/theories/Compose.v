@@ -58,18 +58,16 @@ Infix "<+>" :=
 Local Open Scope free_scope.
 
 Instance IntCompose_Use_L
-         (ix i j:  Interface)
-        `{Use i ix}
-  : Use i (ix <+> j) :=
+         (ix i j:  Interface) `{ix :| i}
+  : ix <+> j :| i :=
   { lift_eff := fun (a:  Type)
                     (e:  i a)
                 => InL (lift_eff e)
   }.
 
 Instance IntCompose_Use_R
-         (j i jx:  Interface)
-        `{Use j jx}
-  : Use j (i <+> jx) :=
+         (j i jx:  Interface) `{jx :| j}
+  : i <+> jx :| j :=
   { lift_eff := fun (a:  Type)
                     (e:  j a)
                 => InR (lift_eff e)

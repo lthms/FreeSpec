@@ -29,16 +29,9 @@ Local Open Scope Z_scope.
 
 Local Open Scope prelude_scope.
 
-Definition combine {ix} `{Use Console.i ix} `{Use Debug.i ix}: Program ix unit :=
+Definition combine {ix} `{ix :| Console.i, Debug.i}: Program ix unit :=
   Debug.iso 10 >>= Debug.inspect >>= Console.echo ;;
   Debug.iso true >>= Debug.inspect >>= Console.echo.
 
 (* for Console.i <+> Debug.i *)
 Exec combine.
-
-Axiom (ix: Type -> Type).
-Axiom (Use_console_ix: Use Console.i ix).
-Axiom (Use_debug_ix: Use Debug.i ix).
-
-(* for the most generic form *)
-Exec (@combine ix Use_console_ix Use_debug_ix).
