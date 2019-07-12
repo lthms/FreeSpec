@@ -31,10 +31,15 @@ install:
   - eval $(opam config env)
   - opam config list
   - opam repo add coq-core-dev https://coq.inria.fr/opam/core-dev || echo "coq-core-dev registered"
-  - opam install -j ${NJOBS} -y camlp5.${CAMLP5_VER} ocamlfind.${FINDLIB_VER} coq.${COQ_VER}
+  - opam install -j ${NJOBS} -y camlp5.${CAMLP5_VER} ocamlfind.${FINDLIB_VER} coq.${COQ_VER} dune
   - opam upgrade -y coq.${COQ_VER}
   - opam list
-  - git clone https://github.com/ANSSI-FR/coq-prelude ${HOME}/coq-prelude; cd ${HOME}/coq-prelude; ./configure.sh; make ; make install; cd -
+  - |
+    git clone https://github.com/ANSSI-FR/coq-prelude ${HOME}/coq-prelude
+    cd ${HOME}/coq-prelude
+    dune build
+    dune install
+    cd -
 
 script:
   - ./configure.sh
