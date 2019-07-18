@@ -113,8 +113,12 @@ Ltac prove_program :=
             let Hrun := fresh "Hrun" in
             apply correct_program_correct_run_correct_bind;
               [| intros x w Hrun; prove_program]
-       | [ |- _ ]
+       | [ |- Request _ _ |> _ [ _ ] ]
          => prove_program
+       | [ |- Pure _ |> _ [ _ ] ]
+         => prove_program
+       | [ |- _ ]
+         => idtac
        end
   | [ |- _ ]
     => auto
