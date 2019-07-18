@@ -88,17 +88,26 @@ Ltac simplify_postcondition :=
        end
   end.
 
+(** The [prove_program] can be used with a goal of the form [?p |> ?c[?w]], that
+    is proving that a program is correct wrt. an abstract specification. Its
+    main benefit it to erase the Program monad. *)
 Ltac prove_program :=
   repeat (cbn; destruct_if_when);
   lazymatch goal with
+  (* 1st case: nested bind:
+       rewrite ((p >>= f) >>= g) into p >>= (λ x, f x >>= g) *)
   | |- program_bind (program_bind ?p ?f) ?g |> ?c[?w]
     => rewrite (program_eq_bind_assoc p f g); prove_program
+  (* 2nd case: bind opaque program:
+       rely on the correct_run abstraction *)
   | |- program_bind ?p ?f |> ?c [?w]
     => let x := fresh "x" in
        let w := fresh "w" in
        let Hrun := fresh "Hrun" in
        apply correct_program_correct_run_correct_bind; [| intros x w Hrun;
                                                           prove_program ]
+  (* 3rd case: request constructor
+      generate a gool to prove the effect satisfies the precondition *)
   | |- Request ?e ?f |> ?c[?w]
     => let Hpre := fresh "Hpre" in
        assert (Hpre: precondition c e w); [| constructor; [apply Hpre |];
@@ -108,10 +117,12 @@ Ltac prove_program :=
                                              let Hpost := fresh "Hpost" in
                                              intros res Hpost;
                                              prove_program ]
+  (* 4st case: pure constructor
+       conclude *)
   | |- Pure ?x |> ?c[?w]
     => constructor
   | |- program_pure ?x |> ?c[?w]
     => constructor
   | _
-    => idtac
+    => fail "Unexpected goal: prove_program allows for proving program correctness"
   end.
