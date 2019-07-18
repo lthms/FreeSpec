@@ -89,33 +89,29 @@ Ltac simplify_postcondition :=
   end.
 
 Ltac prove_program :=
+  repeat (cbn; destruct_if_when);
   lazymatch goal with
-  | [ |- Request ?op ?f |> ?c[?w] ]
+  | |- program_bind (program_bind ?p ?f) ?g |> ?c[?w]
+    => rewrite (program_eq_bind_assoc p f g); prove_program
+  | |- program_bind ?p ?f |> ?c [?w]
+    => let x := fresh "x" in
+       let w := fresh "w" in
+       let Hrun := fresh "Hrun" in
+       apply correct_program_correct_run_correct_bind; [| intros x w Hrun;
+                                                          prove_program ]
+  | |- Request ?e ?f |> ?c[?w]
     => let Hpre := fresh "Hpre" in
-       assert (Hpre: precondition c op w); [| constructor; [apply Hpre |];
-                                              let sig := fresh "sig" in
-                                              let Hsig := fresh "Hsig" in
-                                              let res := fresh "res" in
-                                              let Hpost := fresh "Hpost" in
-                                              intros res Hpost;
-                                              prove_program
-                                           ]
-  | [ |- program_pure ?op |> ?c[?w] ]
+       assert (Hpre: precondition c e w); [| constructor; [apply Hpre |];
+                                             let sig := fresh "sig" in
+                                             let Hsig := fresh "Hsig" in
+                                             let res := fresh "res" in
+                                             let Hpost := fresh "Hpost" in
+                                             intros res Hpost;
+                                             prove_program ]
+  | |- Pure ?x |> ?c[?w]
     => constructor
-  | [ |- ?p |> ?c [?w] ]
-    => repeat (cbn; destruct_if_when);
-       lazymatch goal with
-       | [ |- context[program_bind (program_bind ?p ?f) ?g] ]
-         => rewrite (program_eq_bind_assoc p f g); prove_program
-       | [ |- program_bind ?p ?f |> ?c [?w] ]
-         => let x := fresh "x" in
-            let w := fresh "w" in
-            let Hrun := fresh "Hrun" in
-            apply correct_program_correct_run_correct_bind;
-              [| intros x w Hrun; prove_program]
-       | [ |- _ ]
-         => prove_program
-       end
-  | [ |- _ ]
-    => auto
+  | |- program_pure ?x |> ?c[?w]
+    => constructor
+  | _
+    => idtac
   end.
