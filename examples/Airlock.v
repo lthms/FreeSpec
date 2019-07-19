@@ -63,10 +63,10 @@ Module controller.
   | Tick: i unit
   | OpenDoor: door -> i unit.
 
-  Definition tick {Ix} `{(i | Ix)}: Program Ix unit :=
+  Definition tick {ix} `{ix :| i}: Program ix unit :=
     request Tick.
 
-  Definition open_door {Ix} `{(i | Ix)}: door -> Program Ix unit :=
+  Definition open_door {ix} `{ix :| i}: door -> Program ix unit :=
     request <<< OpenDoor.
 End controller.
 
@@ -80,17 +80,17 @@ Module door.
   Arguments IsOpen {L l}.
   Arguments Toggle {L l}.
 
-  Definition is_open {L Ix} (l: L) `{(i l | Ix)}: Program Ix bool :=
+  Definition is_open {L ix} (l: L) `{ix :| i l}: Program ix bool :=
     request IsOpen.
 
-  Definition toggle {L Ix} (l: L) `{(i l | Ix)}: Program Ix unit :=
+  Definition toggle {L ix} (l: L) `{ix :| i l}: Program ix unit :=
     request Toggle.
 End door.
 
 #[program]
 Instance use_door
          (l: door)
-  : (door.i l | door.i In <+> door.i Out) :=
+  : door.i In <+> door.i Out :| door.i l :=
   { lift_eff :=  match l with
                  | In => fun _ op => InL op
                  | Out => fun _ op => InR op
@@ -99,11 +99,11 @@ Instance use_door
 
 (** * Controller Model *)
 
-Definition open_door {L Ix} (l: L) `{(door.i l | Ix)}: Program Ix unit :=
+Definition open_door {L ix} (l: L) `{ix :| door.i l}: Program ix unit :=
   d <- door.is_open l;
   when (negb d) $ door.toggle l.
 
-Definition close_door {L Ix} (l: L) `{(door.i l | Ix)}: Program Ix unit :=
+Definition close_door {L ix} (l: L) `{ix :| door.i l}: Program ix unit :=
   d <- door.is_open l;
   when d $ door.toggle l.
 
