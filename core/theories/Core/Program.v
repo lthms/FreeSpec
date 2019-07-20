@@ -20,7 +20,7 @@
 
 From Coq.Program Require Import Equality Tactics Basics.
 From Coq Require Import Relations Setoid FunctionalExtensionality.
-From Prelude Require Import Equality Control Control.Classes Tactics.
+From Prelude Require Import Equality Control Control.Classes Tactics State.
 
 #[local]
 Open Scope prelude_scope.
@@ -34,6 +34,11 @@ From FreeSpec.Core Require Import utils.
 (** * Interfaces *)
 
 Definition interface := Type -> Type.
+
+Inductive iempty : interface := .
+
+Notation "'<>'" := iempty : type_scope.
+Notation "'⋄'" := iempty : type_scope.
 
 Inductive iplus (i j : interface) : interface :=
 | in_left {a} (e : i a) : iplus i j a
@@ -289,6 +294,9 @@ Proof.
 Qed.
 
 Hint Resolve lm_semantics_equiv_exec_effect : freespec.
+
+CoFixpoint semempty : semantics ⋄ :=
+  mk_semantics (fun (a : Type) (e : iempty a) => match e with end).
 
 CoFixpoint semplus {i j} (sem_i : semantics i) (sem_j : semantics j)
   : semantics (i ⊕ j) :=
@@ -740,3 +748,18 @@ Defined.
 Next Obligation.
   reflexivity.
 Defined.
+
+(** * Component *)
+
+Definition component (i j : interface) (s : Type) : Type :=
+  forall (a : Type), i a -> state_t s (program j) a.
+
+CoFixpoint derive_semantics {i j s} (c : component i j s) (st : s) (sem : semantics j) :=
+  mk_semantics (fun (a : Type) (e : i a) =>
+                  let out := run_program sem (c a e st) in
+                  let res := interp_result out in
+                  let sem' := interp_next out in
+                  mk_out (fst res) (derive_semantics c (snd res) sem')).
+
+Definition bootstrap {i s} (c : component i ⋄ s) (st : s) :=
+  derive_semantics c st semempty.
