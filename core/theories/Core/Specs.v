@@ -67,8 +67,10 @@ Definition specsplus {i j Ωi Ωj} (speci : specs i Ωi) (specj : specs j Ωj)
                    end
   |}.
 
-Infix "'<.>'" := specsplus (at level 77, left associativity) : specs_scope.
-Infix "'⊙'" := specsplus (at level 77, left associativity) : specs_scope.
+Infix "<.>" := specsplus (at level 77, left associativity) : specs_scope.
+Infix "⊙" := specsplus (at level 77, left associativity) : specs_scope.
+
+Bind Scope specs_scope with specs.
 
 (** * Trustworthiness *)
 
@@ -163,3 +165,46 @@ CoInductive compliant_semantics {i Ω} (c : specs i Ω) : Ω -> semantics i -> P
         -> compliant_semantics c (witness c ω e (eval_effect sem e)) (exec_effect sem e))
 (** … then [sem] complies to [c] in accordance to [ω] *)
   : compliant_semantics c ω sem.
+
+Lemma lm_no_specs_compliant_semantics {i}
+  (sem : semantics i) (ϵ : unit)
+  : compliant_semantics (no_specs i) ϵ sem.
+
+Proof.
+  revert sem.
+  cofix no_specs_compliant_semantics; intros sem.
+  constructor.
+  + trivial.
+  + intros a e req.
+    apply no_specs_compliant_semantics.
+Qed.
+
+Hint Resolve lm_no_specs_compliant_semantics : freespec.
+
+Lemma lm_compliant_semantics_semplus {i j Ωi Ωj}
+  (semi : semantics i) (semj : semantics j)
+  (ci : specs i Ωi) (ωi : Ωi) (compi : compliant_semantics ci ωi semi)
+  (cj : specs j Ωj) (ωj : Ωj) (compj : compliant_semantics cj ωj semj)
+  : compliant_semantics (ci ⊙ cj) (ωi, ωj) (semi ⊗ semj).
+
+Proof.
+  revert ωi ωj semi semj compi compj.
+  cofix lm_compliant_semantics_semplus; intros ωi ωj semi semj compi compj.
+  constructor; intros a e req.
+  + destruct e; [ inversion compi | inversion compj ]; ssubst; now apply prom.
+  + destruct e; [ inversion compi | inversion compj ]; ssubst;
+      apply lm_compliant_semantics_semplus;
+      auto;
+      now apply next.
+Qed.
+
+Hint Resolve lm_compliant_semantics_semplus : freespec.
+
+Lemma lm_compliant_semantics_semplus_no_specs {i j Ω}
+  (ci : specs i Ω) (ω : Ω) (semi : semantics i) (comp : compliant_semantics ci ω semi)
+  (semj : semantics j) (ϵ : unit)
+  : compliant_semantics (ci ⊙ no_specs j) (ω, ϵ) (semi ⊗ semj).
+
+Proof.
+  auto with freespec.
+Qed.

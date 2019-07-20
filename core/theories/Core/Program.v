@@ -311,7 +311,7 @@ CoFixpoint semplus {i j} (sem_i : semantics i) (sem_j : semantics j)
                   end).
 
 Infix "<x>" := semplus (at level 50, left associativity) : semantics_scope.
-Infix "⊗" := iplus (at level 50, left associativity) : semantics_scope.
+Infix "⊗" := semplus (at level 50, left associativity) : semantics_scope.
 
 Bind Scope semantics_scope with semantics.
 
