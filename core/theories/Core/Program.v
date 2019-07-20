@@ -40,9 +40,9 @@ Inductive iempty : interface := .
 Notation "'<>'" := iempty : type_scope.
 Notation "'⋄'" := iempty : type_scope.
 
-Inductive iplus (i j : interface) : interface :=
-| in_left {a} (e : i a) : iplus i j a
-| in_right {a} (e : j a) : iplus i j a.
+Inductive iplus (i j : interface) (a : Type) :=
+| in_left (e : i a) : iplus i j a
+| in_right (e : j a) : iplus i j a.
 
 Arguments in_left [i j a] (e).
 Arguments in_right [i j a] (e).

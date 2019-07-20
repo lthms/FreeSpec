@@ -19,7 +19,7 @@
  *)
 
 From Prelude Require Export Control.
-From FreeSpec.Core Require Export Program.
+From FreeSpec.Core Require Export Program Specs.
 
 #[global]
 Open Scope prelude_scope.
