@@ -12,3 +12,7 @@ theories/Specification/Constant.v
 theories/Undefined.v
 theories/Tactics.v
 theories/Concurrent.v
+
+theories/Core/utils.v
+theories/Core/Program.v
+theories/Core.v

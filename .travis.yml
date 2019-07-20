@@ -37,6 +37,7 @@ install:
   - |
     git clone https://github.com/ANSSI-FR/coq-prelude ${HOME}/coq-prelude
     cd ${HOME}/coq-prelude
+    git checkout refactoring
     dune build
     dune install
     cd -
