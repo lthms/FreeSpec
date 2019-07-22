@@ -18,8 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Import Tactics.
+From Coq Require Import Setoid Morphisms.
+From Prelude Require Import Tactics Equality.
 From FreeSpec.Core Require Export Program.
+
+#[local]
+Open Scope prelude_scope.
+
+#[local]
+Open Scope signature_scope.
 
 (** * Definition *)
 
@@ -33,11 +40,9 @@ Arguments witness [i Ω] (_) [a] (_ _ _).
 Arguments requirements [i Ω] (_) [a] (_).
 Arguments promises [i Ω] (_) [a] (_ _).
 
-Definition no_req {i : interface} {Ω a} (ω : Ω) (e : i a) : Prop :=
-  True.
+Definition no_req {i : interface} {Ω a} (ω : Ω) (e : i a) : Prop := True.
 
-Definition no_prom {i : interface} {Ω a} (ω : Ω) (e : i a) (x : a) : Prop :=
-  True.
+Definition no_prom {i : interface} {Ω a} (ω : Ω) (e : i a) (x : a) : Prop := True.
 
 Definition no_specs (i : interface) : specs i unit :=
   {| witness := fun (a : Type) (u : unit) (e : i a) (x : a) => u
@@ -190,9 +195,17 @@ Qed.
 
 Hint Resolve lm_compliant_semantics_requirement_compliant : freespec.
 
-#[local]
-Open Scope signature_scope.
-From Coq Require Import Setoid Morphisms.
+Lemma lm_compliant_semantics_exec_effect_equ {i Ω a} (c : specs i Ω) (ω : Ω)
+  (sem sem' : semantics i) (equ : sem == sem')
+  (e : i a)
+  : exec_effect sem e == exec_effect sem' e.
+Proof.
+  inversion equ; ssubst.
+  specialize step_equiv with a e.
+  now inversion step_equiv; ssubst.
+Qed.
+
+Hint Resolve lm_compliant_semantics_exec_effect_equ : freespec.
 
 #[program]
 Instance compliant_semantics_Proper {i Ω} (c : specs i Ω) (ω : Ω)
@@ -207,13 +220,10 @@ Next Obligation.
   constructor.
   + now setoid_rewrite <- equ.
   + intros a e req.
-    specialize next with a e.
-    apply next in req.
-    assert (R: eval_effect σ' e = eval_effect sem e) by now rewrite equ.
-    rewrite R; clear R.
-    eapply compliant_semantics_Proper in req.
-    eapply req.
-    now rewrite equ.
+    apply (compliant_semantics_Proper (witness c ω e (eval_effect σ' e)) (exec_effect sem e)).
+    ++ auto with freespec.
+    ++ rewrite <- equ at 1.
+       now apply next.
 Qed.
 
 Lemma lm_no_specs_compliant_semantics {i}
@@ -281,9 +291,22 @@ Proof.
   + apply H.
 Qed.
 
+Hint Rewrite @fst_witness_program_aux_run_program : freespec.
+
 Definition witness_program {i Ω a}
   (sem : semantics i) (p : program i a) (c : specs i Ω) (ω : Ω) : Ω :=
   snd (witness_program_aux sem p c ω).
+
+Lemma witness_progran_request_then_equ {i Ω a b} (c : specs i Ω) (ω : Ω)
+  (sem : semantics i) (e : i a) (f : a -> program i b)
+  : witness_program sem (request_then e f) c ω
+    = witness_program (exec_effect sem e)
+                      (f (eval_effect sem e))
+                      c
+                      (witness c ω e (eval_effect sem e)).
+Proof eq_refl.
+
+Hint Rewrite @witness_progran_request_then_equ : freespec.
 
 Lemma lm_trustworthy_program_compliant_specs {i Ω a} (c : specs i Ω) (ω : Ω)
   (p : program i a) (trust : trustworthy_program c ω p)
@@ -295,12 +318,6 @@ Proof.
   induction p; intros ω trust sem comp.
   + exact comp.
   + inversion trust; ssubst.
-    assert (R : witness_program sem (request_then e f) c ω
-                = witness_program (exec_effect sem e)
-                                  (f (eval_effect sem e))
-                                  c
-                                  (witness c ω e (eval_effect sem e)))
-      by reflexivity.
-    rewrite R; clear R.
+    autorewrite with freespec.
     apply H; auto with freespec.
 Qed.

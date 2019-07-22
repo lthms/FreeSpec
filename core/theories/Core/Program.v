@@ -170,6 +170,8 @@ Qed.
 
 #[program]
 Instance semantics_Equality (i : interface) : Equality (semantics i).
+
+#[global]
 Opaque semantics_Equality.
 
 #[program]
@@ -197,6 +199,8 @@ Qed.
 
 #[program]
 Instance interp_out_Equality (i : interface) (a : Type) : Equality (interp_out i a).
+
+#[global]
 Opaque interp_out_Equality.
 
 #[local]
@@ -361,6 +365,13 @@ Definition eval_program {i a} (sem : semantics i) (p : program i a) : a :=
 Definition exec_program {i a} (sem : semantics i) (p : program i a) : semantics i :=
   interp_next (run_program sem p).
 
+Lemma run_program_request_then_equ {i a b} (sem : semantics i)
+  (e : i a) (f : a -> program i b)
+  : run_program sem (request_then e f) = run_program (exec_effect sem e) (f (eval_effect sem e)).
+Proof eq_refl.
+
+Hint Rewrite @run_program_request_then_equ : freespec.
+
 (** Let [p] and [q] be two programs which both use effects of the interface [i]
     and produces a result of type [a]… *)
 Inductive program_equiv {i a} (p q : program i a) : Prop :=
@@ -400,6 +411,8 @@ Qed.
 
 #[program]
 Instance program_Equality (i : interface) (a : Type) : Equality (program i a).
+
+#[global]
 Opaque program_Equality.
 
 (* FIXME[0]: This works because coq-prelude provides a default [Equality]
@@ -434,8 +447,7 @@ Proof.
   + cbn.
     unfold exec_program.
     cbn.
-    assert (R: interp_result (run_effect sem e) = interp_result (run_effect sem' e));
-      [now rewrite equ | rewrite R; clear R].
+    rewrite equ at 2.
     apply H.
     auto with freespec.
 Qed.
@@ -466,12 +478,7 @@ Next Obligation.
   + cbn.
     now rewrite equ.
   + cbn.
-    assert (R: interp_result (run_effect sem e) = interp_result (run_effect sem' e));
-      [| rewrite R; clear R].
-    inversion equ; ssubst.
-    specialize step_equiv0 with b e.
-    now inversion step_equiv0; ssubst.
-    apply H.
+    rewrite equ at 2.
     auto with freespec.
 Qed.
 
@@ -585,11 +592,7 @@ Next Obligation.
   constructor.
   intros sem.
   repeat rewrite lm_program_bind_equation.
-  assert (R: exec_program sem p == exec_program sem q) by auto with freespec;
-    [ rewrite R; clear R ].
-  assert (R: eval_program sem p = eval_program sem q) by auto with freespec;
-    [ rewrite R; clear R ].
-  reflexivity.
+  now rewrite equp.
 Qed.
 
 Ltac change_request_then :=
