@@ -166,6 +166,30 @@ CoInductive compliant_semantics {i Ω} (c : specs i Ω) : Ω -> semantics i -> P
 (** … then [sem] complies to [c] in accordance to [ω] *)
   : compliant_semantics c ω sem.
 
+Lemma lm_compliant_semantics_requirement_promises {i Ω a} (c : specs i Ω) (ω : Ω)
+  (e : i a) (req : requirements c ω e)
+  (sem : semantics i) (comp : compliant_semantics c ω sem)
+  : promises c ω e (eval_effect sem e).
+
+Proof.
+  inversion comp; ssubst.
+  now apply prom.
+Qed.
+
+Hint Resolve lm_compliant_semantics_requirement_promises : freespec.
+
+Lemma lm_compliant_semantics_requirement_compliant {i Ω a} (c : specs i Ω) (ω : Ω)
+  (e : i a) (req : requirements c ω e)
+  (sem : semantics i) (comp : compliant_semantics c ω sem)
+  : compliant_semantics c (witness c ω e (eval_effect sem e)) (exec_effect sem e).
+
+Proof.
+  inversion comp; ssubst.
+  now apply next.
+Qed.
+
+Hint Resolve lm_compliant_semantics_requirement_compliant : freespec.
+
 #[local]
 Open Scope signature_scope.
 From Coq Require Import Setoid Morphisms.
@@ -233,4 +257,50 @@ Lemma lm_compliant_semantics_semplus_no_specs {i j Ω}
 
 Proof.
   auto with freespec.
+Qed.
+
+#[local]
+Fixpoint witness_program_aux {i Ω a}
+  (sem : semantics i) (p : program i a) (c : specs i Ω) (ω : Ω) : interp_out i a * Ω :=
+  match p with
+  | local x => (mk_out x sem, ω)
+  | request_then e f =>
+    let out := run_effect sem e in
+    let res := interp_result out in
+    witness_program_aux (interp_next out) (f res) c (witness c ω e res)
+  end.
+
+Lemma fst_witness_program_aux_run_program {i Ω a}
+  (sem : semantics i) (p : program i a) (c : specs i Ω) (ω : Ω)
+  : fst (witness_program_aux sem p c ω) = run_program sem p.
+
+Proof.
+  revert sem ω.
+  induction p; intros sem ω.
+  + reflexivity.
+  + apply H.
+Qed.
+
+Definition witness_program {i Ω a}
+  (sem : semantics i) (p : program i a) (c : specs i Ω) (ω : Ω) : Ω :=
+  snd (witness_program_aux sem p c ω).
+
+Lemma lm_trustworthy_program_compliant_specs {i Ω a} (c : specs i Ω) (ω : Ω)
+  (p : program i a) (trust : trustworthy_program c ω p)
+  (sem : semantics i) (comp : compliant_semantics c ω sem)
+  : compliant_semantics c (witness_program sem p c ω) (exec_program sem p).
+
+Proof.
+  revert trust sem comp. revert ω.
+  induction p; intros ω trust sem comp.
+  + exact comp.
+  + inversion trust; ssubst.
+    assert (R : witness_program sem (request_then e f) c ω
+                = witness_program (exec_effect sem e)
+                                  (f (eval_effect sem e))
+                                  c
+                                  (witness c ω e (eval_effect sem e)))
+      by reflexivity.
+    rewrite R; clear R.
+    apply H; auto with freespec.
 Qed.
