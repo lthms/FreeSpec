@@ -166,6 +166,32 @@ CoInductive compliant_semantics {i Ω} (c : specs i Ω) : Ω -> semantics i -> P
 (** … then [sem] complies to [c] in accordance to [ω] *)
   : compliant_semantics c ω sem.
 
+#[local]
+Open Scope signature_scope.
+From Coq Require Import Setoid Morphisms.
+
+#[program]
+Instance compliant_semantics_Proper {i Ω} (c : specs i Ω) (ω : Ω)
+  : Proper ('equal ==> Basics.impl) (compliant_semantics c ω).
+
+Next Obligation.
+  add_morphism_tactic.
+  revert ω.
+  cofix compliant_semantics_Proper; intros ω.
+  intros σ σ' equ comp.
+  destruct comp.
+  constructor.
+  + now setoid_rewrite <- equ.
+  + intros a e req.
+    specialize next with a e.
+    apply next in req.
+    assert (R: eval_effect σ' e = eval_effect sem e) by now rewrite equ.
+    rewrite R; clear R.
+    eapply compliant_semantics_Proper in req.
+    eapply req.
+    now rewrite equ.
+Qed.
+
 Lemma lm_no_specs_compliant_semantics {i}
   (sem : semantics i) (ϵ : unit)
   : compliant_semantics (no_specs i) ϵ sem.
