@@ -31,35 +31,32 @@ Open Scope signature_scope.
 (** * Definition *)
 
 Record specs (i : interface) (Ω : Type) : Type :=
-  { witness (a : Type) (ω : Ω) : i a -> a -> Ω
+  { witness_update (a : Type) (ω : Ω) : i a -> a -> Ω
   ; requirements (a : Type) (ω : Ω) : i a -> Prop
   ; promises (a : Type) (ω : Ω) : i a -> a -> Prop
   }.
 
-Arguments witness [i Ω] (_) [a] (_ _ _).
+Arguments witness_update [i Ω] (_) [a] (_ _ _).
 Arguments requirements [i Ω] (_) [a] (_).
 Arguments promises [i Ω] (_) [a] (_ _).
 
-Definition no_req {i : interface} {Ω a} (ω : Ω) (e : i a) : Prop := True.
+Definition no_req (i : interface) {Ω a} (ω : Ω) (e : i a) : Prop := True.
 
 Definition no_prom {i : interface} {Ω a} (ω : Ω) (e : i a) (x : a) : Prop := True.
 
 Definition no_specs (i : interface) : specs i unit :=
-  {| witness := fun (a : Type) (u : unit) (e : i a) (x : a) => u
+  {| witness_update := fun (a : Type) (u : unit) (e : i a) (x : a) => u
    ; requirements := @no_req i unit
    ; promises := @no_prom i unit
    |}.
 
-(** * Composition *)
-
-#[program]
 Definition specsplus {i j Ωi Ωj} (speci : specs i Ωi) (specj : specs j Ωj)
   : specs (i ⊕ j) (Ωi * Ωj) :=
-  {| witness := fun (a : Type) (ω : Ωi * Ωj) (e : (i ⊕ j) a) (x : a) =>
-                  match e with
-                  | in_left e => (witness speci (fst ω) e x, snd ω)
-                  | in_right e => (fst ω, witness specj (snd ω) e x)
-                  end
+  {| witness_update := fun (a : Type) (ω : Ωi * Ωj) (e : (i ⊕ j) a) (x : a) =>
+                         match e with
+                         | in_left e => (witness_update speci (fst ω) e x, snd ω)
+                         | in_right e => (fst ω, witness_update specj (snd ω) e x)
+                         end
   ;  requirements := fun (a : Type) (ω : Ωi * Ωj) (e : (i ⊕ j) a) =>
                        match e with
                        | in_left e => requirements speci (fst ω) e
@@ -77,47 +74,55 @@ Infix "⊙" := specsplus (at level 77, left associativity) : specs_scope.
 
 Bind Scope specs_scope with specs.
 
-(** * Trustworthiness *)
+(** * Reasoning with Specifications
 
-Inductive trustworthy_program {i a Ω} (c : specs i Ω) : Ω -> program i a -> Prop :=
-| trustworthy_local
-(** Given a term [x] and a witness [ω]… *)
-    (x : a) (ω : Ω)
-(** … the program [local x] is always trustworthy wrt. [c] in accordance to [ω]. *)
+    ** Program Trustworthiness
+
+    A program [p] is said trustworthy wrt. a specification [c] in accordance to
+    a witness [ω] when it only uses effects of [i] which satisfies [c]
+    requirements. *)
+
+Inductive trustworthy_program {i a Ω} (c : specs i Ω) (ω : Ω) : program i a -> Prop :=
+
+(**  - Given a term [x], the program [local x] is always
+      trustworthy wrt. [c] in accordance to [ω], since it does not use any
+      effects. *)
+| trustworthy_local (x : a)
   : trustworthy_program c ω (local x)
+
+(** - Given an effect [e] and a continuation [f], if
+
+      - [e] satisfies [c] requirements
+      - [f] programs are trustworthy wrt. [c] in accordance to [ω'], where [ω'] is
+        the witness after [e] interpretation
+
+      then the program [request_then e f] is trustworthy wrt. [c] in accordance to
+      [ω]. *)
 | trustworthy_request {b}
-(** Given an effect [e], a continuation [f], and a witness [ω]… *)
-    (e : i b) (f : b -> program i a) (ω : Ω)
-(** … if [e] satisfies [c] requirements *)
-    (req : requirements c ω e)
-(** … and [f] programs are trustworthy wrt. [c] in accordance to [ω'], where
-    [ω'] is the witness after [e] interpretation… *)
+    (e : i b) (req : requirements c ω e) (f : b -> program i a)
     (prom : forall (x : b),
-        promises c ω e x -> trustworthy_program c (witness c ω e x) (f x))
-(** … then the program [request_then e f] is trustworthy wrt. [c] in accordance
-    to [ω]. *)
+        promises c ω e x -> trustworthy_program c (witness_update c ω e x) (f x))
   : trustworthy_program c ω (request_then e f).
 
 Inductive trustworthy_run {i a Ω} (c : specs i Ω)
   : program i a -> Ω -> Ω -> a -> Prop :=
+
+(** Given a term [x], and an initial witness [ω], then a trustworthy run of
+    [local x] produces a result [x] and a witness state [ω]. *)
 | run_local
-(** Given a term [x], and an initial witness [ω]… *)
     (x : a) (ω : Ω)
-(** … then a trustworthy run of [local x] produces a result [x] and a witness
-    state [ω]. *)
   : trustworthy_run c (local x) ω ω x
+
+(** Given an initial witness [ω], an effect [e] which satisfies [c]
+    requirements, and a continuation [f], a result [x] for [e] which satisfies
+    [c] promises, if we can show that there is a trustworthy run of [f x]
+    which produces a term [y] and a witness [ω'], then there is a trustworthy
+    run of [request_then e f] which produces a result [y] and a witness [ω']. *)
 | run_request {b}
-(** Given an initial witness [ω]… *)
     (ω : Ω)
-(** … an effect [e] which satisfies [c] requirements, and a continuation [f]… *)
     (e : i b) (req : requirements c ω e) (f : b -> program i a)
-(** … a result [x] for [e] which satisfies [c] promises for [ω]… *)
     (x : b) (prom : promises c ω e x)
-(** … if we can show that there is a trustworthy run of [f x] which produces a
-    term [y] and a witness [ω']… *)
-    (ω' : Ω) (y : a) (rec : trustworthy_run c (f x) (witness c ω e x) ω' y)
-(** … then there is a trustworthy run of [request_then e f] which produces a
-    result [y] and a witness [ω']. *)
+    (ω' : Ω) (y : a) (rec : trustworthy_run c (f x) (witness_update c ω e x) ω' y)
   : trustworthy_run c (request_then e f) ω ω' y.
 
 Lemma lm_trustworthy_bind_trustworthy_run {i a b Ω}
@@ -152,7 +157,7 @@ Qed.
 
 Hint Resolve lm_trustworthy_bind_trustworthy_run : freespec_scope.
 
-(** * Compliance *)
+(** ** Semantics Compliance *)
 
 CoInductive compliant_semantics {i Ω} (c : specs i Ω) : Ω -> semantics i -> Prop :=
 | compliant_semantics_rec
@@ -167,7 +172,7 @@ CoInductive compliant_semantics {i Ω} (c : specs i Ω) : Ω -> semantics i -> P
     interpretation… *)
     (next : forall {a} (e : i a),
         requirements c ω e
-        -> compliant_semantics c (witness c ω e (eval_effect sem e)) (exec_effect sem e))
+        -> compliant_semantics c (witness_update c ω e (eval_effect sem e)) (exec_effect sem e))
 (** … then [sem] complies to [c] in accordance to [ω] *)
   : compliant_semantics c ω sem.
 
@@ -186,7 +191,7 @@ Hint Resolve lm_compliant_semantics_requirement_promises : freespec.
 Lemma lm_compliant_semantics_requirement_compliant {i Ω a} (c : specs i Ω) (ω : Ω)
   (e : i a) (req : requirements c ω e)
   (sem : semantics i) (comp : compliant_semantics c ω sem)
-  : compliant_semantics c (witness c ω e (eval_effect sem e)) (exec_effect sem e).
+  : compliant_semantics c (witness_update c ω e (eval_effect sem e)) (exec_effect sem e).
 
 Proof.
   inversion comp; ssubst.
@@ -220,7 +225,7 @@ Next Obligation.
   constructor.
   + now setoid_rewrite <- equ.
   + intros a e req.
-    apply (compliant_semantics_Proper (witness c ω e (eval_effect σ' e)) (exec_effect sem e)).
+    apply (compliant_semantics_Proper (witness_update c ω e (eval_effect σ' e)) (exec_effect sem e)).
     ++ auto with freespec.
     ++ rewrite <- equ at 1.
        now apply next.
@@ -277,7 +282,7 @@ Fixpoint witness_program_aux {i Ω a}
   | request_then e f =>
     let out := run_effect sem e in
     let res := interp_result out in
-    witness_program_aux (interp_next out) (f res) c (witness c ω e res)
+    witness_program_aux (interp_next out) (f res) c (witness_update c ω e res)
   end.
 
 Lemma fst_witness_program_aux_run_program {i Ω a}
@@ -303,7 +308,7 @@ Lemma witness_progran_request_then_equ {i Ω a b} (c : specs i Ω) (ω : Ω)
     = witness_program (exec_effect sem e)
                       (f (eval_effect sem e))
                       c
-                      (witness c ω e (eval_effect sem e)).
+                      (witness_update c ω e (eval_effect sem e)).
 Proof eq_refl.
 
 Hint Rewrite @witness_progran_request_then_equ : freespec.
@@ -320,4 +325,79 @@ Proof.
   + inversion trust; ssubst.
     autorewrite with freespec.
     apply H; auto with freespec.
+Qed.
+
+Hint Resolve lm_trustworthy_program_compliant_specs : freespec.
+
+(** ** Component Correctness *)
+
+(** We consider a component [c : component i j s], meaning [c] exposes an
+    interface [i], uses an interface [j], and carries an internal state of type
+    [s].
+
+<<
+                            c : component i j s
+                        i +---------------------+      j
+                        | |                     |      |
+                +------>| |       st : s        |----->|
+                        | |                     |      |
+                          +---------------------+
+>>
+
+    We say [c] is correct wrt. [speci] (a specification for [i]) and [specj] (a
+    specification for [i]) iff given effects which satisfy the requirements of
+    [speci], [c] will
+
+    - use trustworthy program wrt. [specj]
+    - compute results which satisfy [speci] promises, assuming it can rely on a
+      semantics of [j] which complies with [specj]
+
+    The two witness states [ωi : Ωi] (for [speci]) and [ωj : Ωj] (for [specj]),
+    and [st : s] the internal state of [c] remained implicit in the previous
+    sentence.  In practice, we associate them together by means of a dedicated
+    predicate [pred].  It is expected that [pred] is an invariant throughout [c]
+    life, meaning that as long as [c] computes result for legitimate effects
+    (wrt.  [speci] effects, the updated values of [ωi], [ωj] and [st] continue
+    to satisfy [pred]. *)
+Definition correct_component {i j Ωi Ωj s}
+  (c : component i j s)
+  (speci : specs i Ωi) (specj : specs j Ωj)
+  (pred : Ωi -> s -> Ωj -> Prop) : Prop :=
+  forall (ωi : Ωi) (st : s) (ωj : Ωj) (init : pred ωi st ωj)
+    (sem : semantics j) (comp : compliant_semantics specj ωj sem)
+    (a : Type) (e : i a) (req : requirements speci ωi e),
+    trustworthy_program specj ωj (c a e st)
+    /\ promises speci ωi e (fst (eval_program sem (c a e st)))
+    /\ pred (witness_update speci ωi e (fst (eval_program sem (c a e st))))
+            (snd (eval_program sem (c a e st)))
+            (witness_program sem (c a e st) specj ωj).
+
+(** Once we have proven [c] is correct wrt. to [speci] and [specj] with [pred]
+    acting as an invariant throughout [c] life, we show we can derive a
+    semantics from [c] with an initial state [st] which complies to [speci] in
+    accordance to [ωi] if we use a semantics of [j] which complies to [specj] in
+    accordance to [ωj], where [pred ωi st ωj] is satisfied. *)
+Lemma lm_correct_component_derives_compliant_semantics {i j Ωi Ωj s}
+  (c : component i j s) (speci : specs i Ωi) (specj : specs j Ωj)
+  (pred : Ωi -> s -> Ωj -> Prop)
+  (correct : correct_component c speci specj pred)
+  (ωi : Ωi) (st : s) (ωj : Ωj) (inv : pred ωi st ωj)
+  (sem : semantics j) (comp : compliant_semantics specj ωj sem)
+  : compliant_semantics speci ωi (derive_semantics c st sem).
+
+Proof.
+  revert inv sem comp.
+  revert ωi st ωj.
+  cofix lm_correct_component_derives_compliant_semantics.
+  intros ωi st ωj inv sem comp.
+  unfold correct_component in correct.
+  specialize (correct ωi st ωj inv sem comp).
+  constructor; intros a e req; specialize (correct a e req);
+    destruct correct as [trust [pr inv']].
+  + apply pr.
+  + eapply lm_correct_component_derives_compliant_semantics.
+    ++ apply inv'.
+    ++ fold (exec_program sem (c a e st)).
+       apply lm_trustworthy_program_compliant_specs; [| exact comp ].
+       apply trust.
 Qed.

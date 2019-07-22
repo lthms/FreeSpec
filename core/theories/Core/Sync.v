@@ -18,10 +18,4 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Export Control Control.Classes.
-From FreeSpec.Core Require Export Program Specs.
-
-#[global]
-Open Scope prelude_scope.
-#[global]
-Open Scope monad_scope.
+From FreeSpec.Core Require Import Specs.
