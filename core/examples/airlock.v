@@ -93,21 +93,21 @@ Definition sel (d : door) : Ω -> bool :=
   end.
 
 Definition tog (d : door) (ω : Ω) : Ω :=
-  match d, ω with
-  | left, (l, r) => (negb l, r)
-  | right, (l, r) => (l, negb r)
+  match d with
+  | left => (negb (fst ω), snd ω)
+  | right => (fst ω, negb (snd ω))
   end.
 
 Lemma tog_equ_1 (d : door) (ω : Ω)
   : sel d (tog d ω) = negb (sel d ω).
 Proof.
-  destruct d; destruct ω; reflexivity.
+  destruct d; reflexivity.
 Qed.
 
 Lemma tog_equ_2 (d : door) (ω : Ω)
   : sel (co d) (tog d ω) = sel (co d) ω.
 Proof.
-  destruct d; destruct ω; reflexivity.
+  destruct d; reflexivity.
 Qed.
 
 Opaque tog.
@@ -119,33 +119,46 @@ Definition step (a : Type) (ω : Ω) (e : DOORS a) (x : a) :=
   end.
 
 Inductive req : forall (a : Type), Ω -> DOORS a -> Prop :=
+(** Given the door [d] of o system [ω], it is always possible to ask for the
+    state of [d]. *)
 | req_is_open (d : door) (ω : Ω)
   : req bool ω (IsOpen d)
 
-| req_toggle (ω : Ω) (d : door) (H : sel d ω = false -> sel (co d) ω = false)
+(** Given the door [d] of o system [ω], if [d] is closed, then the second door
+    [co d] has to be closed to for a request to toggle [d] to be valid. *)
+| req_toggle (d : door) (ω : Ω) (H : sel d ω = false -> sel (co d) ω = false)
   : req unit ω (Toggle d).
 
 Inductive prom: forall (a : Type), Ω -> DOORS a -> a -> Prop :=
 
+(** When a system in a state [ω] reports the state of the door [d], it shall
+    reflect the true state of [d]. *)
 | prom_is_open (d : door) (ω : Ω) (x : bool) (equ : sel d ω = x)
   : prom bool ω (IsOpen d) x
 
-| prom_toggle (d : door)(ω : Ω) (x : unit)
+(** There is no particular promises on the result [x] of a request for [ω] to
+    close the door [d]. *)
+| prom_toggle (d : door) (ω : Ω) (x : unit)
   : prom unit ω (Toggle d) x.
 
-Definition doors_specs : specs DOORS Ω :=
-  {| witness_update := step
-  ; requirements := req
-  ; promises := prom
-  |}.
+Definition doors_specs : specs DOORS Ω := Build_specs _ _ step req prom.
 
 From Prelude Require Import Tactics.
 
+(** Closing a door [d] in any system [ω] is always a trustworthy operation. *)
 Lemma close_door_trustworthy (ω : Ω) (d : door)
   : trustworthy_program doors_specs ω (close_door d).
 
 Proof.
+  (* We use the [prove_program] tactics to erease the program monad *)
   prove_program; cbn; repeat constructor; subst.
+  (* This leaves us with one goal to prove:
+
+       [sel d ω = false -> sel (co d) ω = false]
+
+     Yet, thanks to our call to [IsOpen d], we can predict that
+
+       [sel d ω = true] *)
   inversion Hpost; ssubst.
   now rewrite H1.
 Qed.
@@ -167,17 +180,15 @@ Lemma close_door_run (ω : Ω) (d : door) (ω' : Ω) (x : unit)
   (run : trustworthy_run doors_specs (close_door d) ω ω' x)
   : sel d ω' = false.
 Proof.
-  inversion run; ssubst.
-  cbn in *.
-  inversion prom0; ssubst.
-  case_eq (sel d ω); intros equ; rewrite equ in rec.
-  + inversion rec; ssubst.
-    cbn in rec0.
-    inversion rec0; ssubst.
+  inversion run; ssubst; clear run req0; cbn in *.
+  inversion prom0; ssubst; clear prom0.
+  case_eq (sel d ω); intros equ; rewrite equ in rec;
+    inversion rec; ssubst; cbn in *; try clear req.
+  + inversion rec0; ssubst; clear rec0.
     rewrite tog_equ_1.
     rewrite equ.
     reflexivity.
-  + inversion rec; ssubst.
+  + inversion rec; ssubst; clear rec.
     exact equ.
 Qed.
 

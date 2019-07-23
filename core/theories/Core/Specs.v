@@ -145,18 +145,16 @@ Inductive trustworthy_run {i a Ω} (c : specs i Ω)
     (ω' : Ω) (y : a) (rec : trustworthy_run c (f x) (witness_update c ω e x) ω' y)
   : trustworthy_run c (request_then e f) ω ω' y.
 
+(** Given a specification [c] and a witness [ω] a program of effects [p] and a
+    continuation [f] if [p] is a trustworthy program wrt. [c] in accordance to
+    [ω] and for all result [x] and witness [ω'] produces by [p], [f x] is
+    trustworthy then [local p f] is trustworthy. *)
 Lemma lm_trustworthy_bind_trustworthy_run {i a b Ω}
-(** Given a specification [c] and a witness [ω]… *)
   (c : specs i Ω) (ω : Ω)
-(** … a program of effects [p] and a continuation [f]… *)
   (p : program i a) (f : a -> program i b)
-(** … if [p] is a trustworthy program wrt. [c] in accordance to [ω]… *)
   (trust : trustworthy_program c ω p)
-(** … and for all result [x] and witness [ω'] produces by [p], [f x] is
-    trustworthy… *)
   (run : forall (x : a) (ω' : Ω),
       trustworthy_run c p ω ω' x -> trustworthy_program c ω' (f x))
-(** … then [local p f] is trustworthy. *)
   : trustworthy_program c ω (program_bind p f).
 
 Proof.
