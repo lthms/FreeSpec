@@ -31,17 +31,19 @@ Inductive DOORS : interface :=
 | IsOpen : door -> DOORS bool
 | Toggle : door -> DOORS unit.
 
-Definition is_open {ix} `{ix :| DOORS} (d : door) : program ix bool :=
+Generalizable All Variables.
+
+Definition is_open `{ix :| DOORS} (d : door) : program ix bool :=
   request (IsOpen d).
 
-Definition toggle {ix} `{ix :| DOORS} (d : door) : program ix unit :=
+Definition toggle `{ix :| DOORS} (d : door) : program ix unit :=
   request (Toggle d).
 
-Definition open_door {ix} `{ix :| DOORS} (d : door) : program ix unit :=
+Definition open_door `{ix :| DOORS} (d : door) : program ix unit :=
   var open ← is_open d in
   when (negb open) (toggle d).
 
-Definition close_door {ix} `{ix :| DOORS} (d : door) : program ix unit :=
+Definition close_door `{ix :| DOORS} (d : door) : program ix unit :=
   var open ← is_open d in
   when open (toggle d).
 
@@ -51,10 +53,10 @@ Inductive CONTROLLER : interface :=
 | Tick : CONTROLLER unit
 | RequestOpen (d : door) : CONTROLLER unit.
 
-Definition tick {ix} `{ix :| CONTROLLER} : program ix unit :=
+Definition tick `{ix :| CONTROLLER} : program ix unit :=
   request Tick.
 
-Definition request_open {ix} `{ix :| CONTROLLER} (d : door) : program ix unit :=
+Definition request_open `{ix :| CONTROLLER} (d : door) : program ix unit :=
   request (RequestOpen d).
 
 Definition co (d : door) : door :=
