@@ -372,15 +372,11 @@ Proof eq_refl.
 
 Hint Rewrite @run_program_request_then_equ : freespec.
 
-(** Let [p] and [q] be two programs which both use effects of the interface [i]
-    and produces a result of type [a]… *)
-Inductive program_equiv {i a} (p q : program i a) : Prop :=
-(** if they _always_ produce the same output, independently from the operational
-    semantics… *)
-| program_equiv_out (run_equiv : forall (sem : semantics i),
-                        run_program sem p == run_program sem q)
-(** … then [p] and [q] are said to be equivalent. *)
-  : program_equiv p q.
+Inductive program_equiv {i a} : program i a -> program i a -> Prop  :=
+| local_equiv (x : a) : program_equiv (local x) (local x)
+| request_equiv {b} (e : i b) (f g : b -> program i a)
+    (equ : forall (x : b), program_equiv (f x) (g x))
+  : program_equiv (request_then e f) (request_then e g).
 
 #[program]
 Instance program_equiv_Equivalence (i : interface) (a : Type)
@@ -388,25 +384,28 @@ Instance program_equiv_Equivalence (i : interface) (a : Type)
 
 Next Obligation.
   intros p.
-  constructor.
-  reflexivity.
+  induction p; constructor.
+  intros x.
+  apply H.
 Qed.
 
 Next Obligation.
-  intros p q.
-  constructor.
-  intros sem.
-  symmetry.
+  intros p q equ.
+  induction equ; constructor.
+  intros x.
   apply H.
 Qed.
 
 Next Obligation.
   intros p q r pq qr.
-  constructor.
-  intros sem.
-  transitivity (run_program sem q).
-  + apply pq.
-  + apply qr.
+  revert p r pq qr.
+  induction q; intros p r pq qr.
+  + inversion pq; ssubst; inversion qr; ssubst.
+    constructor.
+  + inversion pq; ssubst; inversion qr; ssubst.
+    constructor.
+    intros x.
+    now apply H with (b := x).
 Qed.
 
 #[program]
@@ -427,18 +426,13 @@ Instance request_then_Proper (i : interface) (a b : Type)
 Next Obligation.
   add_morphism_tactic.
   intros x f g equ.
-  constructor.
-  intros sem; cbn.
-  specialize equ with (interp_result (run_effect sem x)).
-  inversion equ; ssubst.
-  apply run_equiv.
+  now constructor.
 Qed.
 
+(** Let two equivalent semantics [sem] and [sem'] and a program with effects [p]
+    then the semantics resulting in the interpretation of [p] are equivalent. *)
 Lemma lm_semantics_equiv_interp_next_program {i a}
-(** Let two equivalent semantics [sem] and [sem'] and a program with effects [p]... *)
   (sem sem' : semantics i) (equ : sem == sem') (p : program i a)
-(** ... then the semantics resulting in the interpretation of [p] are
-    equivalent. *)
   : interp_next (run_program sem p) == interp_next (run_program sem' p).
 Proof.
   revert sem sem' equ.
@@ -454,10 +448,10 @@ Qed.
 
 Hint Resolve lm_semantics_equiv_interp_next_program : freespec.
 
+(** Let two equivalent semantics [sem] and [sem'] and a program with effects [p]
+    then [exec_program sem p] and [exec_program sem' p] are equivalent. *)
 Lemma lm_semantics_equiv_exec_program {i a}
-(** Let two equivalent semantics [sem] and [sem'] and a program with effects [p]... *)
   (sem sem' : semantics i) (equ : sem == sem') (p : program i a)
-(** ... then [exec_program sem p] and [exec_program sem' p] are equivalent. *)
   : exec_program sem p == exec_program sem' p.
 Proof.
   unfold exec_program.
@@ -489,7 +483,10 @@ Instance run_program_Proper_2 (i : interface) (a : Type)
 Next Obligation.
   add_morphism_tactic.
   intros sem p q equ.
-  apply equ.
+  revert sem.
+  induction equ; intros sem.
+  + reflexivity.
+  + apply H.
 Qed.
 
 #[program]
@@ -537,8 +534,7 @@ Qed.
 Lemma lm_run_program_equiv {i a} (p q : program i a) (equ : p == q) (sem : semantics i)
   : run_program sem p == run_program sem q.
 Proof.
-  inversion equ.
-  apply run_equiv.
+  now rewrite equ.
 Qed.
 
 Hint Resolve lm_run_program_equiv : freespec.
@@ -564,16 +560,15 @@ Hint Resolve lm_run_program_eval_program_equiv : freespec.
 Lemma lm_exec_program_equiv {i a} (p q : program i a) (equ : p == q) (sem : semantics i)
   : exec_program sem p == exec_program sem q.
 Proof.
-  inversion equ.
-  specialize run_equiv with sem.
-  auto with freespec.
+  now rewrite equ.
 Qed.
 
 Hint Resolve lm_run_program_equiv : freespec.
 
 Lemma lm_program_bind_equation {i a b}
   (p : program i a) (f : a -> program i b) (sem : semantics i)
-  : run_program sem (program_bind p f) == run_program (exec_program sem p) (f (eval_program sem p)).
+  : run_program sem (program_bind p f)
+    == run_program (exec_program sem p) (f (eval_program sem p)).
 Proof.
   revert sem.
   induction p; intros sem.
@@ -589,10 +584,11 @@ Instance program_bind_Proper_2 (i : interface) (a b : Type)
 Next Obligation.
   add_morphism_tactic.
   intros p q equp f.
-  constructor.
-  intros sem.
-  repeat rewrite lm_program_bind_equation.
-  now rewrite equp.
+  induction equp.
+  + reflexivity.
+  + cbn.
+    constructor.
+    apply H.
 Qed.
 
 Ltac change_request_then :=
@@ -644,12 +640,7 @@ Next Obligation.
   unfold program_map.
   rewrite equp.
   change_program_bind.
-  constructor.
-  intros sem.
-  cbn.
-  constructor.
-  + apply equf.
-  + reflexivity.
+  now rewrite equf.
 Qed.
 
 #[program]
