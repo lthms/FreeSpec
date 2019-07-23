@@ -104,6 +104,26 @@ Inductive trustworthy_program {i a Ω} (c : specs i Ω) (ω : Ω) : program i a 
         promises c ω e x -> trustworthy_program c (witness_update c ω e x) (f x))
   : trustworthy_program c ω (request_then e f).
 
+#[program]
+Instance trustworthy_program_Proper {i Ω} (a : Type) (c : specs i Ω) (ω : Ω)
+  : Proper ('equal ==> Basics.impl) (trustworthy_program (a:=a) c ω).
+
+Next Obligation.
+  add_morphism_tactic.
+  unfold Basics.impl.
+  intros p q equ.
+  revert ω.
+  induction equ; intros ω.
+  + auto.
+  + intros trust.
+    inversion trust; ssubst.
+    constructor.
+    ++ exact req.
+    ++ intros x p.
+       apply H.
+       now apply prom.
+Qed.
+
 Inductive trustworthy_run {i a Ω} (c : specs i Ω)
   : program i a -> Ω -> Ω -> a -> Prop :=
 
@@ -401,3 +421,51 @@ Proof.
        apply lm_trustworthy_program_compliant_specs; [| exact comp ].
        apply trust.
 Qed.
+
+
+(** * Tactics *)
+
+From Prelude Require Import Control.
+
+Ltac destruct_if_when :=
+  let eq_cond := fresh "Heq_cond" in
+  match goal with
+  | |- context[when (negb ?B) _] => case_eq B; intros eq_cond; cbn
+  | |- context[when ?B _] => case_eq B; intros eq_cond; cbn
+  | |- context[if (negb ?B) then _ else _] => case_eq B; intros eq_cond; cbn
+  | |- context[if ?B then _ else _] => case_eq B; intros eq_cond; cbn
+  | _ => idtac
+  end.
+
+Ltac prove_program :=
+  repeat (cbn; destruct_if_when);
+  lazymatch goal with
+  (* 1st case: nested bind:
+       rewrite ((p >>= f) >>= g) into p >>= (λ x, f x >>= g) *)
+  | |- trustworthy_program ?c ?w (program_bind (program_bind ?p ?f) ?g) =>
+    rewrite (lm_program_bind_assoc p f g); prove_program
+  (* 2nd case: bind opaque program:
+       rely on the correct_run abstraction *)
+  | |- trustworthy_program ?c ?w (program_bind ?p ?f) =>
+    let x := fresh "x" in
+    let w := fresh "w" in
+    let Hrun := fresh "Hrun" in
+    apply lm_trustworthy_bind_trustworthy_run; [| intros x w Hrun;
+                                                  prove_program ]
+  (* 3rd case: request constructor
+      generate a gool to prove the effect satisfies the precondition *)
+  | |- trustworthy_program ?c ?w (request_then ?e ?f) =>
+    let Hpre := fresh "Hpre" in
+    assert (Hpre: requirements c w e); [| constructor; [apply Hpre |];
+                                          let sig := fresh "sig" in
+                                          let Hsig := fresh "Hsig" in
+                                          let res := fresh "res" in
+                                          let Hpost := fresh "Hpost" in
+                                          intros res Hpost;
+                                          prove_program ]
+  (* 4st case: pure constructor
+       conclude *)
+  | |- trustworthy_program ?c ?w (local ?x) => constructor
+  | |- trustworthy_program ?c ?w (program_pure ?x) => constructor
+  | _ => fail "Unexpected goal: prove_program allows for proving program correctness"
+  end.
