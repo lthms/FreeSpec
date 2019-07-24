@@ -19,13 +19,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Stdlib.Console.
-Require Import FreeSpec.Program.
-Require Import Prelude.Control.
+From FreeSpec.Stdlib Require Import Console.
 
-Local Open Scope prelude_scope.
+Generalizable All Variables.
 
-Definition hello {ix} `{Use Console.i ix} : Program ix unit :=
+Definition hello `{ix :| CONSOLE} : impure ix unit :=
   Console.echo "Hello, world".
 
 Exec hello.

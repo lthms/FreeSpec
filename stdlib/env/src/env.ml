@@ -22,7 +22,7 @@ open Exec_plugin.Coqstr
 open Exec_plugin.Extends
 open Exec_plugin.Coqunit
 
-let path = ["FreeSpec"; "Stdlib"; "Env"; "Env"]
+let path = ["FreeSpec"; "Stdlib"; "Env"]
 
 let install_interface =
   let get = function
@@ -39,4 +39,4 @@ let install_interface =
       -> Unix.putenv (string_of_coqstr var) (string_of_coqstr value);
          coqtt
     | _ -> assert false
-  in register_interface path [("GetVar", get); ("SetVar", set)]
+  in register_interface path [("GetEnv", get); ("SetEnv", set)]

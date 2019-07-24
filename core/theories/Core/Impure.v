@@ -126,13 +126,13 @@ Instance refl_Provide (i : interface) : Provide i i :=
   }.
 
 #[program]
-Instance iplus_left_Provide (i j : interface) : Provide (i ⊕ j) i :=
-  { lift_eff := @in_left i j
+Instance iplus_left_Provide (i i' j : interface) `{Provide i' i} : Provide (i' ⊕ j) i :=
+  { lift_eff := fun _ x => (in_left (lift_eff x))
   }.
 
 #[program]
-Instance iplus_right_Provide (i j : interface) : Provide (i ⊕ j) j :=
-  { lift_eff := @in_right i j
+Instance iplus_right_Provide (i j j' : interface) `{Provide j' j} : Provide (i ⊕ j') j :=
+  { lift_eff := fun _ x => (in_right (lift_eff x))
   }.
 
 (** We introduce a dedicated notation for conveniently declare interface
@@ -159,10 +159,29 @@ Definition provide_notation_test_1 {a}
   lift_eff p.
 
 #[local]
-Definition provide_notation_test_2 {a}
-  (ix i1 i2 i3 : interface) `{ix :| i1, i2, i3} (p : forall i' `{ix :| i2, i3}, i' a)
+Definition provide_notation_test_2 {a} (ix i1 i2 i3 : interface) `{ix :| i1, i2, i3}
+  (p : forall i' `{ix :| i2, i3}, i' a)
   : ix a :=
   p ix.
+
+#[local]
+Definition provide_notation_test_3 {a} (i1 i2 i3 : interface) (p : i2 a)
+  : (i1 ⊕ i2 ⊕ i3) a :=
+  lift_eff p.
+
+#[local]
+Lemma provide_notation_test_4 (i1 i2 i3 : interface)
+  : i1 ⊕ (i2 ⊕ i3) :| i2.
+Proof.
+  typeclasses eauto.
+Qed.
+
+#[local]
+Lemma provide_notation_test_5 (i1 i2 i3 : interface)
+  : i1 ⊕ i2 ⊕ i3 :| i2, i1.
+Proof.
+  typeclasses eauto.
+Qed.
 (* end hide *)
 
 (** * Operational Semantics *)
@@ -189,13 +208,13 @@ CoInductive semantics (i : interface) : Type :=
 with interp_out (i : interface) : Type -> Type :=
 | mk_out {a} (x : a) (sem : semantics i) : interp_out i a.
 
+Arguments mk_semantics [i] (f).
+Arguments mk_out [i a] (x sem).
+
 (** Thus, a [semantics] does not only compute a result for a primitive, but also
     provides a new semantics.  This is necessary to model impurity: the same
     primitive may or may not return the same result when called several
     times. *)
-
-Arguments mk_semantics [i] (f).
-Arguments mk_out [i a] (x sem).
 
 (** As for interfaces, the simpler [semantics] is the operational semantics for
     [⋄], the empty interface. *)

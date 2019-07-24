@@ -18,22 +18,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Exec.
-Require Export Coq.Strings.String.
-Require Import FreeSpec.Program.
+From FreeSpec Require Export Exec.
+From Coq Require Export String.
 
-Module Console.
-  Inductive i: Type -> Type :=
-  | Scan: i string
-  | Echo: string -> i unit.
+Generalizable All Variables.
 
-  Definition scan {ix} `{Use i ix}
-    : Program ix string :=
-    request Scan.
+Inductive CONSOLE : interface :=
+| Scan : CONSOLE string
+| Echo (str : string) : CONSOLE unit.
 
-  Definition echo {ix} `{Use i ix} (str: string)
-    : Program ix unit :=
-    request (Echo str).
-End Console.
+Definition scan `{ix :| CONSOLE} : impure ix string :=
+  request Scan.
+
+Definition echo `{ix :| CONSOLE} (str: string) : impure ix unit :=
+  request (Echo str).
 
 Declare ML Module "stdlib_console_plugin".

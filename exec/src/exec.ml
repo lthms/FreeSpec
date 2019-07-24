@@ -31,7 +31,7 @@ let exec_request instr_t instr_trm func_trm =
     let (instr_trm, args) = app_full instr_trm in
     match (kind instr_trm, args) with
     | (Construct (c, _), args)
-      -> (match (Ind.IntCompose.constructor_of instr_trm, args) with
+      -> (match (Ind.IPlus.constructor_of instr_trm, args) with
           | (Some _, [_; _; _; trm])
             -> find_primitive trm
           | _
@@ -52,11 +52,11 @@ let rec exec env evm def =
   let def = Reduction.whd_all env def in
   let (def, args) = app_full def in
   match (Ind.Program.constructor_of def, args) with
-  | (Some Request_program,
+  | (Some RequestThen_impure,
      [instr_t; _ret_t; _instr_ret_t; instr_trm; func_trm])
     -> let instr_trm = reduce_all env evm instr_trm in
        exec env evm (exec_request instr_t instr_trm func_trm)
-  | (Some Pure_program, _)
+  | (Some Local_impure, _)
     -> ()
   | _
     -> raise (UnsupportedTerm "FreeSpe.Exec only handles [FreeSpec.Program] terms.")

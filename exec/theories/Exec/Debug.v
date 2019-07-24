@@ -18,37 +18,30 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import FreeSpec.Program.
+From FreeSpec Require Import Core.
 
-Require Import Prelude.Control.
-Require Import Coq.Numbers.BinNums.
-Require Import Coq.Strings.Ascii.
-Require Import Coq.Strings.String.
+From Coq Require Import BinNums Ascii String.
 
-Local Open Scope prelude_scope.
+Generalizable All Variables.
 
-Class HasExecIsomorphism (A: Type).
+Class HasExecIsomorphism (a : Type).
 
-Instance bool_ExecIso: HasExecIsomorphism bool.
-Instance Z_ExecIso: HasExecIsomorphism Z.
-Instance ascii_ExecIso: HasExecIsomorphism ascii.
-Instance string_ExecIso: HasExecIsomorphism string.
+Instance bool_ExecIso : HasExecIsomorphism bool.
+Instance Z_ExecIso : HasExecIsomorphism Z.
+Instance ascii_ExecIso : HasExecIsomorphism ascii.
+Instance string_ExecIso : HasExecIsomorphism string.
 
-Module Debug.
-  Inductive i: Type -> Type :=
-  | Iso: forall {A} `{HasExecIsomorphism A}, A -> i A
-  | Inspect: forall {A} `{HasExecIsomorphism A}, A -> i string.
+Inductive DEBUG : interface :=
+(** Should acts as [id] as long as there is no bug in the FreeSpec.Exec plugin
+    (primilarly intended to write test cases for conversion functions in Coq) *)
+| Iso `{HasExecIsomorphism a} : a -> DEBUG a
 
-  (** Get a string which describes the argument (from the
-      Exec plugin perspective). *)
-  Definition inspect {ix} `{Use i ix} {A} `{HasExecIsomorphism A}
-    : A -> Program ix string :=
-    request <<< Inspect.
+(** Get a string which describes the argument (from the Exec plugin
+    perspective). *)
+| Inspect `{HasExecIsomorphism a} : a -> DEBUG string.
 
-  (** Should acts as [id] as long as there is no bug in the
-      FreeSpec.Exec plugin (primilarly intended to write test cases
-      for conversion functions in Coq) *)
-  Definition iso {ix} `{Use i ix} {A} `{HasExecIsomorphism A}
-    : A -> Program ix A :=
-    request <<< Iso.
-End Debug.
+Definition inspect `{HasExecIsomorphism a, ix :| DEBUG} (x : a) : impure ix string :=
+  request (Inspect x).
+
+Definition iso `{HasExecIsomorphism a, ix :| DEBUG} (x : a) : impure ix a :=
+  request (Iso x).

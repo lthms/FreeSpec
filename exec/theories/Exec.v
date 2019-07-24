@@ -18,35 +18,21 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import Prelude.Control.
-
-Require Import FreeSpec.Component.
-Require Import FreeSpec.Compose.
-Require Import FreeSpec.Program.
-
-Require Export FreeSpec.Exec.Debug.
-
-Local Open Scope free_scope.
-Local Open Scope prelude_scope.
+From FreeSpec Require Export Core.
+From FreeSpec.Exec Require Export Debug.
 
 Declare ML Module "exec_plugin".
 
 #[local]
-Fixpoint extends
-         {Ix J:  Type -> Type}
-         {A S:   Type}
-         (s:     S)
-         (comp:  Component J S Ix)
-         (p:     Program (J <+> Ix) A)
-: Program Ix (A * S) :=
+Fixpoint extends {ix j a s} (init : s) (c : component j ix s) (p : impure (j ⊕ ix) a)
+  : impure ix (a * s) :=
   match p with
-  | Pure x
-    => Pure (x, s)
-  | Request (InL e) f
-    => res <- comp _ e s;
-       extends (snd res) comp (f (fst res))
-  | Request (InR e) f
-    => Request e (fun x => extends s comp (f x))
+  | local x => local (x, init)
+  | request_then (in_left e) f =>
+    var res <- c _ e init in
+    extends (snd res) c (f (fst res))
+  | request_then (in_right e) f =>
+    request_then e (fun x => extends init c (f x))
   end.
 
 (** With FreeSpec.Exec, it becomes possible to interpret a term of type [Program
@@ -57,21 +43,19 @@ Fixpoint extends
     several advantages to rely on [withComponent] rather than writing an OCaml
     plugin, the most important being a handler in Coq is not part of the
     TCB. Besides, it can be verified as any FreeSpec [Component]. *)
-Definition withComponent
-         {Ix J:         Type -> Type}
-         {A S:          Type}
-         (** A [Component] carries its own state. The [initializer] is a
-             computation to construct the initial state of the component *)
-         (initializer:  Program Ix S)
-         (** The [Component] used to implement a semantics for J *)
-         (comp:         Component J S Ix)
-         (** The [finalizer] is a clean-up computation to “destruct” the
-             [Component] final state *)
-         (finalizer:    S -> Program Ix unit)
-         (** A computation to interpret, that uses [J] in addition to [Ix]. *)
-         (p:            Program (J <+> Ix) A)
-  : Program Ix A :=
-  s <- initializer;
-  res <- extends s comp p;
-  finalizer (snd res);;
-  pure (fst res).
+Definition withComponent {ix j a s}
+  (** A [Component] carries its own state. The [initializer] is a
+    computation to construct the initial state of the component *)
+  (initializer : impure ix s)
+  (** The [Component] used to implement a semantics for J *)
+  (c : component j ix s)
+  (** The [finalizer] is a clean-up computation to “destruct” the [Component]
+      final state *)
+   (finalizer : s -> impure ix unit)
+   (** A computation to interpret, that uses [J] in addition to [Ix]. *)
+   (p : impure (j ⊕ ix) a)
+  : impure ix a :=
+  var s <- initializer in
+  var res <- extends s c p in
+  do finalizer (snd res);
+     pure (fst res).

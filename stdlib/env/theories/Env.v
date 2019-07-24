@@ -18,78 +18,48 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import Coq.ZArith.ZArith.
-Require Export Coq.Strings.String.
+From Coq Require Import NArith String.
+From Prelude Require Import Z.
 
-Require Import Prelude.Control.
-Require Import Prelude.Control.Classes.
-Require Import Prelude.Data.Z.
-
-Require Import FreeSpec.Exec.
-Require Import FreeSpec.Program.
-Require Import FreeSpec.Compose.
-Require Import FreeSpec.Component.
+From FreeSpec Require Export Exec.
 
 #[local]
-Open Scope prelude_scope.
-Open Scope free_scope.
 Open Scope string_scope.
 
-Module Env.
-  Inductive i: Type -> Type :=
-  | GetVar: string -> i string
-  | SetVar: string -> string -> i unit.
+Generalizable All Variables.
 
-  Definition get
-             {ix} `{Use i ix}
-    : string -> Program ix string :=
-    request <<< GetVar.
+Inductive ENV : interface :=
+| GetEnv (name : string) : ENV string
+| SetEnv (name : string) (value : string) : ENV unit.
 
-  Definition set
-             {ix} `{Use i ix}
-             (var: string)
-    : string -> Program ix unit :=
-    request <<< (SetVar var).
-End Env.
+Definition get_env `{ix :| ENV} (name : string) : impure ix string :=
+  request (GetEnv name).
 
-Module Args.
-  Inductive i: Type -> Type :=
-  | Count: i Z
-  | Get: Z -> i string.
+Definition set_env `{ix :| ENV} (name : string) (value : string) : impure ix unit :=
+    request (SetEnv name value).
 
-  Definition count
-             {ix} `{Use i ix}
-    : Program ix Z :=
-    request Count.
+Inductive ARGS : interface :=
+| ArgCount : ARGS Z
+| ArgValue (nth : Z) : ARGS string.
 
-  Definition get
-             {ix} `{Use i ix}
-    : Z -> Program ix string :=
-    request <<< Get.
-End Args.
+Definition arg_count `{ix :| ARGS} : impure ix Z :=
+  request ArgCount.
+
+Definition arg_value `{ix :| ARGS} (nth : Z) : impure ix string :=
+  request (ArgValue nth).
 
 #[local]
-Close Scope nat_scope.
-#[local]
-Open Scope Z_scope.
+Open Scope N_scope.
 
 #[local]
-Definition component
-           {ix} `{Use Env.i ix}
-  : Component Args.i unit ix :=
-  fun (a:  Type)
-      (op: Args.i a)
-  => match op with
-     | Args.Count
-       => Z_of_string <$> lift (Env.get "FREESPEC_EXEC_ARGC")
-     | Args.Get idx
-       => lift (Env.get (append "FREESPEC_EXEC_ARGV_" (string_of_Z idx)))
-     end.
+Definition args `{ix :| ENV} : component ARGS ix unit :=
+  fun (a : Type) (e : ARGS a) =>
+    match e with
+    | ArgCount => Z_of_string <$> lift (get_env "FREESPEC_EXEC_ARGC")
+    | ArgValue n => lift (get_env (append "FREESPEC_EXEC_ARGV_" (string_of_Z n)))
+    end.
 
-Definition withArgs
-           {ix} `{Use Env.i ix}
-           {a:  Type}
-  : Program (Args.i <+> ix) a -> Program ix a :=
-  withComponent (pure tt) component (fun _ => pure tt).
+Definition withArgs {a} `{ix :| ENV} : impure (ARGS ⊕ ix) a -> impure ix a :=
+  withComponent (pure tt) args (fun _ => pure tt).
 
 Declare ML Module "stdlib_env_plugin".

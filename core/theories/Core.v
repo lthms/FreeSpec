@@ -2,7 +2,7 @@
  * Copyright (C) 2018–2019 ANSSI
  *
  * Contributors:
- * 2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,18 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Exec_plugin.Coqstr
-open Exec_plugin.Extends
-open Exec_plugin.Coqunit
+From Prelude Require Export Control Control.Classes.
+From FreeSpec.Core Require Export Impure Specs.
 
-let path = ["FreeSpec"; "Stdlib"; "Console"]
-
-let install_interface =
-  let scan = function
-    | [] -> string_to_coqstr (read_line ())
-    | _ -> assert false in
-  let echo = function
-    | [str] -> print_bytes (bytes_of_coqstr str);
-               coqtt
-    | _ -> assert false in
-  register_interface path [("Scan", scan); ("Echo", echo)]
+#[global]
+Open Scope prelude_scope.
+#[global]
+Open Scope monad_scope.
