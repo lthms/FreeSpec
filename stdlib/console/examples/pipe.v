@@ -18,20 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import Coq.Strings.String.
-Require Import FreeSpec.Exec.
-Require Import FreeSpec.Stdlib.Console.
-Require Import FreeSpec.Program.
-Require Import Prelude.Control.
+Generalizable All Variables.
+From FreeSpec Require Import Console.
 
-Require Import Coq.ZArith.ZArith.
-Local Open Scope Z_scope.
+Definition pipe `{ix :| CONSOLE}: impure ix unit :=
+  scan >>= echo.
 
-Local Open Scope prelude_scope.
-
-Definition combine {ix} `{ix :| Console.i, Debug.i}: Program ix unit :=
-  Debug.iso 10 >>= Debug.inspect >>= Console.echo ;;
-  Debug.iso true >>= Debug.inspect >>= Console.echo.
-
-(* for Console.i <+> Debug.i *)
-Exec combine.
+Exec pipe.

@@ -18,22 +18,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Require Import Coq.Program.Wf.
-Require Import Coq.Strings.Ascii.
-Require Import FreeSpec.Stdlib.Console.
-Require Import FreeSpec.Program.
-Require Import Prelude.Control.
-Require Import Coq.PArith.Pnat.
-Require Import Lia.
+Generalizable All Variables.
 
-Local Open Scope prelude_scope.
-Local Open Scope char_scope.
+From Coq Require Import Program.Wf Ascii Lia NArith.
+From FreeSpec Require Import Console.
+
+Open Scope char_scope.
+Open Scope N_scope.
 
 Require Import Coq.NArith.NArith.
 
-Local Open Scope N_scope.
-
-Definition ascii_of_nat n :=
+Definition ascii_of_N n :=
   match n mod 10 with
   | 0 =>  "0"
   | 1 =>  "1"
@@ -47,7 +42,7 @@ Definition ascii_of_nat n :=
   | _ =>  "9"
   end.
 
-Remark N2nat_inj_lt: forall n m,
+Remark N2Nat_inj_lt: forall n m,
     n < m -> (N.to_nat n < N.to_nat m)%nat.
 Proof.
   intros n m.
@@ -67,24 +62,24 @@ Proof.
        now apply N.succ_lt_mono.
 Qed.
 
-Program Fixpoint string_of_nat_aux acc n {measure (N.to_nat n)} :=
+Program Fixpoint string_of_N_aux acc n {measure (N.to_nat n)} :=
   match n =? 0 as n in bool with
   | true => acc
-  | false => string_of_nat_aux (String (ascii_of_nat (n mod 10)) acc)
+  | false => string_of_N_aux (String (ascii_of_N (n mod 10)) acc)
                                (n / 10)
   end.
 Next Obligation.
   symmetry in Heq_n.
-  apply N2nat_inj_lt.
+  apply N2Nat_inj_lt.
   apply N.div_lt.
   + apply N.eqb_neq in Heq_n.
     now apply N.neq_0_lt_0.
   + repeat constructor.
 Defined.
 
-Definition string_of_nat := string_of_nat_aux "".
+Definition string_of_N := string_of_N_aux "".
 
-Definition nat_of_string (s: string) :=
+Definition N_of_string (s: string) :=
   let fix aux acc s :=
       match s with
       | String "0" rst => aux (10 * acc) rst
@@ -107,19 +102,19 @@ Program Fixpoint fibonacci_aux n f {measure (N.to_nat n)} :=
   | Some x => (x, f)
   | None => match 1 <? n as n with
             | true => let (x, f') := fibonacci_aux (n - 1) f in
-                       let (y, f'') := fibonacci_aux (n - 2) f' in
-                       (x + y, update f'' n (x + y))
+                      let (y, f'') := fibonacci_aux (n - 2) f' in
+                      (x + y, update f'' n (x + y))
             | false => (1, update f n 1)
             end
   end.
 Next Obligation.
-  apply N2nat_inj_lt.
+  apply N2Nat_inj_lt.
   symmetry in Heq_n.
   apply N.ltb_lt in Heq_n.
   lia.
 Defined.
 Next Obligation.
-  apply N2nat_inj_lt.
+  apply N2Nat_inj_lt.
   symmetry in Heq_n.
   apply N.ltb_lt in Heq_n.
   lia.
@@ -128,10 +123,10 @@ Defined.
 Definition fibonacci n :=
   fst (fibonacci_aux n (fun _ => None)).
 
-Definition fibo {ix} `{Use Console.i ix} : Program ix unit :=
-  Console.echo "Go! ";;
-  x <- Console.scan;
-  let res := fibonacci (nat_of_string x) in
-  Console.echo (string_of_nat res).
+Definition fibo `{ix :| CONSOLE} : impure ix unit :=
+  do Console.echo "Go! ";
+     var x <- scan in
+     let res := fibonacci (N_of_string x) in
+     echo (string_of_N res).
 
 Exec fibo.
