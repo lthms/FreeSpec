@@ -33,17 +33,17 @@ Inductive DOORS : interface :=
 
 Generalizable All Variables.
 
-Definition is_open `{ix :| DOORS} (d : door) : program ix bool :=
+Definition is_open `{ix :| DOORS} (d : door) : impure ix bool :=
   request (IsOpen d).
 
-Definition toggle `{ix :| DOORS} (d : door) : program ix unit :=
+Definition toggle `{ix :| DOORS} (d : door) : impure ix unit :=
   request (Toggle d).
 
-Definition open_door `{ix :| DOORS} (d : door) : program ix unit :=
+Definition open_door `{ix :| DOORS} (d : door) : impure ix unit :=
   var open ← is_open d in
   when (negb open) (toggle d).
 
-Definition close_door `{ix :| DOORS} (d : door) : program ix unit :=
+Definition close_door `{ix :| DOORS} (d : door) : impure ix unit :=
   var open ← is_open d in
   when open (toggle d).
 
@@ -53,10 +53,10 @@ Inductive CONTROLLER : interface :=
 | Tick : CONTROLLER unit
 | RequestOpen (d : door) : CONTROLLER unit.
 
-Definition tick `{ix :| CONTROLLER} : program ix unit :=
+Definition tick `{ix :| CONTROLLER} : impure ix unit :=
   request Tick.
 
-Definition request_open `{ix :| CONTROLLER} (d : door) : program ix unit :=
+Definition request_open `{ix :| CONTROLLER} (d : door) : impure ix unit :=
   request (RequestOpen d).
 
 Definition co (d : door) : door :=
@@ -112,34 +112,34 @@ Qed.
 
 Opaque tog.
 
-Definition step (a : Type) (ω : Ω) (e : DOORS a) (x : a) :=
+Definition step (ω : Ω) (a : Type) (e : DOORS a) (x : a) :=
   match e with
   | Toggle d => tog d ω
   | _ => ω
   end.
 
-Inductive req : forall (a : Type), Ω -> DOORS a -> Prop :=
+Inductive req : Ω -> forall (a : Type), DOORS a -> Prop :=
 (** Given the door [d] of o system [ω], it is always possible to ask for the
     state of [d]. *)
 | req_is_open (d : door) (ω : Ω)
-  : req bool ω (IsOpen d)
+  : req ω bool (IsOpen d)
 
 (** Given the door [d] of o system [ω], if [d] is closed, then the second door
     [co d] has to be closed to for a request to toggle [d] to be valid. *)
 | req_toggle (d : door) (ω : Ω) (H : sel d ω = false -> sel (co d) ω = false)
-  : req unit ω (Toggle d).
+  : req ω unit (Toggle d).
 
-Inductive prom: forall (a : Type), Ω -> DOORS a -> a -> Prop :=
+Inductive prom: Ω -> forall (a : Type), DOORS a -> a -> Prop :=
 
 (** When a system in a state [ω] reports the state of the door [d], it shall
     reflect the true state of [d]. *)
 | prom_is_open (d : door) (ω : Ω) (x : bool) (equ : sel d ω = x)
-  : prom bool ω (IsOpen d) x
+  : prom ω bool (IsOpen d) x
 
 (** There is no particular promises on the result [x] of a request for [ω] to
     close the door [d]. *)
 | prom_toggle (d : door) (ω : Ω) (x : unit)
-  : prom unit ω (Toggle d) x.
+  : prom ω unit (Toggle d) x.
 
 Definition doors_specs : specs DOORS Ω := Build_specs _ _ step req prom.
 
@@ -147,11 +147,11 @@ From Prelude Require Import Tactics.
 
 (** Closing a door [d] in any system [ω] is always a trustworthy operation. *)
 Lemma close_door_trustworthy (ω : Ω) (d : door)
-  : trustworthy_program doors_specs ω (close_door d).
+  : trustworthy_impure doors_specs ω (close_door d).
 
 Proof.
   (* We use the [prove_program] tactics to erease the program monad *)
-  prove_program; cbn; repeat constructor; subst.
+  prove_impure; cbn; repeat constructor; subst.
   (* This leaves us with one goal to prove:
 
        [sel d ω = false -> sel (co d) ω = false]
@@ -164,15 +164,15 @@ Proof.
 Qed.
 
 Lemma open_door_trustworthy (ω : Ω) (d : door) (safe : sel (co d) ω = false)
-  : trustworthy_program doors_specs ω (open_door d).
+  : trustworthy_impure doors_specs ω (open_door d).
 
 Proof.
-  prove_program; cbn; repeat constructor; subst.
+  prove_impure; cbn; repeat constructor; subst.
   inversion Hpost; ssubst.
   now rewrite safe.
 Qed.
 
-Definition safe_open_door {ix} `{ix :| DOORS} (d : door) : program ix unit :=
+Definition safe_open_door {ix} `{ix :| DOORS} (d : door) : impure ix unit :=
   do close_door (co d);
      open_door d.
 
@@ -196,10 +196,10 @@ Qed.
 #[local] Opaque open_door.
 
 Lemma safe_door_trustworthy (ω : Ω) (d : door)
-  : trustworthy_program doors_specs ω (safe_open_door d).
+  : trustworthy_impure doors_specs ω (safe_open_door d).
 
 Proof.
-  prove_program; cbn; repeat constructor; subst.
+  prove_impure; cbn; repeat constructor; subst.
   apply close_door_trustworthy.
   apply close_door_run in Hrun.
   apply open_door_trustworthy.

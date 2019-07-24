@@ -25,13 +25,18 @@ Class CCons (x rst : Type) : Type :=
 
 Class CNil : Type.
 
-Ltac find_class_list_instance :=
+Ltac to_instances_list :=
   match goal with
-  | |- CCons _ _
-    => constructor; [typeclasses eauto | find_class_list_instance]
-  | |- CNil
-    => constructor
+  | |- CCons _ _ => constructor; [ typeclasses eauto | to_instances_list ]
+  | |- CNil => constructor
   end.
 
-Hint Extern 20 (CCons _ _) => find_class_list_instance : typeclass_instances.
-Hint Extern 20 (CNil _ _) => find_class_list_instance : typeclass_instances.
+Hint Extern 20 (CCons _ _) => to_instances_list : typeclass_instances.
+Hint Extern 20 (CNil _ _) => to_instances_list : typeclass_instances.
+
+Ltac from_instances_list :=
+  match goal with
+  | H: context[CCons ?a _] |- ?a => apply H
+  end.
+
+Hint Extern 10 => from_instances_list : typeclass_instances.
