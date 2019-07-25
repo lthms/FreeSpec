@@ -194,6 +194,7 @@ Qed.
 
 #[local] Opaque close_door.
 #[local] Opaque open_door.
+#[local] Opaque Nat.ltb.
 
 Lemma safe_door_trustworthy (ω : Ω) (d : door)
   : trustworthy_impure doors_specs ω (safe_open_door d).
@@ -204,4 +205,66 @@ Proof.
   apply close_door_run in Hrun.
   apply open_door_trustworthy.
   exact Hrun.
+Qed.
+
+Lemma trustworthy_run_inv {a} (p : impure DOORS a)
+  (ω : Ω) (safe : sel left ω = false \/ sel right ω = false)
+  (x : a) (ω' : Ω) (run : trustworthy_run doors_specs p ω ω' x)
+  : sel left ω' = false \/ sel right ω' = false.
+
+Proof.
+  induction run.
+  + exact safe.
+  + apply IHrun.
+    clear f run IHrun ω' y.
+    destruct e;
+      inversion prom0; ssubst;
+      inversion req0; ssubst; cbn -[sel].
+    ++ apply safe.
+    ++ destruct safe as [safe | safe]; destruct d.
+       +++ (* The left door is closed, we toggle the left door. Because of
+              [doors_specs], we know the right door has to be closed. *)
+           right.
+           fold (co left).
+           rewrite tog_equ_2.
+           now apply H1.
+       +++ (* The left door is closed, we want to toggle the right door. We know
+              the left door will remain closed. *)
+           left.
+           fold (co right).
+           rewrite tog_equ_2.
+           exact safe.
+       +++ (* The right door is closed, we want to toggle the left door. We know
+              the right door will remain closed. *)
+           right.
+           fold (co left).
+           rewrite tog_equ_2.
+           exact safe.
+       +++ (* The right door is closed, we want to toggle the right
+              door. Because of [doors_specs], we know the left door has to be
+              closed. *)
+           left.
+           fold (co right).
+           rewrite tog_equ_2.
+           now apply H1.
+Qed.
+
+Lemma controller_correct
+  : correct_component controller
+                      (no_specs CONTROLLER)
+                      doors_specs
+                      (fun _ _ d => sel left d = false \/ sel right d = false).
+Proof.
+  intros ωc cpt ωd pred a e req.
+  split.
+  + destruct e.
+    ++ prove_impure; apply close_door_trustworthy.
+    ++ prove_impure.
+       apply close_door_trustworthy.
+       apply open_door_trustworthy.
+       now apply close_door_run in Hrun.
+  + intros x st ωj' run.
+    split; auto.
+    eapply trustworthy_run_inv; [ exact pred
+                                |  exact run ].
 Qed.
