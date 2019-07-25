@@ -1,8 +1,8 @@
-all: core experiment exec stdlib
+all: core exec stdlib
 
-install: all install-stdlib install-experiment
+install: all install-stdlib
 
-html: html-core html-experiment html-exec html-stdlib
+html: html-core html-exec html-stdlib
 	mkdir -p html
 	cp -r core/html html/core
 	cp -r exec/html html/exec
@@ -14,9 +14,6 @@ html: html-core html-experiment html-exec html-stdlib
 
 core:
 	make -C core
-
-experiment: install-core
-	make -C experiment
 
 exec: install-core
 	make -C exec
@@ -32,10 +29,6 @@ stdlib-console: install-exec
 install-core: core
 	make -C core uninstall || true
 	make -C core install
-
-install-experiment: experiment
-	make -C experiment uninstall || true
-	make -C experiment install
 
 install-exec:
 	make -C exec uninstall || true
@@ -53,9 +46,6 @@ install-stdlib-env: stdlib-env
 
 html-core: core
 	make -C core html
-
-html-experiment: install-core
-	make -C experiment html
 
 html-exec: install-core
 	make -C exec html
@@ -76,9 +66,8 @@ clean:
 	make -C exec clean
 	make -C stdlib/console clean
 	make -C stdlib/env clean
-	make -C experiment clean
 
-.PHONY: all core experiment exec stdlib-console stdlib
-.PHONY: install install-core install-experiment install-exec install-stdlib-env install-stdlib-console install-stdlib
-.PHONY: html html-core html-experiment html-exec html-stdlib-console html-stdlib-env html-stdlib
+.PHONY: all core exec stdlib-console stdlib
+.PHONY: install install-core install-exec install-stdlib-env install-stdlib-console install-stdlib
+.PHONY: html html-core html-exec html-stdlib-console html-stdlib-env html-stdlib
 .PHONY: clean
