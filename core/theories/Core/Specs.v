@@ -437,6 +437,20 @@ Fixpoint witness_impure_aux {i Ω a}
     witness_impure_aux (interp_next out) (f res) c (witness_update c ω e res)
   end.
 
+#[program]
+Instance witness_impure_aux_Proper_2 {i Ω a}
+  : Proper (eq ==> 'equal ==> eq ==> eq ==> eq) (@witness_impure_aux i Ω a).
+
+Next Obligation.
+  add_morphism_tactic.
+  intros sem p q equp c ω.
+  revert sem ω.
+  induction equp; intros sem ω.
+  + reflexivity.
+  + cbn.
+    apply H.
+Qed.
+
 Lemma fst_witness_impure_aux_run_impure {i Ω a}
   (sem : semantics i) (p : impure i a) (c : specs i Ω) (ω : Ω)
   : fst (witness_impure_aux sem p c ω) = run_impure sem p.
@@ -453,6 +467,38 @@ Hint Rewrite @fst_witness_impure_aux_run_impure : freespec.
 Definition witness_impure {i Ω a}
   (sem : semantics i) (p : impure i a) (c : specs i Ω) (ω : Ω) : Ω :=
   snd (witness_impure_aux sem p c ω).
+
+#[program]
+Instance witness_impure_Proper {i Ω a}
+  : Proper (eq ==> 'equal ==> eq ==> eq ==> eq) (@witness_impure i Ω a).
+
+Next Obligation.
+  add_morphism_tactic.
+  unfold witness_impure.
+  intros sem p q equp c ω.
+  now rewrite equp.
+Qed.
+
+Lemma compliant_semantics_trustworthy_impure_gives_trustworthy_run {i Ω a}
+  (c : specs i Ω) (ω : Ω) (p : impure i a) (trust : trustworthy_impure c ω p)
+  (sem : semantics i) (comp : compliant_semantics c ω sem)
+  : trustworthy_run c p ω (witness_impure sem p c ω) (eval_impure sem p).
+
+Proof.
+  revert sem comp trust. revert ω.
+  induction p; intros ω sem comp trust.
+  + constructor.
+  + inversion trust; ssubst.
+    inversion comp; ssubst.
+    econstructor; auto.
+    apply H.
+    ++ now apply next.
+    ++ inversion trust; ssubst.
+       apply prom1.
+       now apply prom0.
+Qed.
+
+Hint Resolve compliant_semantics_trustworthy_impure_gives_trustworthy_run : freespec.
 
 Lemma witness_impure_request_then_equ {i Ω a b} (c : specs i Ω) (ω : Ω)
   (sem : semantics i) (e : i a) (f : a -> impure i b)
@@ -517,13 +563,11 @@ Definition correct_component {i j Ωi Ωj s}
   (speci : specs i Ωi) (specj : specs j Ωj)
   (pred : Ωi -> s -> Ωj -> Prop) : Prop :=
   forall (ωi : Ωi) (st : s) (ωj : Ωj) (init : pred ωi st ωj)
-    (sem : semantics j) (comp : compliant_semantics specj ωj sem)
     (a : Type) (e : i a) (req : requirements speci ωi e),
-    trustworthy_impure specj ωj (c a e st)
-    /\ promises speci ωi e (fst (eval_impure sem (c a e st)))
-    /\ pred (witness_update speci ωi e (fst (eval_impure sem (c a e st))))
-            (snd (eval_impure sem (c a e st)))
-            (witness_impure sem (c a e st) specj ωj).
+    trustworthy_impure specj ωj (c a e st) /\
+    forall (x : a) (st' : s) (ωj' : Ωj)
+      (run : trustworthy_run specj (c a e st) ωj ωj' (x, st')),
+      promises speci ωi e x /\ pred (witness_update speci ωi e x) st' ωj'.
 
 (** Once we have proven [c] is correct wrt. to [speci] and [specj] with [pred]
     acting as an invariant throughout [c] life, we show we can derive a
@@ -545,17 +589,24 @@ Proof.
   cofix correct_component_derives_compliant_semantics.
   intros ωi st ωj inv sem comp.
   unfold correct_component in correct.
-  specialize (correct ωi st ωj inv sem comp).
+  specialize (correct ωi st ωj inv).
+  assert (R: forall (a : Type) (o : a * s), (fst o, snd o) = o) by now intros a [o1 o2].
   constructor; intros a e req; specialize (correct a e req);
-    destruct correct as [trust [pr inv']].
-  + apply pr.
+    destruct correct as [trust run];
+    specialize run with (fst (eval_impure sem (c a e st)))
+                        (snd (eval_impure sem (c a e st)))
+                        (witness_impure sem (c a e st) specj ωj).
+  + apply run.
+    rewrite R; clear R.
+    auto with freespec.
   + eapply correct_component_derives_compliant_semantics.
-    ++ apply inv'.
+    ++ apply run.
+       rewrite R; clear R.
+       auto with freespec.
     ++ fold (exec_impure sem (c a e st)).
        apply trustworthy_impure_compliant_specs; [| exact comp ].
        apply trust.
 Qed.
-
 
 (** * Tactics *)
 
