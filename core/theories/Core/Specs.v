@@ -18,51 +18,101 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+(** In this library, we provide the necessary material to reason about FreeSpec
+    component both in isolation, and in composition.  To do that, we focus our
+    reasoning principle on interfaces, by defining how their primitives shall be
+    used in the one hand, and what to expect the result computed by “good”
+    operational semantics (according to a certain definition of “good”). *)
+
 From Coq Require Import Setoid Morphisms.
-From Prelude Require Import Tactics Equality.
+From Prelude Require Import Tactics Equality Control.
 From FreeSpec.Core Require Export Impure.
 
 #[local]
 Open Scope prelude_scope.
-
 #[local]
 Open Scope signature_scope.
 
 (** * Definition *)
 
+(** A specification dedicated to [i : interface] primilarly provide two
+    predicates [requirements] and [promises].
+
+    - [requirements] distinguishes between primitives that can be used (by an
+      impure computation), and primitives that cannot be used.
+    - [promises] specifies which guarantee can be expected from primitives
+      results, as computed by a “good” operational semantics.
+
+    Both [requirements] and [promises] models properties that may vary in time,
+    e.g., a primitive may be forbiden at a given time, but authorized later.  To
+    take this possibility into account, specifications are parameterized by what
+    we have called a “witness.”  A witness is a term which describes the
+    necessary information of the past, and allows for taking decision for the
+    present.  It can be seen as an abstraction of the concrete state of the
+    interface implementer.
+
+    To keep this state up-to-date after each primitive interpretation,
+    specifications also defines a dedicated function [witness_update]. *)
+
 Record specs (i : interface) (Ω : Type) : Type :=
-  { witness_update (a : Type) (ω : Ω) : i a -> a -> Ω
-  ; requirements (a : Type) (ω : Ω) : i a -> Prop
-  ; promises (a : Type) (ω : Ω) : i a -> a -> Prop
+  { witness_update (ω : Ω) : forall (a : Type), i a -> a -> Ω
+  ; requirements (ω : Ω) : forall (a : Type),  i a -> Prop
+  ; promises (ω : Ω) : forall (a : Type), i a -> a -> Prop
   }.
 
-Arguments witness_update [i Ω] (_) [a] (_ _ _).
-Arguments requirements [i Ω] (_) [a] (_).
-Arguments promises [i Ω] (_) [a] (_ _).
+Arguments witness_update [i Ω] (s ω) [a] (_ _).
+Arguments requirements [i Ω] (s ω) [a] (_).
+Arguments promises [i Ω] (s ω) [a] (_ _).
 
-Definition no_req (i : interface) {Ω a} (ω : Ω) (e : i a) : Prop := True.
+(** The most simple specification we can define is the one that requires
+    anything both for the impure computations which uses the primitives of a
+    given interface, and for the operational semantics which compute results for
+    these primitives. *)
 
-Definition no_prom {i : interface} {Ω a} (ω : Ω) (e : i a) (x : a) : Prop := True.
+Definition const_witness {i} :=
+  fun (u : unit) (a : Type) (e : i a) (x : a) => u.
+
+Definition no_req {i Ω} (ω : Ω) (a : Type) (e : i a) : Prop := True.
+
+Definition no_prom {i Ω} (ω : Ω) (a : Type) (e : i a) (x : a) : Prop := True.
 
 Definition no_specs (i : interface) : specs i unit :=
-  {| witness_update := fun (a : Type) (u : unit) (e : i a) (x : a) => u
-   ; requirements := @no_req i unit
-   ; promises := @no_prom i unit
+  {| witness_update := const_witness
+   ; requirements := no_req
+   ; promises := no_prom
    |}.
+
+(** A similar —and as simple— specification is the one that forbids the use of a
+    given interface. *)
+
+Definition no_use {i Ω} (ω : Ω) (a : Type) (e : i a) : Prop := False.
+
+Definition forbid_specs (i : interface) : specs i unit :=
+  {| witness_update := const_witness
+   ; requirements := no_use
+   ; promises := no_prom
+   |}.
+
+(** As we compose interfaces and operational semantics, we can easily compose
+    specifications together, by means of the [specsplus] operator (denoted by
+    [<.>] or [⊙]). Given [i : interface] and [j : interface], if we can reason
+    about [i] and [j] independently (e.g., the requirements of [j] do not vary
+    when we use [i]), then we can compose [speci : specs i Ωi] and [specj :
+    specs j Ωj], such that [speci ⊙ specj] in a specification for [i ⊕ j]. *)
 
 Definition specsplus {i j Ωi Ωj} (speci : specs i Ωi) (specj : specs j Ωj)
   : specs (i ⊕ j) (Ωi * Ωj) :=
-  {| witness_update := fun (a : Type) (ω : Ωi * Ωj) (e : (i ⊕ j) a) (x : a) =>
+  {| witness_update := fun (ω : Ωi * Ωj) (a : Type) (e : (i ⊕ j) a) (x : a) =>
                          match e with
                          | in_left e => (witness_update speci (fst ω) e x, snd ω)
                          | in_right e => (fst ω, witness_update specj (snd ω) e x)
                          end
-  ;  requirements := fun (a : Type) (ω : Ωi * Ωj) (e : (i ⊕ j) a) =>
+  ;  requirements := fun (ω : Ωi * Ωj) (a : Type) (e : (i ⊕ j) a) =>
                        match e with
                        | in_left e => requirements speci (fst ω) e
                        | in_right e => requirements specj (snd ω) e
                        end
-  ;  promises := fun (a : Type) (ω : Ωi * Ωj) (e : (i ⊕ j) a) (x : a) =>
+  ;  promises := fun (ω : Ωi * Ωj) (a : Type) (e : (i ⊕ j) a) (x : a) =>
                    match e with
                    | in_left e => promises speci (fst ω) e x
                    | in_right e => promises specj (snd ω) e x
@@ -73,6 +123,70 @@ Infix "<.>" := specsplus (at level 77, left associativity) : specs_scope.
 Infix "⊙" := specsplus (at level 77, left associativity) : specs_scope.
 
 Bind Scope specs_scope with specs.
+
+(** Finally, and as an example, we define a specification for the interface
+    [STORE s] we discuss in [FreeSpec.Core.Impure].  As a reminder, the
+    interface is defined as follows:
+
+<<
+Inductive STORE (s : Type) : interface :=
+| Get : STORE s s
+| Put (x : s) : STORE s unit.
+>>
+
+    For [STORE s], the best witness is the actuall value of the mutable
+    variable.  Therefore, the specification for [STORE s] may be [specs (STORE
+    s) s], and the witness will be updated after each [Put] call.
+
+<<
+Definition store_update (s : Type) :=
+  fun (x : s) (a : Type) (e : STORE s a) (_ : a) =>
+    match e with
+    | Get => x
+    | Put x' => x'
+    end.
+>>
+
+    Assuming the mutable variable is being initialized prior to any impure
+    computation interpretation, we do not have any requirements over the use of
+    [STORE s] primitives.  We will get back to this assertion once we have
+    defined our specification, but in the meantime, we define its promises.
+
+    The logic of these promises is as follows: [Get] is expected to produce a
+    result strictly equal to the witness, and we do not have any promises about
+    the result of [Put] (which belongs to [unit] anyway, so there is not much to
+    tell).
+
+<<
+Inductive store_prom (s : Type) (x : s) : forall (a : Type), STORE s a -> a -> Prop :=
+| get_prom (x' : s) (equ : x = x') : store_prom s x s Get x'
+| put_prom (x' : s) (b : unit) : store_prom s x unit (Put x') b.
+>>
+
+    The actual specification can therefore be defined as follows:
+
+<<
+Definition store_specs (s : Type) : specs (STORE s) s :=
+  {| witness_update := store_update s
+  ;  requirements := no_req
+  ;  promises := store_prom s
+  |}.
+>>
+
+    Now, as we briefly mentionned, this specification allows for reasoning about
+    an impure computation which uses the [STORE s] interface, assuming the
+    mutable, global variable has been initialized.  We can define another
+    specification that do not rely on such assumption, and on the contrary,
+    requires an impure computation to initialize the variable prior to using it.
+
+    In this context, the witness can solely be a boolean which tells if the
+    variable has been initialized, and the [requirements] will require the
+    witness to be [true] to authorize a call of [Get].
+
+    This is one of the key benefit of the FreeSpec approach: because the
+    specifications are defined independently from impure computation and
+    interfaces, we can actually define several specifications to consider
+    different set of hypotheses. *)
 
 (** * Reasoning with Specifications
 
@@ -86,6 +200,7 @@ Inductive trustworthy_impure {i a Ω} (c : specs i Ω) (ω : Ω) : impure i a ->
 
 (** - Given a term [x], the computation [local x] is always trustworthy wrt. [c]
       in accordance to [ω], since it does not use any primitives. *)
+
 | trustworthy_local (x : a)
   : trustworthy_impure c ω (local x)
 
@@ -97,6 +212,7 @@ Inductive trustworthy_impure {i a Ω} (c : specs i Ω) (ω : Ω) : impure i a ->
 
       then the impure computation [request_then e f] is trustworthy wrt. [c] in
       accordance to [ω]. *)
+
 | trustworthy_request {b}
     (e : i b) (req : requirements c ω e) (f : b -> impure i a)
     (prom : forall (x : b),
@@ -123,11 +239,25 @@ Next Obligation.
        now apply prom.
 Qed.
 
+(** As is, the definition of [trustworthy_impure] would force FreeSpec users to
+    unfold any impure computations they may combine together with [bind].  For
+    instance, proving a computation of the form [bind p (λ _, p)] is trustworthy
+    would require to prove [p] is trustworthy twice, for two different
+    witnesses.  Moreover, it could be challenging to know, when interactively
+    writing the proof script, when “the first [p]” stops, and when “the second
+    [p]” starts.
+
+    We need a way to compose proofs about impure computations the same way we
+    compose impure computations with [bind].  We do that with the
+    [trustworthy_run] predicate, which describes the potential outcomes of a
+    computation in terms of results and witnesses. *)
+
 Inductive trustworthy_run {i a Ω} (c : specs i Ω)
   : impure i a -> Ω -> Ω -> a -> Prop :=
 
 (** Given a term [x], and an initial witness [ω], then a trustworthy run of
     [local x] produces a result [x] and a witness state [ω]. *)
+
 | run_local
     (x : a) (ω : Ω)
   : trustworthy_run c (local x) ω ω x
@@ -137,6 +267,7 @@ Inductive trustworthy_run {i a Ω} (c : specs i Ω)
     [c] promises, if we can show that there is a trustworthy run of [f x]
     which produces a term [y] and a witness [ω'], then there is a trustworthy
     run of [request_then e f] which produces a result [y] and a witness [ω']. *)
+
 | run_request {b}
     (ω : Ω)
     (e : i b) (req : requirements c ω e) (f : b -> impure i a)
@@ -145,9 +276,14 @@ Inductive trustworthy_run {i a Ω} (c : specs i Ω)
   : trustworthy_run c (request_then e f) ω ω' y.
 
 (** Given a specification [c] and a witness [ω] an impure computation [p] and a
-    continuation [f] if [p] is a trustworthy program wrt. [c] in accordance to
-    [ω] and for all result [x] and witness [ω'] produces by [p], [f x] is
-    trustworthy then [local p f] is trustworthy. *)
+    continuation [f] if
+
+    - [p] is a trustworthy impure computation wrt. [c] in accordance to [ω]
+    - for all result [x] and witness [ω'] produces by [p], [f x] is trustworthy
+
+
+    Then [bind p f] is trustworthy. *)
+
 Lemma trustworthy_bind_trustworthy_run {i a b Ω}
   (c : specs i Ω) (ω : Ω)
   (p : impure i a) (f : a -> impure i b)
@@ -176,21 +312,20 @@ Hint Resolve trustworthy_bind_trustworthy_run : freespec_scope.
 
 (** ** Semantics Compliance *)
 
+(** Given a semantics [sem], and a witness [ω] if [sem] computes results which
+    satisfies [c] promises for effects which satisfies [c] requirements and if
+    the resulting semantics produces after interpreting [e] complies to [c] in
+    accordance to [ω'], where [ω'] is the new witness state after [e]
+    interpretation then [sem] complies to [c] in accordance to [ω] *)
+
 CoInductive compliant_semantics {i Ω} (c : specs i Ω) : Ω -> semantics i -> Prop :=
 | compliant_semantics_rec
-(** Given a semantics [sem], and a witness [ω]… *)
     (sem : semantics i) (ω : Ω)
-(** … if [sem] computes results which satisfies [c] promises for effects which
-    satisfies [c] requirements… *)
     (prom : forall {a} (e : i a),
         requirements c ω e -> promises c ω e (eval_effect sem e))
-(** … and if the resulting semantics produces after interpreting [e] complies to
-    [c] in accordance to [ω'], where [ω'] is the new witness state after [e]
-    interpretation… *)
     (next : forall {a} (e : i a),
         requirements c ω e
         -> compliant_semantics c (witness_update c ω e (eval_effect sem e)) (exec_effect sem e))
-(** … then [sem] complies to [c] in accordance to [ω] *)
   : compliant_semantics c ω sem.
 
 Lemma compliant_semantics_requirement_promises {i Ω a} (c : specs i Ω) (ω : Ω)
@@ -376,6 +511,7 @@ Hint Resolve trustworthy_impure_compliant_specs : freespec.
     life, meaning that as long as [c] computes result for legitimate effects
     (wrt.  [speci] effects, the updated values of [ωi], [ωj] and [st] continue
     to satisfy [pred]. *)
+
 Definition correct_component {i j Ωi Ωj s}
   (c : component i j s)
   (speci : specs i Ωi) (specj : specs j Ωj)
@@ -394,6 +530,7 @@ Definition correct_component {i j Ωi Ωj s}
     semantics from [c] with an initial state [st] which complies to [speci] in
     accordance to [ωi] if we use a semantics of [j] which complies to [specj] in
     accordance to [ωj], where [pred ωi st ωj] is satisfied. *)
+
 Lemma correct_component_derives_compliant_semantics {i j Ωi Ωj s}
   (c : component i j s) (speci : specs i Ωi) (specj : specs j Ωj)
   (pred : Ωi -> s -> Ωj -> Prop)
@@ -421,8 +558,6 @@ Qed.
 
 
 (** * Tactics *)
-
-From Prelude Require Import Control.
 
 Ltac destruct_if_when :=
   let eq_cond := fresh "Heq_cond" in
