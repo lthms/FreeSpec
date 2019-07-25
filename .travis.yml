@@ -42,9 +42,11 @@ install:
     cd -
 
 script:
+  - git clone https://git.sr.ht/~lthms/coqbook.css ${HOME}/coqbook.css
   - ./configure.sh
   - make install
   - make html
+  - find html -name coqdoc.css -exec cp ${HOME}/coqbook.css/coqdoc.css {} \;
 
 deploy:
   provider: pages
