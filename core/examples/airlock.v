@@ -40,12 +40,14 @@ Definition toggle `{ix :| DOORS} (d : door) : impure ix unit :=
   request (Toggle d).
 
 Definition open_door `{ix :| DOORS} (d : door) : impure ix unit :=
-  var open ← is_open d in
-  when (negb open) (toggle d).
+  do var open ← is_open d in
+     when (negb open) (toggle d)
+  end.
 
 Definition close_door `{ix :| DOORS} (d : door) : impure ix unit :=
-  var open ← is_open d in
-  when open (toggle d).
+  do var open ← is_open d in
+     when open (toggle d)
+   end.
 
 (** ** Controller *)
 
@@ -71,15 +73,18 @@ Definition controller : component CONTROLLER DOORS nat :=
   fun _ op =>
     match op with
     | Tick =>
-      var cpt ← get in
-      when (15 <? cpt) (do
-        lift (close_door left);
-        lift (close_door right);
-        put 0)
+      do var cpt ← get in
+         when (15 <? cpt) do
+           lift (close_door left);
+           lift (close_door right);
+           put 0
+         end
+      end
     | RequestOpen d => do
         lift (close_door (co d));
         lift (open_door d);
         put 0
+      end
     end.
 
 (** * Verifying *)
@@ -174,7 +179,8 @@ Qed.
 
 Definition safe_open_door {ix} `{ix :| DOORS} (d : door) : impure ix unit :=
   do close_door (co d);
-     open_door d.
+     open_door d
+  end.
 
 Lemma close_door_run (ω : Ω) (d : door) (ω' : Ω) (x : unit)
   (run : trustworthy_run doors_specs (close_door d) ω ω' x)
@@ -192,15 +198,15 @@ Proof.
     exact equ.
 Qed.
 
-#[local] Opaque close_door.
-#[local] Opaque open_door.
-#[local] Opaque Nat.ltb.
+#[local] Arguments close_door : simpl never.
+#[local] Arguments open_door : simpl never.
+#[local] Arguments Nat.ltb : simpl never.
 
 Lemma safe_door_trustworthy (ω : Ω) (d : door)
   : trustworthy_impure doors_specs ω (safe_open_door d).
 
 Proof.
-  prove_impure; cbn; repeat constructor; subst.
+  prove_impure.
   apply close_door_trustworthy.
   apply close_door_run in Hrun.
   apply open_door_trustworthy.

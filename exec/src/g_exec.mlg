@@ -20,13 +20,14 @@
 
 DECLARE PLUGIN "exec"
 
-open Stdarg
+{ open Stdarg }
 
 VERNAC COMMAND EXTEND Exec CLASSIFIED AS SIDEFF
-    | [ "Exec" constr(def) ] ->
-    [ let (evm, env) = Pfedit.get_current_context () in
-      let (def, _) = Constrintern.interp_constr env evm def in
-      let def = EConstr.to_constr evm def in
-      Exec.exec env evm def
-    ]
-END;;
+    | ![proof] [ "Exec" constr(def) ] ->
+    { fun ~pstate ->
+        let (evm, env) = let env = Global.env () in Evd.(from_env env, env) in
+        let (def, _) = Constrintern.interp_constr env evm def in
+        let def = EConstr.to_constr evm def in
+        Exec.exec env evm def
+    }
+END

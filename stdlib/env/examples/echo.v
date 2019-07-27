@@ -7,10 +7,11 @@ Generalizable All Variables.
 Open Scope Z_scope.
 
 Definition echo_arg `{ix :| CONSOLE, ARGS} : impure ix unit :=
-  var argc ← arg_count in
-  if argc =? 1
-  then (arg_value 0 >>= Console.echo)
-  else echo
-         "usage: FREESPEC_EXEC_ARGC=1 FREESPEC_EXEC_ARGV_0=<text> coqc examples/echo.v".
+  do var argc ← arg_count in
+     if argc =? 1
+     then (arg_value 0 >>= Console.echo)
+     else echo
+         "usage: FREESPEC_EXEC_ARGC=1 FREESPEC_EXEC_ARGV_0=<text> coqc examples/echo.v"
+  end.
 
 Exec (withArgs (ix:= CONSOLE ⊕ ENV) echo_arg).

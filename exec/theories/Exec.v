@@ -29,8 +29,7 @@ Fixpoint extends {ix j a s} (init : s) (c : component j ix s) (p : impure (j ⊕
   match p with
   | local x => local (x, init)
   | request_then (in_left e) f =>
-    var res <- c _ e init in
-    extends (snd res) c (f (fst res))
+    c _ e init >>= fun res => extends (snd res) c (f (fst res))
   | request_then (in_right e) f =>
     request_then e (fun x => extends init c (f x))
   end.
@@ -55,7 +54,8 @@ Definition withComponent {ix j a s}
    (** A computation to interpret, that uses [J] in addition to [Ix]. *)
    (p : impure (j ⊕ ix) a)
   : impure ix a :=
-  var s <- initializer in
-  var res <- extends s c p in
-  do finalizer (snd res);
-     pure (fst res).
+  do var s ← initializer in
+     var res ← extends s c p in
+     finalizer (snd res);
+     pure (fst res)
+  end.

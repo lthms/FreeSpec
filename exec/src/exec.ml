@@ -57,6 +57,6 @@ let rec exec env evm def =
     -> let instr_trm = reduce_all env evm instr_trm in
        exec env evm (exec_request instr_t instr_trm func_trm)
   | (Some Local_impure, _)
-    -> ()
+    -> None
   | _
     -> raise (UnsupportedTerm "FreeSpe.Exec only handles [FreeSpec.Program] terms.")

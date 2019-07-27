@@ -119,6 +119,8 @@ Definition specsplus {i j Ωi Ωj} (speci : specs i Ωi) (specj : specs j Ωj)
                    end
   |}.
 
+Declare Scope specs_scope.
+
 Infix "<.>" := specsplus (at level 77, left associativity) : specs_scope.
 Infix "⊙" := specsplus (at level 77, left associativity) : specs_scope.
 
@@ -634,7 +636,7 @@ Ltac prove_impure :=
     let w := fresh "w" in
     let Hrun := fresh "Hrun" in
     apply trustworthy_bind_trustworthy_run; [| intros x w Hrun;
-                                                  prove_impure ]
+                                               prove_impure ]
   (* 3rd case: request constructor
       generate a gool to prove the effect satisfies the precondition *)
   | |- trustworthy_impure ?c ?w (request_then ?e ?f) =>
@@ -650,5 +652,6 @@ Ltac prove_impure :=
        conclude *)
   | |- trustworthy_impure ?c ?w (local ?x) => constructor
   | |- trustworthy_impure ?c ?w (impure_pure ?x) => constructor
-  | _ => fail "Unexpected goal: prove_program allows for proving program correctness"
+  | |- trustworthy_impure ?c ?w ?p => idtac
+  | |- _ => fail "prove_impure aims to prove impure computation trustworthiness"
   end.

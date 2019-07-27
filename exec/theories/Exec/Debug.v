@@ -18,17 +18,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From FreeSpec Require Import Core.
-
 From Coq Require Import BinNums Ascii String.
+From FreeSpec Require Import Core.
 
 Generalizable All Variables.
 
 Class HasExecIsomorphism (a : Type).
 
+#[program]
 Instance bool_ExecIso : HasExecIsomorphism bool.
+
+#[program]
 Instance Z_ExecIso : HasExecIsomorphism Z.
+
+#[program]
 Instance ascii_ExecIso : HasExecIsomorphism ascii.
+
+#[program]
 Instance string_ExecIso : HasExecIsomorphism string.
 
 Inductive DEBUG : interface :=

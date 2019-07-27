@@ -235,6 +235,8 @@ CoFixpoint semplus {i j} (sem_i : semantics i) (sem_j : semantics j)
                     mk_out (interp_result out) (semplus sem_i (interp_next out))
                   end).
 
+Declare Scope semantics_scope.
+
 Infix "<x>" := semplus (at level 50, left associativity) : semantics_scope.
 Infix "⊗" := semplus (at level 50, left associativity) : semantics_scope.
 
@@ -658,7 +660,7 @@ Next Obligation.
   now rewrite equ2.
 Qed.
 
-#[program, polymorphic]
+#[program, universes(polymorphic)]
 Instance impure_Applicative (i : interface) : Applicative (impure i) :=
   { pure := @impure_pure i
   ; apply := @impure_apply i
