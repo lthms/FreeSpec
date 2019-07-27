@@ -15,11 +15,11 @@ addons:
 env:
   global:
     - NJOBS=2
-    - COMPILER="4.06.0"
+    - COMPILER="4.08.0"
     - CAMLP5_VER="7.06"
     - FINDLIB_VER="1.8.0"
     - NATIVE_COMP="yes"
-    - COQ_VER="8.9.0"
+    - COQ_VER="8.10+beta2"
     - OPAMVERBOSE=3
 
 install:
@@ -46,6 +46,7 @@ script:
   - git clone https://git.sr.ht/~lthms/coqbook.css ${HOME}/coqbook.css
   - ./configure.sh
   - make install
+  - ./run-tests.sh
   - make html
   - find html -name coqdoc.css -exec cp ${HOME}/coqbook.css/coqdoc.css {} \;
 

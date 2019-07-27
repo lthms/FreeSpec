@@ -152,38 +152,6 @@ Notation "ix ':|' i" :=
     (at level 78, i at next level, no associativity)
   : type_scope.
 
-(* begin hide *)
-#[local]
-Definition provide_notation_test_1 {a}
-  (ix i1 i2 i3 : interface) `{ix :| i1, i2, i3} (p : i2 a) : ix a :=
-  lift_eff p.
-
-#[local]
-Definition provide_notation_test_2 {a} (ix i1 i2 i3 : interface) `{ix :| i1, i2, i3}
-  (p : forall i' `{ix :| i2, i3}, i' a)
-  : ix a :=
-  p ix.
-
-#[local]
-Definition provide_notation_test_3 {a} (i1 i2 i3 : interface) (p : i2 a)
-  : (i1 ⊕ i2 ⊕ i3) a :=
-  lift_eff p.
-
-#[local]
-Lemma provide_notation_test_4 (i1 i2 i3 : interface)
-  : i1 ⊕ (i2 ⊕ i3) :| i2.
-Proof.
-  typeclasses eauto.
-Qed.
-
-#[local]
-Lemma provide_notation_test_5 (i1 i2 i3 : interface)
-  : i1 ⊕ i2 ⊕ i3 :| i2, i1.
-Proof.
-  typeclasses eauto.
-Qed.
-(* end hide *)
-
 (** * Operational Semantics *)
 
 (** We have already explained interfaces, in FreeSpec, does not attach any
