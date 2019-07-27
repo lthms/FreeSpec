@@ -23,39 +23,132 @@ From FreeSpec.Exec Require Export Debug.
 
 Declare ML Module "exec_plugin".
 
+(** * Extending FreeSpec.Exec *)
+
+(** The FreeSpec.Exec plugin has been designed to be extensible, meaning it
+    shall be easy for FreeSpec users to be able to provide handlers for their
+    own interfaces. *)
+
+(** ** By Means of OCaml plugins
+
+    In FreeSpec, primitives are modeled with Coq constructors of an [interface]
+    inductive type. FreeSpec.Exec allows to define so-called
+    <<effectful_semantic>> for these constructors which aim to compute the
+    related primitive results.
+
+    The Ocaml type <<effectful_semantic>> is defined as follows:
+
+<<
+type effectful_semantic =
+  Constr.constr list -> Constr.constr
+>>
+
+    If you are not familiar with Coq internals, <<Constr.constr>> is the
+    representation of Coq terms. Therefore, an <<effectful_semantic>> is an
+    Ocaml function which maps a list of Coq terms (the arguments of the
+    primitives) to its result.
+
+    For instance, if we consider the following interface:
+
+<<
+Inductive CONSOLE : interface :=
+| WriteLine : string -> CONSOLE unit
+| ReadLine : CONSOLE string.
+>>
+
+    Then, one can implement two <<effectful_semantic>>: one for the constructor
+    <<WriteLine>> and the other for the constructor <<ReadLine>>:
+
+<<
+let writeline = function
+  | [str] -> print_bytes (bytes_of_coqstr str);
+             coqtt
+  | _ -> assert false
+
+let readline = function
+  | [] -> string_to_coqstr (read_line ())
+  | _ -> assert false
+>>
+
+    There are several facts to explain.
+
+    First, manipulating <<Constr.constr>> value manually shall not be required
+    most of the time, since the FreeSpec.Exec plugin provides several helpers
+    isomorphisms to turn Coq term into Ocmal values and vice-versa.
+    Hence, <<bytes_of_coqstr>> translates a [string] term into a [bytes] value,
+    while <<string_to_coqstr>> translates a Ocaml [string] value into a Coq
+    [string] term.
+
+    Secondly, it is the responsibility of plugin developers to ensure they
+    consider the right number of arguments for their <<effectful_semantic>>. The
+    <<WriteLine>> constructor has one argument, so the <<writeline>> Ocaml
+    function only consider one-element lists. The <<ReadLine>> constructor has
+    no argument, so the <<readline>> Ocaml function only handles the empty list.
+
+    Thirdly, it is also the responsibility of plugin developers to forged a
+    well-typed result for their primitives.
+
+    Once the <<effectful_semantic>> have been defined, they need to be
+    registered to FreeSpec.Exec, so that the plugin effectively use them. The
+    <<Extends>> Ocaml module of FreeSpec.Exec provides a function to that hand:
+
+<<
+val register_interface :
+  (* The path of the module within the interface type
+     lives. *)
+     string list
+  (* A list to map each constructor of this interface
+     to an effectfull semantic. *)
+  -> (string * effectful_semantic) list
+  -> unit
+>>
+
+    It shall be used as follows:
+
+<<
+let _ =
+  register_interface
+    ["My"; ""; "Interface"; "FullyQualified"; "Type"; "CONSOLE"]
+    [("WriteLine", writeline); ("ReadLine", readline)]
+>>
+
+    For a concrete example of the use of FreeSpec.Exec extensible feature,
+    interested readers can have a look at the FreeSpec.Stdlib project.
+
+*)
+
+(** ** By Means of Compoments *)
+
+(** The second way to extend FreeSpec.Exec is to write handlers in Coq, in the
+    form of FreeSpec compoments. This approach has an important advantage over
+    writing an OCaml plugin: it is possible to verify a FreeSpec
+    [component]. However, we forsee an impact over FreeSpec performances.
+
+    The function [with_component] allows for locally providing a novel interface
+    [j] in addition to an impure computation [p], by means of a FreeSpec
+    component [c : compoment j ix s].  Two impure computations have to be
+    provided: [initializer] to create the initial state of [c], and [finalizer]
+    to clean-up the final state of [c] after the interpretation of [p]. *)
+
 #[local]
-Fixpoint extends {ix j a s} (init : s) (c : component j ix s) (p : impure (j ⊕ ix) a)
+Fixpoint with_compoment_aux {ix j a s} (init : s) (c : component j ix s) (p : impure (j ⊕ ix) a)
   : impure ix (a * s) :=
   match p with
   | local x => local (x, init)
   | request_then (in_left e) f =>
-    c _ e init >>= fun res => extends (snd res) c (f (fst res))
+    c _ e init >>= fun res => with_compoment_aux (snd res) c (f (fst res))
   | request_then (in_right e) f =>
-    request_then e (fun x => extends init c (f x))
+    request_then e (fun x => with_compoment_aux init c (f x))
   end.
 
-(** With FreeSpec.Exec, it becomes possible to interpret a term of type [Program
-    Ix A], where [Ix] depends on the plugins loaded by the user.
-
-    In addition, we provide [withComponent], a helper function to extend the set
-    of interfaces that can be executed with FreeSpec [Component]s. There are
-    several advantages to rely on [withComponent] rather than writing an OCaml
-    plugin, the most important being a handler in Coq is not part of the
-    TCB. Besides, it can be verified as any FreeSpec [Component]. *)
-Definition withComponent {ix j a s}
-  (** A [Component] carries its own state. The [initializer] is a
-    computation to construct the initial state of the component *)
+Definition with_component {ix j a s}
   (initializer : impure ix s)
-  (** The [Component] used to implement a semantics for J *)
   (c : component j ix s)
-  (** The [finalizer] is a clean-up computation to “destruct” the [Component]
-      final state *)
-   (finalizer : s -> impure ix unit)
-   (** A computation to interpret, that uses [J] in addition to [Ix]. *)
-   (p : impure (j ⊕ ix) a)
+  (finalizer : s -> impure ix unit)
+  (p : impure (j ⊕ ix) a)
   : impure ix a :=
   do var s ← initializer in
-     var res ← extends s c p in
+     var res ← with_compoment_aux s c p in
      finalizer (snd res);
      pure (fst res)
   end.

@@ -59,7 +59,7 @@ Definition args `{ix :| ENV} : component ARGS ix unit :=
     | ArgValue n => lift (get_env (append "FREESPEC_EXEC_ARGV_" (string_of_Z n)))
     end.
 
-Definition withArgs {a} `{ix :| ENV} : impure (ARGS ⊕ ix) a -> impure ix a :=
-  withComponent (pure tt) args (fun _ => pure tt).
+Definition with_args {a} `{ix :| ENV} : impure (ARGS ⊕ ix) a -> impure ix a :=
+  with_component (pure tt) args (fun _ => pure tt).
 
 Declare ML Module "stdlib_env_plugin".

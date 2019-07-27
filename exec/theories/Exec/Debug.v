@@ -23,27 +23,50 @@ From FreeSpec Require Import Core.
 
 Generalizable All Variables.
 
-Class HasExecIsomorphism (a : Type).
+(** * Disclaimer
 
-#[program]
-Instance bool_ExecIso : HasExecIsomorphism bool.
+   This library is mostly intended to provide facilities to test
+   <<FreeSpec.Exec>>, and shall not be used in production code. *)
 
-#[program]
-Instance Z_ExecIso : HasExecIsomorphism Z.
+(** * <<Exec>> Isomorphisms *)
 
-#[program]
-Instance ascii_ExecIso : HasExecIsomorphism ascii.
+(** One of the key action of <<FreeSpec.Exec>> is to provide “translation
+    helpers” to turn a Coq term into an OCaml value and vice versa.  It is
+    expected that these functions form isomorphisms; meaning that
+    <<from_ocaml(from_coq(t)) = t>> and <<from_coq(from_ocaml(v)) = v>>.
 
-#[program]
-Instance string_ExecIso : HasExecIsomorphism string.
+    <<FreeSpec.Exec>> users can obviously define there own translation
+    functions, but the plugin defines several base functions; the concerned
+    types are provided an instance for the dummy typeclass [HasExecIsomorphism].
+    The typeclass is used to constrain the arguments of the [DEBUG] interface
+    primitives. As long as <<FreeSpec.Exec>> does not provide a way to extend
+    this interface implementation, _you shall not provide instances of_
+    [HasExecIsomorphism] _for your own types_.
+ *)
+
+Class HasExecIsomorphism (a : Type) := {}.
+
+Instance bool_ExecIso : HasExecIsomorphism bool := {}.
+Instance Z_ExecIso : HasExecIsomorphism Z := {}.
+Instance ascii_ExecIso : HasExecIsomorphism ascii := {}.
+Instance string_ExecIso : HasExecIsomorphism string := {}.
+
+(** * The [DEBUG] Interface *)
+
+(** The main objective of the [DEBUG] interface is to provide primitives to
+    debug and test <<FreeSpec.Exec>> translation functions. *)
 
 Inductive DEBUG : interface :=
-(** Should acts as [id] as long as there is no bug in the FreeSpec.Exec plugin
-    (primilarly intended to write test cases for conversion functions in Coq) *)
+
+(** The [Iso] primitive, on the one hand, should acts as [id] as long as there
+    is no bug in the FreeSpec.Exec plugin (primilarly intended to write test
+    cases for conversion functions in Coq) *)
+
 | Iso `{HasExecIsomorphism a} : a -> DEBUG a
 
-(** Get a string which describes the argument (from the Exec plugin
-    perspective). *)
+(** The [Inspect] primitive, on the other hand, should compute a string which
+    describes its argument (from the Exec plugin perspective). *)
+
 | Inspect `{HasExecIsomorphism a} : a -> DEBUG string.
 
 Definition inspect `{HasExecIsomorphism a, ix :| DEBUG} (x : a) : impure ix string :=

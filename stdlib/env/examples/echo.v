@@ -14,4 +14,4 @@ Definition echo_arg `{ix :| CONSOLE, ARGS} : impure ix unit :=
          "usage: FREESPEC_EXEC_ARGC=1 FREESPEC_EXEC_ARGV_0=<text> coqc examples/echo.v"
   end.
 
-Exec (withArgs (ix:= CONSOLE ⊕ ENV) echo_arg).
+Exec (with_args echo_arg).

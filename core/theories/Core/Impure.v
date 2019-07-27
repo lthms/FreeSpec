@@ -20,11 +20,11 @@
 
 (** In this library, we provide all the necessary concepts to model interacting
     components using Coq.  We do that by means of a variant of the Free monad
-    introduced by the Haskell ~operational~ package, and originally called the
+    introduced by the Haskell <<operational>> package, and originally called the
     Program monad thereafter.  The Program monad is parameterized by a type
     which describes the interfaces its monadic computations can use, where an
     interface describes a set of functions carried out by an outer environment
-    expected to produce a result.  In other words, using the ~operational~
+    expected to produce a result.  In other words, using the <<operational>>
     Program monad, we model impurity.
 
     To avoid ambiguity with the Program framework of Coq, we rename the Program
@@ -52,7 +52,7 @@ Notation "''equal'" := (@equal _ _) (only parsing).
 
 (** * Interfaces *)
 
-(** Following the definition of the ~operational~ package, interfaces in
+(** Following the definition of the <<operational>> package, interfaces in
     FreeSpec are parameterized inductive types whose terms purposely describe
     the primitives the interface provides. *)
 
@@ -244,8 +244,8 @@ Bind Scope semantics_scope with semantics.
 
 (** ** Equivalence *)
 
-(** We say two semantics are equivalent when (1) we they produce equivalent outputs
-    given the same primitive. *)
+(** We say two semantics are equivalent when (1) we they produce equivalent
+    outputs given the same primitive. *)
 
 CoInductive semantics_equiv {i} : semantics i -> semantics i -> Prop :=
 | semantics_equiv_rec
@@ -481,11 +481,34 @@ Arguments request_then [i a b] (e f).
 
 (** ** Equivalence *)
 
+(** Due to the definition of [impure] and [impure_bind], we could decide to rely
+    on Coq built-in [eq] to reason about impure computations equivalence, but we
+    would have to use the functional extensionality axiom to handle the
+    continuation of the [request_then] constructor. In order to keep FreeSpec
+    axiom-free, we rather provide a custom equivalence for [impure] terms.
+
+    The definition of [impure_equiv] is two-fold. *)
+
 Inductive impure_equiv {i a} : impure i a -> impure i a -> Prop  :=
+
+(** - Two impure computations are equivalent if and only if they compute the
+      exact same term (wrt. Coq [eq] function). *)
+
 | local_equiv (x : a) : impure_equiv (local x) (local x)
+
+(** - Two computations which consist in requesting the interpretation of an
+      primitive and passing the result to a monadic continuation are equivalent
+      if and only if they use the exact same primitive in the first place, and
+      given any result the interpretation of this primitive may produce, their
+      continuation returns equivalent impure computations. *)
+
 | request_equiv {b} (e : i b) (f g : b -> impure i a)
     (equ : forall (x : b), impure_equiv (f x) (g x))
   : impure_equiv (request_then e f) (request_then e g).
+
+(** The definition of [impure_equiv] is very similar to [eq], with the exception
+    of the treatment of the continuation. There is no much effort to put into
+    proving this is indeed a proper equivalence. *)
 
 #[program]
 Instance impure_equiv_Equivalence (i : interface) (a : Type)
@@ -523,8 +546,6 @@ Instance impure_Equality (i : interface) (a : Type) : Equality (impure i a).
 #[global]
 Opaque impure_Equality.
 
-(** ** Monad Instances *)
-
 (* FIXME[0]: This works because coq-prelude provides a default [Equality]
    instance for any type is [eq].  Since [b] is universally quantified, there is
    no specific instance to pick expect this one, and therefore the instance of
@@ -539,6 +560,11 @@ Next Obligation.
   intros x f g equ.
   now constructor.
 Qed.
+
+(** ** Monad Instances *)
+
+(** We then provide the necessary instances of the <<coq-prelude>> Monad
+    typeclasses hierarchy. *)
 
 Fixpoint impure_bind {i a b} (p : impure i a) (f : a -> impure i b) : impure i b :=
   match p with
@@ -737,13 +763,37 @@ Defined.
 Definition request {ix i} `{ix :| i} {a : Type} (e : i a) : impure ix a :=
   request_then (lift_eff e) (fun x => local x).
 
-(** The ~coq-prelude~ provides notations (inspired by the do notation of
+(** Note: there have been attempts to turn [request] into a typeclass
+    function (to seamlessly use [request] with a [MonadTrans] instance such as
+    [state_t]). The reason why it has not been kept into the codebase is that
+    the flexibility it gives for writing code has a real impact on the
+    verification process. It is simpler to reason about “pure” impure
+    computation (that is, not within a monad stack), then wrapping these
+    computations thanks to [lift].
+
+    The <<coq-prelude>> provides notations (inspired by the do notation of
     Haskell) to write monadic functions more easily.  These notations live
     inside the [monad_scope] scope. *)
 
 Bind Scope monad_scope with impure.
 
 (** ** Interpreting Impure Computations *)
+
+(** A term of type [impure a] describes an impure computation expected to return
+    a term of type [a].  Interpreting this term means actually realizing the
+    computation and producing the result.  This requires to provide an
+    operational semantics for the interfaces used by the computation.
+
+    Some operational semantics may be defined in Gallina by means of the
+    [semantics] type. In such a case, we provide helpers functions to use them
+    in conjunction with [impure] terms. The terminology follows a similar logic than the
+    Haskell state monad:
+
+    - [run_impure] interprets an impure computation [p] with an operational
+      semantics [sem], and returns both the result of [p] and the new
+      operational semantics to use afterwards.
+    - [eval_impure] only returns the result of [p].
+    - [exec_impure] only returns the new operational semantics. *)
 
 Fixpoint run_impure {i a} (sem : semantics i) (p : impure i a) : interp_out i a :=
   match p with
@@ -759,6 +809,9 @@ Definition eval_impure {i a} (sem : semantics i) (p : impure i a) : a :=
 
 Definition exec_impure {i a} (sem : semantics i) (p : impure i a) : semantics i :=
   interp_next (run_impure sem p).
+
+(** We provide several lemmas and the necessary [Proper] instances to use these
+    functions in conjunction with [semantics_equiv] and [impure_equiv]. *)
 
 Lemma run_impure_request_then_equ {i a b} (sem : semantics i)
   (e : i a) (f : a -> impure i b)
@@ -937,7 +990,7 @@ CoFixpoint derive_semantics {i j s} (c : component i j s) (st : s) (sem : semant
                   let sem' := interp_next out in
                   mk_out (fst res) (derive_semantics c (snd res) sem')).
 
-(** So, [⊕] on the onde hand allows for composing operational semantics
+(** So, [⊕] on the one hand allows for composing operational semantics
     horizontally, and [derive_semantics] allows for composing components
     vertically.  Using these two operators, we can model a complete system in a
     modular manner, by defining each of its component independently, then

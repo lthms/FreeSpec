@@ -612,6 +612,11 @@ Qed.
 
 (** * Tactics *)
 
+(** The [impure] monad is an empty shell which brings structure and only
+    that.  It is not relevant when it comes to verifying impure computations,
+    and we provide a tactic called [prove_impure] to erase it while proving a
+    given impure computation is trustworthy wrt. to a given specification. *)
+
 Ltac destruct_if_when :=
   let eq_cond := fresh "Heq_cond" in
   match goal with
