@@ -1,6 +1,0 @@
--I src
--R theories FreeSpec.Stdlib
-
-theories/Console.v
-src/console.ml
-src/stdlib_console_plugin.mlpack

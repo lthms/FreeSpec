@@ -7,7 +7,7 @@ Generalizable All Variables.
 Open Scope Z_scope.
 
 Definition echo_arg `{ix :| CONSOLE, ARGS} : impure ix unit :=
-  do var argc ← arg_count in
+  do var argc <- arg_count in
      if argc =? 1
      then (arg_value 0 >>= Console.echo)
      else echo

@@ -21,7 +21,7 @@
 From FreeSpec Require Export Core.
 From FreeSpec.Exec Require Export Debug.
 
-Declare ML Module "exec_plugin".
+Declare ML Module "freespec_exec".
 
 (** * Extending FreeSpec.Exec *)
 
@@ -147,8 +147,8 @@ Definition with_component {ix j a s}
   (finalizer : s -> impure ix unit)
   (p : impure (j ⊕ ix) a)
   : impure ix a :=
-  do var s ← initializer in
-     var res ← with_compoment_aux s c p in
+  do var s <- initializer in
+     var res <- with_compoment_aux s c p in
      finalizer (snd res);
      pure (fst res)
   end.

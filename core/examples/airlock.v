@@ -40,12 +40,12 @@ Definition toggle `{ix :| DOORS} (d : door) : impure ix unit :=
   request (Toggle d).
 
 Definition open_door `{ix :| DOORS} (d : door) : impure ix unit :=
-  do var open ← is_open d in
+  do var open <- is_open d in
      when (negb open) (toggle d)
   end.
 
 Definition close_door `{ix :| DOORS} (d : door) : impure ix unit :=
-  do var open ← is_open d in
+  do var open <- is_open d in
      when open (toggle d)
    end.
 
@@ -73,7 +73,7 @@ Definition controller : component CONTROLLER DOORS nat :=
   fun _ op =>
     match op with
     | Tick =>
-      do var cpt ← get in
+      do var cpt <- get in
          when (15 <? cpt) do
            lift (close_door left);
            lift (close_door right);

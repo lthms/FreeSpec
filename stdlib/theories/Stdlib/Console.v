@@ -18,16 +18,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-DECLARE PLUGIN "exec"
+From FreeSpec Require Export Exec.
+From Coq Require Export String.
 
-{ open Stdarg }
+Generalizable All Variables.
 
-VERNAC COMMAND EXTEND Exec CLASSIFIED AS SIDEFF
-    | ![proof] [ "Exec" constr(def) ] ->
-    { fun ~pstate ->
-        let (evm, env) = let env = Global.env () in Evd.(from_env env, env) in
-        let (def, _) = Constrintern.interp_constr env evm def in
-        let def = EConstr.to_constr evm def in
-        Exec.exec env evm def
-    }
-END
+Inductive CONSOLE : interface :=
+| Scan : CONSOLE string
+| Echo (str : string) : CONSOLE unit.
+
+Definition scan `{ix :| CONSOLE} : impure ix string :=
+  request Scan.
+
+Definition echo `{ix :| CONSOLE} (str: string) : impure ix unit :=
+  request (Echo str).
+
+Declare ML Module "freespec_stdlib_console".

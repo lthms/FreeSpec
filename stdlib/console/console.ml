@@ -18,19 +18,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From FreeSpec Require Export Exec.
-From Coq Require Export String.
+open Freespec_exec.Coqstr
+open Freespec_exec.Extends
+open Freespec_exec.Coqunit
 
-Generalizable All Variables.
+let path = ["FreeSpec"; "Stdlib"; "Console"]
 
-Inductive CONSOLE : interface :=
-| Scan : CONSOLE string
-| Echo (str : string) : CONSOLE unit.
-
-Definition scan `{ix :| CONSOLE} : impure ix string :=
-  request Scan.
-
-Definition echo `{ix :| CONSOLE} (str: string) : impure ix unit :=
-  request (Echo str).
-
-Declare ML Module "stdlib_console_plugin".
+let install_interface =
+  let scan = function
+    | [] -> string_to_coqstr (read_line ())
+    | _ -> assert false in
+  let echo = function
+    | [str] -> print_bytes (bytes_of_coqstr str);
+               coqtt
+    | _ -> assert false in
+  register_interface path [("Scan", scan); ("Echo", echo)]

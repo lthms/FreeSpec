@@ -127,6 +127,7 @@ Definition fibo `{ix :| CONSOLE} : impure ix unit :=
   do Console.echo "Go! ";
      var x <- scan in
      let res := fibonacci (N_of_string x) in
-     echo (string_of_N res).
+     echo (string_of_N res)
+  end.
 
 Exec fibo.

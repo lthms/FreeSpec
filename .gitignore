@@ -1,3 +1,7 @@
+# Dune
+_build/
+*.install
+
 # Coq
 .*.aux
 .*.d
@@ -14,13 +18,11 @@
 *.cmi
 *.cmx
 
-**/Makefile
-Makefile.conf
+Makefile.coq*
 .merlin
 
 # generated docs
-html/*
-!html/index.html
-**/html
-docs/freespec
-mlihtml/
+html
+mlihtml
+docs/coq
+docs/ml

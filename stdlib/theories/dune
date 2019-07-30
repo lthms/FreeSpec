@@ -1,0 +1,8 @@
+(coq.theory
+  (name FreeSpec)
+  (public_name freespec-stdlib.theories)
+  (libraries freespec-stdlib.console freespec-stdlib.env)
+  (modules Stdlib.Console
+           Stdlib.Env))
+
+(include_subdirs qualified)

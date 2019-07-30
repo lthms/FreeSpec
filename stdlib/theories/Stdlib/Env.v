@@ -62,4 +62,4 @@ Definition args `{ix :| ENV} : component ARGS ix unit :=
 Definition with_args {a} `{ix :| ENV} : impure (ARGS ⊕ ix) a -> impure ix a :=
   with_component (pure tt) args (fun _ => pure tt).
 
-Declare ML Module "stdlib_env_plugin".
+Declare ML Module "freespec_stdlib_env".

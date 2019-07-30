@@ -1,0 +1,9 @@
+(coq.theory
+  (name FreeSpec)
+  (public_name freespec-core.theories)
+  (modules Core
+           Core.Impure
+           Core.Specs
+           Core.utils))
+
+(include_subdirs qualified)

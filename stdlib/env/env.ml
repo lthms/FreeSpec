@@ -18,9 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Exec_plugin.Coqstr
-open Exec_plugin.Extends
-open Exec_plugin.Coqunit
+open Freespec_exec.Coqstr
+open Freespec_exec.Extends
+open Freespec_exec.Coqunit
 
 let path = ["FreeSpec"; "Stdlib"; "Env"]
 

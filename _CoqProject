@@ -1,0 +1,41 @@
+-R core/theories FreeSpec
+-R exec/theories FreeSpec
+-I exec/src
+-R stdlib/theories FreeSpec
+-I stdlib/console
+-I stdlib/env
+
+core/theories/Core.v
+core/theories/Core/Impure.v
+core/theories/Core/Specs.v
+core/theories/Core/utils.v
+
+exec/theories/Exec.v
+exec/theories/Exec/Debug.v
+
+exec/src/interfaces.mli
+exec/src/interfaces.ml
+exec/src/extends.mli
+exec/src/extends.ml
+exec/src/debug.ml
+exec/src/exec.ml
+exec/src/freespec_exec.mlpack
+exec/src/g_freespec_exec.mlg
+exec/src/coqunit.mli
+exec/src/coqunit.ml
+exec/src/coqstr.mli
+exec/src/coqstr.ml
+exec/src/coqbool.mli
+exec/src/coqbool.ml
+exec/src/coqnum.mli
+exec/src/coqnum.ml
+exec/src/query.ml
+exec/src/utils.ml
+
+stdlib/theories/Stdlib/Console.v
+stdlib/theories/Stdlib/Env.v
+
+stdlib/console/console.ml
+stdlib/console/freespec_stdlib_console.mlpack
+stdlib/env/env.ml
+stdlib/env/freespec_stdlib_env.mlpack
