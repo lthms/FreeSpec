@@ -69,6 +69,14 @@ Inductive DEBUG : interface :=
 
 | Inspect `{HasExecIsomorphism a} : a -> DEBUG string.
 
+(** As mentionned in the [FreeSpec.Exec] library, due to recent changes in
+    <<Coq-8.10>>, you now need to register interfaces types and constructors to
+    the kernel in order for <<FreeSpec.Exec>> to be able to recognize them. *)
+
+Register DEBUG as freespec.exec.debug.type.
+Register Iso as freespec.exec.debug.Iso.
+Register Inspect as freespec.exec.debug.Inspect.
+
 Definition inspect `{HasExecIsomorphism a, ix :| DEBUG} (x : a) : impure ix string :=
   request (Inspect x).
 

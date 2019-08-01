@@ -21,6 +21,20 @@
 From FreeSpec Require Export Core.
 From FreeSpec.Exec Require Export Debug.
 
+(* TODO: this shall be in the standard library of Coq *)
+Register unit as core.unit.type.
+Register tt as core.unit.tt.
+
+From Coq Require Import String Ascii.
+
+Register string as plugins.syntax.string.type.
+Register EmptyString as plugins.syntax.string.EmptyString.
+Register String as plugins.syntax.string.String.
+
+Register ascii as plugins.syntax.ascii.type.
+Register Ascii as plugins.syntax.ascii.Ascii.
+(* end TODO *)
+
 Declare ML Module "freespec_exec".
 
 (** * Extending FreeSpec.Exec *)
@@ -54,6 +68,24 @@ type effectful_semantic =
 Inductive CONSOLE : interface :=
 | WriteLine : string -> CONSOLE unit
 | ReadLine : CONSOLE string.
+>>
+
+    Since <<Coq-8.10>>, it is required to manually register both the type of an
+    interface and its constructors for plugins to easily interact with them. This is done
+    with the [Register] command.
+
+<<
+Register <Coq Name> <Unique ID>.
+>>
+
+    The <<FreeSpec.Exec>> plugin expects the unique ID to be of the form <<<some
+    path>.<Coq Name> >>for contructors and <<<some path>.type>> for the type. In
+    the case of the <<CONSOLE>> interface, we could use:
+
+<<
+Register CONSOLE freespec.exec.console.type.
+Register WriteLine freespec.exec.console.WriteLine.
+Register ReadLine freespec.exec.console.ReadLine.
 >>
 
     Then, one can implement two <<effectful_semantic>>: one for the constructor
@@ -94,9 +126,8 @@ let readline = function
 
 <<
 val register_interface :
-  (* The path of the module within the interface type
-     lives. *)
-     string list
+  (* The base path we have chosen to register our interface. *)
+     string
   (* A list to map each constructor of this interface
      to an effectfull semantic. *)
   -> (string * effectful_semantic) list
@@ -108,7 +139,7 @@ val register_interface :
 <<
 let _ =
   register_interface
-    ["My"; ""; "Interface"; "FullyQualified"; "Type"; "CONSOLE"]
+    "freespec.exec.console"
     [("WriteLine", writeline); ("ReadLine", readline)]
 >>
 

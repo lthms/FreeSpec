@@ -22,7 +22,7 @@ open Freespec_exec.Coqstr
 open Freespec_exec.Extends
 open Freespec_exec.Coqunit
 
-let path = ["FreeSpec"; "Stdlib"; "Console"]
+let path = "freespec.stdlib.console"
 
 let install_interface =
   let scan = function

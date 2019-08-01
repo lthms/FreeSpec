@@ -32,6 +32,10 @@ Inductive ENV : interface :=
 | GetEnv (name : string) : ENV string
 | SetEnv (name : string) (value : string) : ENV unit.
 
+Register ENV as freespec.stdlib.env.type.
+Register GetEnv as freespec.stdlib.env.GetEnv.
+Register SetEnv as freespec.stdlib.env.SetEnv.
+
 Definition get_env `{ix :| ENV} (name : string) : impure ix string :=
   request (GetEnv name).
 

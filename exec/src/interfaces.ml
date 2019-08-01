@@ -19,7 +19,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Query
 open Utils
 
 (**
@@ -34,7 +33,7 @@ let primitive_semantics : effectful_semantic Names.Constrmap.t ref =
   ref Names.Constrmap.empty
 
 let new_primitive m c p =
-  match Coqlib.gen_reference_in_modules contrib [m] c with
+  match Coqlib.lib_ref (m ^ "." ^ c) with
     | Names.GlobRef.ConstructRef c ->
        primitive_semantics := Names.Constrmap.add c p !primitive_semantics
     | _ ->

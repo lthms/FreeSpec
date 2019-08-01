@@ -20,7 +20,7 @@
 
 type effectful_semantic = Constr.constr list -> Constr.constr
 
-val new_primitive: string list -> string -> effectful_semantic -> unit
+val new_primitive: string -> string -> effectful_semantic -> unit
 val primitive_semantic : Names.constructor -> effectful_semantic
 
 val force_interface_initializers: unit -> unit

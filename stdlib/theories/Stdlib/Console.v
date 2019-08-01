@@ -27,6 +27,10 @@ Inductive CONSOLE : interface :=
 | Scan : CONSOLE string
 | Echo (str : string) : CONSOLE unit.
 
+Register CONSOLE as freespec.stdlib.console.type.
+Register Scan as freespec.stdlib.console.Scan.
+Register Echo as freespec.stdlib.console.Echo.
+
 Definition scan `{ix :| CONSOLE} : impure ix string :=
   request Scan.
 

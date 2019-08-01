@@ -24,7 +24,7 @@ module type InductiveSpec = sig
   type constructor
   val type_name : string
   val names : (string * constructor) list
-  val modlist : string list
+  val namespace : string
 end
 
 module Inductive = struct
@@ -35,7 +35,7 @@ module Inductive = struct
         | Constr.Construct (c, _)
           -> Names.GlobRef.equal
                (Globnames.ConstructRef c)
-               (Coqlib.gen_reference_in_modules contrib [I.modlist] cstr)
+               (Coqlib.lib_ref (I.namespace ^ "." ^ cstr))
         | _ -> false
       in
       let rec aux = function
@@ -47,7 +47,7 @@ module Inductive = struct
       in aux I.names
 
     let mkConstructor cstr =
-      let ref = Coqlib.gen_reference_in_modules contrib [I.modlist] cstr in
+      let ref = Coqlib.lib_ref (I.namespace ^ "." ^ cstr) in
       match ref with
       | Globnames.ConstructRef c -> Constr.mkConstruct c
       | _ -> raise (Utils.Anomaly "Could not construct the term")
@@ -57,7 +57,7 @@ module Inductive = struct
       | Constr.Ind (i, _)
         -> Names.GlobRef.equal
              (Globnames.IndRef i)
-             (Coqlib.gen_reference_in_modules contrib [I.modlist] I.type_name)
+             (Coqlib.lib_ref (I.namespace ^ ".type"))
       | _ -> false
 
   end
@@ -75,7 +75,7 @@ module Ind = struct
     Inductive.Make(struct
         type constructor = impure_constructor
         let type_name = "impure"
-        let modlist = ["FreeSpec"; "Core"; "Impure"]
+        let namespace = "freespec.core.impure"
         let names = [("local", Local_impure); ("request_then", RequestThen_impure)]
       end)
 
@@ -83,7 +83,7 @@ module Ind = struct
     Inductive.Make(struct
         type constructor = iplus_constructor
         let type_name = "iplus"
-        let modlist = ["FreeSpec"; "Core"; "Impure"]
+        let namespace = "freespec.core.iplus"
         let names = [("in_left", InL_intcompose); ("in_right", InR_intcompose)]
       end)
 
@@ -91,7 +91,7 @@ module Ind = struct
     Inductive.Make(struct
         type constructor = positive_constructor
         let type_name = "positive"
-        let modlist = ["Coq"; "Numbers"; "BinNums"]
+        let namespace = "num.pos"
         let names = [("xI", XI_positive); ("xO", XO_positive); ("xH", XH_positive)]
       end)
 
@@ -99,7 +99,7 @@ module Ind = struct
     Inductive.Make(struct
         type constructor = z_constructor
         let type_name = "Z"
-        let modlist = ["Coq"; "Numbers"; "BinNums"]
+        let namespace = "num.Z"
         let names = [("Z0", Z0_Z); ("Zpos", Zpos_Z); ("Zneg", Zneg_Z)]
       end)
 
@@ -107,7 +107,7 @@ module Ind = struct
     Inductive.Make(struct
         type constructor = string_constructor
         let type_name = "string"
-        let modlist = ["Coq"; "Strings"; "String"]
+        let namespace = "plugins.syntax.string"
         let names = [("EmptyString", EmptyString_string); ("String", String_string)]
       end)
 
@@ -115,7 +115,7 @@ module Ind = struct
     Inductive.Make(struct
         type constructor = ascii_constructor
         let type_name = "ascii"
-        let modlist = ["Coq"; "Strings"; "Ascii"]
+        let namespace = "plugins.syntax.ascii"
         let names = [("Ascii", Ascii_ascii)]
       end)
 
@@ -123,7 +123,7 @@ module Ind = struct
     Inductive.Make(struct
         type constructor = bool
         let type_name = "bool"
-        let modlist = ["Coq"; "Init"; "Datatypes"]
+        let namespace = "core.bool"
         let names = [("true", true); ("false", false)]
       end)
 
@@ -131,7 +131,7 @@ module Ind = struct
     Inductive.Make(struct
         type constructor = unit
         let type_name = "unit"
-        let modlist = ["Coq"; "Init"; "Datatypes"]
+        let namespace = "core.unit"
         let names = [("tt", ())]
       end)
 end

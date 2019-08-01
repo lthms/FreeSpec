@@ -25,7 +25,7 @@ open Extends
 open Query
 open Utils
 
-let path = ["FreeSpec"; "Exec"; "Debug"]
+let path = "freespec.exec.debug"
 
 let map_iso_type term_type term fint fbool fchar fstring =
   if Ind.Z.ref_is term_type

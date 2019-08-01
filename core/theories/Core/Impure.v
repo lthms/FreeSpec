@@ -107,6 +107,10 @@ Inductive iplus (i j : interface) (a : Type) :=
 Arguments in_left [i j a] (e).
 Arguments in_right [i j a] (e).
 
+Register iplus as freespec.core.iplus.type.
+Register in_left as freespec.core.iplus.in_left.
+Register in_right as freespec.core.iplus.in_right.
+
 Infix "<+>" := iplus (at level 50, left associativity) : type_scope.
 Infix "⊕" := iplus (at level 50, left associativity) : type_scope.
 
@@ -478,6 +482,10 @@ Inductive impure (i : interface) (a : Type) : Type :=
 
 Arguments local [i a] (x).
 Arguments request_then [i a b] (e f).
+
+Register impure as freespec.core.impure.type.
+Register local as freespec.core.impure.local.
+Register request_then as freespec.core.impure.request_then.
 
 (** ** Equivalence *)
 

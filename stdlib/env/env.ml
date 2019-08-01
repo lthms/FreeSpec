@@ -22,7 +22,7 @@ open Freespec_exec.Coqstr
 open Freespec_exec.Extends
 open Freespec_exec.Coqunit
 
-let path = ["FreeSpec"; "Stdlib"; "Env"]
+let path = "freespec.stdlib.env"
 
 let install_interface =
   let get = function
