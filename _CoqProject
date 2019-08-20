@@ -34,6 +34,7 @@ exec/src/utils.ml
 
 stdlib/theories/Stdlib/Console.v
 stdlib/theories/Stdlib/Env.v
+stdlib/theories/Stdlib/Args.v
 
 stdlib/console/console.ml
 stdlib/console/freespec_stdlib_console.mlpack

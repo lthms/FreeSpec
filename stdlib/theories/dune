@@ -3,6 +3,7 @@
   (public_name freespec-stdlib.theories)
   (libraries freespec-stdlib.console freespec-stdlib.env)
   (modules Stdlib.Console
+           Stdlib.Args
            Stdlib.Env))
 
 (include_subdirs qualified)

@@ -1,4 +1,4 @@
-From FreeSpec Require Import Env Console.
+From FreeSpec Require Import Args Console.
 From Coq Require Import ZArith.
 
 Generalizable All Variables.
