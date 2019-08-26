@@ -5,7 +5,6 @@ docs:
 	@rm -rf docs/coq docs/ml
 	@mv html docs/coq
 	@mv mlihtml docs/ml
-	@make -f Makefile.coq clean
 
 install: clean
 	@cd core;   dune build; dune install; cd -
@@ -24,6 +23,6 @@ uninstall:
 
 clean:
 	@make -f Makefile.coq clean
-	@rm -rf docs
+	@rm -rf docs/coq docs/ml
 
 .PHONY: install docs clean mrproper uninstall
