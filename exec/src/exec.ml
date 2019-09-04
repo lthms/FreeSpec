@@ -49,7 +49,7 @@ let exec_request instr_t instr_trm func_trm =
 
 let rec exec env evm def =
   Interfaces.force_interface_initializers ();
-  let def = Reduction.whd_all env def in
+  let def = reduce_all env evm def in
   let (def, args) = app_full def in
   match (Ind.Program.constructor_of def, args) with
   | (Some RequestThen_impure,
