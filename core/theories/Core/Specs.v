@@ -312,6 +312,30 @@ Qed.
 
 Hint Resolve trustworthy_bind_trustworthy_run : freespec_scope.
 
+Lemma trustworthy_bind_exists_trustworthy_run {i a b Ω}
+    (c : specs i Ω) (ω ω' : Ω)
+    (p : impure i a) (f : a -> impure i b) (x : b)
+    (trust : trustworthy_run c (impure_bind p f) ω ω' x)
+  : exists (ω'' : Ω) (y : a),
+    trustworthy_run c p ω ω'' y /\ trustworthy_run c (f y) ω'' ω' x.
+
+Proof.
+  revert trust.
+  revert ω ω'.
+  induction p; intros ω ω' trust.
+  + exists ω; exists x0.
+    split.
+    ++ constructor.
+    ++ exact trust.
+  + inversion trust; ssubst.
+    specialize H with x0 (witness_update c ω e x0) ω'.
+    apply H in rec.
+    destruct rec as [ω'' [y [trust1 trust2]]].
+    exists ω''; exists y.
+    split; auto.
+    constructor 2 with (x := x0); auto.
+Qed.
+
 (** ** Semantics Compliance *)
 
 (** Given a semantics [sem], and a witness [ω] if [sem] computes results which
@@ -618,12 +642,30 @@ Qed.
     given impure computation is trustworthy wrt. to a given specification. *)
 
 Ltac destruct_if_when :=
-  let eq_cond := fresh "Heq_cond" in
+  let equ_cond := fresh "equ_cond" in
   match goal with
-  | |- context[when (negb ?B) _] => case_eq B; intros eq_cond; cbn
-  | |- context[when ?B _] => case_eq B; intros eq_cond; cbn
-  | |- context[if (negb ?B) then _ else _] => case_eq B; intros eq_cond; cbn
-  | |- context[if ?B then _ else _] => case_eq B; intros eq_cond; cbn
+  | |- context[when (negb ?B) _] => case_eq B; intros equ_cond; cbn
+  | |- context[when ?B _] => case_eq B; intros equ_cond; cbn
+  | |- context[if (negb ?B) then _ else _] => case_eq B; intros equ_cond; cbn
+  | |- context[if ?B then _ else _] => case_eq B; intros equ_cond; cbn
+  | _ => idtac
+  end.
+
+Ltac destruct_if_when_in hyp :=
+  let equ_cond := fresh "equ" in
+  match type of hyp with
+  | context[when (negb ?B) _] => case_eq B;
+                                 intro equ_cond;
+                                 rewrite equ_cond in hyp
+  | context[when ?B _] => case_eq B;
+                          intro equ_cond;
+                          rewrite equ_cond in hyp
+  | context[if (negb ?B) then _ else _] => case_eq B;
+                                           intro equ_cond;
+                                           rewrite equ_cond in hyp
+  | context[if ?B then _ else _] => case_eq B;
+                                    intro equ_cond;
+                                    rewrite equ_cond in hyp
   | _ => idtac
   end.
 
@@ -657,6 +699,35 @@ Ltac prove_impure :=
        conclude *)
   | |- trustworthy_impure ?c ?w (local ?x) => constructor
   | |- trustworthy_impure ?c ?w (impure_pure ?x) => constructor
+  | |- trustworthy_impure ?c ?w (request ?x) => unfold request; prove_impure
   | |- trustworthy_impure ?c ?w ?p => idtac
   | |- _ => fail "prove_impure aims to prove impure computation trustworthiness"
+  end.
+
+Ltac unroll_impure_run run :=
+  repeat (cbn in run; destruct_if_when_in run);
+  lazymatch type of run with
+  | trustworthy_run ?specs (request_then ?p _) ?init ?final ?res =>
+    inversion run; ssubst;
+    clear run;
+    lazymatch goal with
+    | next : trustworthy_run specs _ (witness_update specs init p _) final res |- _ =>
+      unroll_impure_run next
+    | |- _ => fail "we could not find the next run to unroll"
+    end
+  | trustworthy_run ?specs (impure_bind ?p ?f) ?init ?final ?res =>
+    apply (trustworthy_bind_exists_trustworthy_run specs init final p f res) in run;
+    let run1 := fresh "run" in
+    let run2 := fresh "run" in
+    destruct run as [?ω'' [?y [run1 run2]]];
+    unroll_impure_run run1; unroll_impure_run run2
+  | trustworthy_run _ (impure_pure _) _ _ _ =>
+    inversion run; ssubst; clear run
+  | trustworthy_run _ (local _) _ _ _ =>
+    inversion run; ssubst; clear run
+  | trustworthy_run _ (request _) _ _ _ =>
+    unfold request in run; unroll_impure_run run
+  | trustworthy_run _ _ _ _ _ =>
+    idtac
+  | _ => fail "unknown pattern"
   end.
