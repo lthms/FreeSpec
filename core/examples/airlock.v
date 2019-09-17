@@ -20,12 +20,16 @@
 
 From Coq Require Import Arith.
 From FreeSpec Require Import Core.
+From Prelude Require Import Tactics.
 
-(** * Specifying
+(** * Specifying *)
 
-    ** Doors *)
+(** ** Doors *)
 
 Inductive door : Type := left | right.
+
+Definition door_eq_dec (d d' : door) : { d = d' } + { ~ d = d' } :=
+  ltac:(decide equality).
 
 Inductive DOORS : interface :=
 | IsOpen : door -> DOORS bool
@@ -87,7 +91,11 @@ Definition controller : component CONTROLLER DOORS nat :=
       end
     end.
 
-(** * Verifying *)
+(** * Verifying the Airlock Controller *)
+
+(** ** Doors Specification *)
+
+(** *** Witness States *)
 
 Definition Ω : Type := bool * bool.
 
@@ -115,7 +123,16 @@ Proof.
   destruct d; reflexivity.
 Qed.
 
-Opaque tog.
+(** From now on, we will reason about [tog] using [tog_equ_1] and [tog_equ_2].
+    FreeSpec tactics rely heavily on [cbn] to simplify certain terms, so we use
+    the <<simpl never>> options of the [Arguments] vernacular command to prevent
+    [cbn] from unfolding [tog].
+
+    This pattern is common in FreeSpec.  Later in this example, we will use this
+    trick to prevent [cbn] to unfold impure computations covered by intermediary
+    theorems. *)
+
+#[local] Arguments tog : simpl never.
 
 Definition step (ω : Ω) (a : Type) (e : DOORS a) (x : a) :=
   match e with
@@ -123,34 +140,44 @@ Definition step (ω : Ω) (a : Type) (e : DOORS a) (x : a) :=
   | _ => ω
   end.
 
+(** *** Requirements *)
+
 Inductive req : Ω -> forall (a : Type), DOORS a -> Prop :=
-(** Given the door [d] of o system [ω], it is always possible to ask for the
-    state of [d]. *)
+
+(** - Given the door [d] of o system [ω], it is always possible to ask for the
+      state of [d]. *)
+
 | req_is_open (d : door) (ω : Ω)
   : req ω bool (IsOpen d)
 
-(** Given the door [d] of o system [ω], if [d] is closed, then the second door
-    [co d] has to be closed to for a request to toggle [d] to be valid. *)
+(** - Given the door [d] of o system [ω], if [d] is closed, then the second door
+      [co d] has to be closed to for a request to toggle [d] to be valid. *)
+
 | req_toggle (d : door) (ω : Ω) (H : sel d ω = false -> sel (co d) ω = false)
   : req ω unit (Toggle d).
 
+(** *** Promises *)
+
 Inductive prom: Ω -> forall (a : Type), DOORS a -> a -> Prop :=
 
-(** When a system in a state [ω] reports the state of the door [d], it shall
-    reflect the true state of [d]. *)
+(** - When a system in a state [ω] reports the state of the door [d], it shall
+      reflect the true state of [d]. *)
+
 | prom_is_open (d : door) (ω : Ω) (x : bool) (equ : sel d ω = x)
   : prom ω bool (IsOpen d) x
 
-(** There is no particular promises on the result [x] of a request for [ω] to
-    close the door [d]. *)
+(** - There is no particular promises on the result [x] of a request for [ω] to
+      close the door [d]. *)
+
 | prom_toggle (d : door) (ω : Ω) (x : unit)
   : prom ω unit (Toggle d) x.
 
 Definition doors_specs : specs DOORS Ω := Build_specs _ _ step req prom.
 
-From Prelude Require Import Tactics.
+(** ** Intermediary Lemmas *)
 
 (** Closing a door [d] in any system [ω] is always a trustworthy operation. *)
+
 Lemma close_door_trustworthy (ω : Ω) (d : door)
   : trustworthy_impure doors_specs ω (close_door d).
 
@@ -177,11 +204,6 @@ Proof.
   now rewrite safe.
 Qed.
 
-Definition safe_open_door {ix} `{ix :| DOORS} (d : door) : impure ix unit :=
-  do close_door (co d);
-     open_door d
-  end.
-
 Lemma close_door_run (ω : Ω) (d : door) (ω' : Ω) (x : unit)
   (run : trustworthy_run doors_specs (close_door d) ω ω' x)
   : sel d ω' = false.
@@ -202,64 +224,91 @@ Qed.
 #[local] Arguments open_door : simpl never.
 #[local] Arguments Nat.ltb : simpl never.
 
-Lemma safe_door_trustworthy (ω : Ω) (d : door)
-  : trustworthy_impure doors_specs ω (safe_open_door d).
+Fact one_door_safe_all_doors_safe (ω : Ω) (d : door)
+    (safe : sel d ω = false \/ sel (co d) ω = false)
+  : forall (d' : door), sel d' ω = false \/ sel (co d') ω = false.
 
 Proof.
-  prove_impure.
-  apply close_door_trustworthy.
-  apply close_door_run in Hrun.
-  apply open_door_trustworthy.
-  exact Hrun.
+  intros d'.
+  destruct d; destruct d'; auto.
+  + cbn -[sel].
+    now rewrite or_comm.
+  + cbn -[sel].
+    fold (co right).
+    now rewrite or_comm.
 Qed.
+
+(** The objective of this lemma is to prove that, if either the right door or
+    the left door is closed, then after any trustworthy run of a computation
+    [p], this fact remains true. *)
 
 Lemma trustworthy_run_inv {a} (p : impure DOORS a)
   (ω : Ω) (safe : sel left ω = false \/ sel right ω = false)
   (x : a) (ω' : Ω) (run : trustworthy_run doors_specs p ω ω' x)
   : sel left ω' = false \/ sel right ω' = false.
 
+
+(** We reason by induction on the impure computation [p]:
+
+    - Either [p] is a local, pure computation; in such a case, the doors state
+      does not change, a the proof is trivial.
+
+    - Or [p] consists in a request to the doors interface, and a continuation
+      whose domain satisfies the theorem, _ie_, it preserves the invariant that
+      either the left or the right door is closed.  Due to this hypothesis, we
+      only have to prove that the first request made by [p] does not break the
+      invariant. We consider two cases.
+
+      - Either the computation asks for the state of a given door ([IsOpen]),
+        then again the doors state does not change and the proof is trivial.
+      - Or the computation wants to toggle a door [d].  We know by hypothesis
+        that either [d] is closed or [d] is open (thanks to the
+        [one_door_safe_all_doors_safe] result and the [safe] hypothesis).
+        Again, we consider both cases.
+
+         - If [d] is closed —and therefore will be opened—, then because we
+           consider a trustworthy run, [co d] is necessarily closed too (it is a
+           requirements of [door_specs]). Once [d] is opened, [co d] is still
+           closed.
+         - Otherwise, [co d] is closed, which means once [d] is toggled (no
+           matter its initial state), then [co d] is still close.
+
+         That is, we prove that, when [p] toggles [d], [co d] is necessarily
+         closed after the request has been handled.  Because there is at least
+         one door closed ([co d]), we can conclude that either the right or the
+         left door is closed thanks to [one_door_safe_all_doors_safe]. *)
+
 Proof.
-  induction run.
-  + exact safe.
-  + apply IHrun.
-    clear f run IHrun ω' y.
-    destruct e;
-      inversion prom0; ssubst;
-      inversion req0; ssubst; cbn -[sel].
-    ++ apply safe.
-    ++ destruct safe as [safe | safe]; destruct d.
-       +++ (* The left door is closed, we toggle the left door. Because of
-              [doors_specs], we know the right door has to be closed. *)
-           right.
-           fold (co left).
-           rewrite tog_equ_2.
-           now apply H1.
-       +++ (* The left door is closed, we want to toggle the right door. We know
-              the left door will remain closed. *)
-           left.
-           fold (co right).
-           rewrite tog_equ_2.
-           exact safe.
-       +++ (* The right door is closed, we want to toggle the left door. We know
-              the right door will remain closed. *)
-           right.
-           fold (co left).
-           rewrite tog_equ_2.
-           exact safe.
-       +++ (* The right door is closed, we want to toggle the right
-              door. Because of [doors_specs], we know the left door has to be
-              closed. *)
-           left.
-           fold (co right).
-           rewrite tog_equ_2.
-           now apply H1.
+  fold (co left) in *.
+  revert ω run safe.
+  induction p; intros ω run safe.
+  + now unroll_impure_run run.
+  + unroll_impure_run run.
+    eapply H; eauto.
+    destruct e as [d|d]; cbn -[sel] in *; auto.
+    (* We try to toggle a door [d]. *)
+    apply one_door_safe_all_doors_safe with (d := d).
+    apply one_door_safe_all_doors_safe with (d' := d) in safe.
+    inversion req0; ssubst.
+    destruct safe as [safe | safe].
+    (* 1. The door [d] is closed. Because we are in a trustworthy run, we
+          know the door [co d] is also closed, and remains closed. *)
+    ++ right.
+       rewrite tog_equ_2.
+       now apply H2.
+    (* 2. The door [co d] is closed. Once [d] is toggled, [co d] will remain
+          closed. *)
+    ++ right.
+       now rewrite tog_equ_2.
 Qed.
+
+(** ** Main Theorem *)
 
 Lemma controller_correct
   : correct_component controller
                       (no_specs CONTROLLER)
                       doors_specs
-                      (fun _ _ d => sel left d = false \/ sel right d = false).
+                      (fun _ _ ω => sel left ω = false \/ sel right ω = false).
 Proof.
   intros ωc cpt ωd pred a e req.
   split.
