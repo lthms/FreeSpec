@@ -29,19 +29,19 @@ Inductive ARGS : interface :=
 | ArgCount : ARGS Z
 | ArgValue (nth : Z) : ARGS string.
 
-Definition arg_count `{ix :| ARGS} : impure ix Z :=
+Definition arg_count `{Provide ix ARGS} : impure ix Z :=
   request ArgCount.
 
-Definition arg_value `{ix :| ARGS} (nth : Z) : impure ix string :=
+Definition arg_value `{Provide ix ARGS} (nth : Z) : impure ix string :=
   request (ArgValue nth).
 
 #[local]
-Definition args `{ix :| ENV} : component ARGS ix unit :=
+Definition args `{Provide ix ENV} : component ARGS ix :=
   fun (a : Type) (e : ARGS a) =>
     match e with
-    | ArgCount => Z_of_string <$> lift (get_env "FREESPEC_EXEC_ARGC")
-    | ArgValue n => lift (get_env (append "FREESPEC_EXEC_ARGV_" (string_of_Z n)))
+    | ArgCount => Z_of_string <$> get_env "FREESPEC_EXEC_ARGC"
+    | ArgValue n => get_env (append "FREESPEC_EXEC_ARGV_" (string_of_Z n))
     end.
 
-Definition with_args {a} `{ix :| ENV} : impure (ARGS ⊕ ix) a -> impure ix a :=
-  with_component (pure tt) args (fun _ => pure tt).
+Definition with_args {a} `{Provide ix ENV} : impure (ARGS ⊕ ix) a -> impure ix a :=
+  with_component (pure tt) args (pure tt).

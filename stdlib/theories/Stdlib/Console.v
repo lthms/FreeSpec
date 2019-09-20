@@ -31,10 +31,10 @@ Register CONSOLE as freespec.stdlib.console.type.
 Register Scan as freespec.stdlib.console.Scan.
 Register Echo as freespec.stdlib.console.Echo.
 
-Definition scan `{ix :| CONSOLE} : impure ix string :=
+Definition scan `{Provide ix CONSOLE} : impure ix string :=
   request Scan.
 
-Definition echo `{ix :| CONSOLE} (str: string) : impure ix unit :=
+Definition echo `{Provide ix CONSOLE} (str: string) : impure ix unit :=
   request (Echo str).
 
 Declare ML Module "freespec_stdlib_console".

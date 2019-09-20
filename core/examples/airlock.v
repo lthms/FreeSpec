@@ -37,18 +37,18 @@ Inductive DOORS : interface :=
 
 Generalizable All Variables.
 
-Definition is_open `{ix :| DOORS} (d : door) : impure ix bool :=
+Definition is_open `{Provide ix DOORS} (d : door) : impure ix bool :=
   request (IsOpen d).
 
-Definition toggle `{ix :| DOORS} (d : door) : impure ix unit :=
+Definition toggle `{Provide ix DOORS} (d : door) : impure ix unit :=
   request (Toggle d).
 
-Definition open_door `{ix :| DOORS} (d : door) : impure ix unit :=
+Definition open_door `{Provide ix DOORS} (d : door) : impure ix unit :=
   do var open <- is_open d in
      when (negb open) (toggle d)
   end.
 
-Definition close_door `{ix :| DOORS} (d : door) : impure ix unit :=
+Definition close_door `{Provide ix DOORS} (d : door) : impure ix unit :=
   do var open <- is_open d in
      when open (toggle d)
    end.
@@ -59,10 +59,10 @@ Inductive CONTROLLER : interface :=
 | Tick : CONTROLLER unit
 | RequestOpen (d : door) : CONTROLLER unit.
 
-Definition tick `{ix :| CONTROLLER} : impure ix unit :=
+Definition tick `{Provide ix CONTROLLER} : impure ix unit :=
   request Tick.
 
-Definition request_open `{ix :| CONTROLLER} (d : door) : impure ix unit :=
+Definition request_open `{Provide ix CONTROLLER} (d : door) : impure ix unit :=
   request (RequestOpen d).
 
 Definition co (d : door) : door :=
@@ -71,22 +71,20 @@ Definition co (d : door) : door :=
   | right => left
   end.
 
-From Prelude Require Import State.
-
-Definition controller : component CONTROLLER DOORS nat :=
+Definition controller `{Provide ix DOORS, Provide ix (STORE nat)} : component CONTROLLER ix :=
   fun _ op =>
     match op with
     | Tick =>
       do var cpt <- get in
          when (15 <? cpt) do
-           lift (close_door left);
-           lift (close_door right);
+           close_door left;
+           close_door right;
            put 0
          end
       end
     | RequestOpen d => do
-        lift (close_door (co d));
-        lift (open_door d);
+        close_door (co d);
+        open_door d;
         put 0
       end
     end.
@@ -132,7 +130,7 @@ Qed.
     trick to prevent [cbn] to unfold impure computations covered by intermediary
     theorems. *)
 
-#[local] Arguments tog : simpl never.
+#[local] Opaque tog.
 
 Definition step (ω : Ω) (a : Type) (e : DOORS a) (x : a) :=
   match e with
@@ -178,7 +176,7 @@ Definition doors_specs : specs DOORS Ω := Build_specs _ _ step req prom.
 
 (** Closing a door [d] in any system [ω] is always a trustworthy operation. *)
 
-Lemma close_door_trustworthy (ω : Ω) (d : door)
+Lemma close_door_trustworthy `{Provide ix DOORS} (ω : Ω) (d : door)
   : trustworthy_impure doors_specs ω (close_door d).
 
 Proof.
@@ -191,38 +189,35 @@ Proof.
      Yet, thanks to our call to [IsOpen d], we can predict that
 
        [sel d ω = true] *)
-  inversion Hpost; ssubst.
-  now rewrite H1.
+  inversion prom0; ssubst.
+  now rewrite H3.
 Qed.
 
-Lemma open_door_trustworthy (ω : Ω) (d : door) (safe : sel (co d) ω = false)
-  : trustworthy_impure doors_specs ω (open_door d).
+Lemma open_door_trustworthy `{Provide ix DOORS} (ω : Ω)
+    (d : door) (safe : sel (co d) ω = false)
+  : trustworthy_impure doors_specs ω (open_door (ix := ix) d).
 
 Proof.
   prove_impure; cbn; repeat constructor; subst.
-  inversion Hpost; ssubst.
+  inversion prom0; ssubst.
   now rewrite safe.
 Qed.
 
-Lemma close_door_run (ω : Ω) (d : door) (ω' : Ω) (x : unit)
-  (run : trustworthy_run doors_specs (close_door d) ω ω' x)
+Lemma close_door_run `{Provide ix DOORS} (ω : Ω) (d : door) (ω' : Ω) (x : unit)
+  (run : trustworthy_run doors_specs (close_door (ix := ix) d) ω ω' x)
   : sel d ω' = false.
+
 Proof.
-  inversion run; ssubst; clear run req0; cbn in *.
-  inversion prom0; ssubst; clear prom0.
-  case_eq (sel d ω); intros equ; rewrite equ in rec;
-    inversion rec; ssubst; cbn in *; try clear req.
-  + inversion rec0; ssubst; clear rec0.
-    rewrite tog_equ_1.
-    rewrite equ.
-    reflexivity.
-  + inversion rec; ssubst; clear rec.
-    exact equ.
+  unroll_impure_run run; cbn in *.
+  + rewrite tog_equ_1.
+    inversion prom0; ssubst.
+    now rewrite H3.
+  + now inversion prom0; ssubst.
 Qed.
 
-#[local] Arguments close_door : simpl never.
-#[local] Arguments open_door : simpl never.
-#[local] Arguments Nat.ltb : simpl never.
+#[local] Opaque close_door.
+#[local] Opaque open_door.
+#[local] Opaque Nat.ltb.
 
 Fact one_door_safe_all_doors_safe (ω : Ω) (d : door)
     (safe : sel d ω = false \/ sel (co d) ω = false)
@@ -242,11 +237,12 @@ Qed.
     the left door is closed, then after any trustworthy run of a computation
     [p], this fact remains true. *)
 
-Lemma trustworthy_run_inv {a} (p : impure DOORS a)
+Lemma trustworthy_run_inv `{Provide ix DOORS} {a} (p : impure ix a)
   (ω : Ω) (safe : sel left ω = false \/ sel right ω = false)
   (x : a) (ω' : Ω) (run : trustworthy_run doors_specs p ω ω' x)
   : sel left ω' = false \/ sel right ω' = false.
 
+#[local] Opaque sel.
 
 (** We reason by induction on the impure computation [p]:
 
@@ -284,42 +280,52 @@ Proof.
   induction p; intros ω run safe.
   + now unroll_impure_run run.
   + unroll_impure_run run.
-    eapply H; eauto.
-    destruct e as [d|d]; cbn -[sel] in *; auto.
-    (* We try to toggle a door [d]. *)
-    apply one_door_safe_all_doors_safe with (d := d).
-    apply one_door_safe_all_doors_safe with (d' := d) in safe.
-    inversion req0; ssubst.
-    destruct safe as [safe | safe].
+    destruct (unlift_eff e) as [ e' |].
+    ++ eapply H1; eauto.
+       destruct e' as [d|d]; cbn in *; auto.
+       (* We try to toggle a door [d]. *)
+       apply one_door_safe_all_doors_safe with (d := d).
+       apply one_door_safe_all_doors_safe with (d' := d) in safe.
+       inversion req0; ssubst.
+       destruct safe as [safe | safe].
     (* 1. The door [d] is closed. Because we are in a trustworthy run, we
           know the door [co d] is also closed, and remains closed. *)
-    ++ right.
-       rewrite tog_equ_2.
-       now apply H2.
+       +++ right.
+           rewrite tog_equ_2.
+           now apply H4.
     (* 2. The door [co d] is closed. Once [d] is toggled, [co d] will remain
           closed. *)
-    ++ right.
-       now rewrite tog_equ_2.
+           +++ right.
+               now rewrite tog_equ_2.
+    ++ cbn in *.
+       eapply H1; [ exact rec | exact safe ].
 Qed.
 
 (** ** Main Theorem *)
 
-Lemma controller_correct
+Lemma controller_correct `{ M1 : MayProvide ix DOORS
+                          , P1 : @Provide ix DOORS M1
+                          , M2 : MayProvide ix (STORE nat)
+                          , P2 : @Provide ix (STORE nat) M2
+                          , @Distinguish ix (STORE nat) DOORS M2 P2 M1
+                          }
   : correct_component controller
                       (no_specs CONTROLLER)
                       doors_specs
-                      (fun _ _ ω => sel left ω = false \/ sel right ω = false).
+                      (fun _ ω => sel left ω = false \/ sel right ω = false).
+
 Proof.
-  intros ωc cpt ωd pred a e req.
+  intros ωc ωd pred a e req.
   split.
   + destruct e.
-    ++ prove_impure; apply close_door_trustworthy.
     ++ prove_impure.
-       apply close_door_trustworthy.
-       apply open_door_trustworthy.
-       now apply close_door_run in Hrun.
-  + intros x st ωj' run.
+       +++ apply close_door_trustworthy.
+       +++ apply close_door_trustworthy.
+    ++ prove_impure.
+       +++ apply close_door_trustworthy.
+       +++ apply open_door_trustworthy.
+           now apply close_door_run in Hrun.
+  + intros x ωj' run.
     split; auto.
-    eapply trustworthy_run_inv; [ exact pred
-                                |  exact run ].
+    eapply trustworthy_run_inv in run; auto.
 Qed.

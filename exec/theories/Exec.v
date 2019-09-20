@@ -162,24 +162,38 @@ let _ =
     to clean-up the final state of [c] after the interpretation of [p]. *)
 
 #[local]
-Fixpoint with_compoment_aux {ix j a s} (init : s) (c : component j ix s) (p : impure (j ⊕ ix) a)
-  : impure ix (a * s) :=
+Fixpoint with_component_aux {ix j a} (c : component j ix) (p : impure (j ⊕ ix) a)
+  : impure ix a :=
   match p with
-  | local x => local (x, init)
+  | local x => local x
   | request_then (in_left e) f =>
-    c _ e init >>= fun res => with_compoment_aux (snd res) c (f (fst res))
+    c _ e >>= fun res => with_component_aux c (f res)
   | request_then (in_right e) f =>
-    request_then e (fun x => with_compoment_aux init c (f x))
+    request_then e (fun x => with_component_aux c (f x))
   end.
 
-Definition with_component {ix j a s}
-  (initializer : impure ix s)
-  (c : component j ix s)
-  (finalizer : s -> impure ix unit)
+Definition with_component {ix j a}
+  (initializer : impure ix unit)
+  (c : component j ix)
+  (finalizer : impure ix unit)
   (p : impure (j ⊕ ix) a)
   : impure ix a :=
-  do var s <- initializer in
-     var res <- with_compoment_aux s c p in
-     finalizer (snd res);
-     pure (fst res)
+  do initializer;
+     var res <- with_component_aux c p in
+     finalizer;
+     pure res
+  end.
+
+#[local]
+Fixpoint with_semantics {ix j a} (sem : semantics j) (p : impure (j ⊕ ix) a)
+  : impure ix a :=
+  match p with
+  | local x => local x
+  | request_then (in_left e) f =>
+    let run := run_effect sem e in
+    let res := interp_result run in
+    let next := interp_next run in
+    with_semantics next (f res)
+  | request_then (in_right e) f =>
+    request_then e (fun x => with_semantics sem (f x))
   end.

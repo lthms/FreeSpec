@@ -1,4 +1,4 @@
-From FreeSpec Require Import Core.
+From FreeSpec Require Import Core Notations.
 From Prelude Require Import Integer State Tactics.
 From Coq Require Import ZArith.
 
@@ -71,23 +71,26 @@ Inductive MEMORY : interface :=
 | ReadFrom (addr : address) : MEMORY cell
 | WriteTo (addr : address) (value : cell) : MEMORY unit.
 
-Definition DRAM := MEMORY.
-Definition VGA := MEMORY.
+Inductive DRAM : interface :=
+| MakeDRAM {a : Type} (e : MEMORY a) : DRAM a.
 
-Definition dram_read_from `{ix :| DRAM <+> VGA} (addr : address)
+Definition dram_read_from `{Provide ix DRAM} (addr : address)
   : impure ix cell :=
-  request (in_left (ReadFrom addr)).
+  request (MakeDRAM (ReadFrom addr)).
 
-Definition dram_write_to `{ix :| DRAM <+> VGA} (addr : address) (val : cell)
+Definition dram_write_to `{Provide ix DRAM} (addr : address) (val : cell)
   : impure ix unit :=
-  request (in_left (WriteTo addr val)).
+  request (MakeDRAM (WriteTo addr val)).
 
-Definition vga_read_from `{ix :| DRAM <+> VGA} (addr : address) : impure ix cell :=
-  request (in_right (ReadFrom addr)).
+Inductive VGA : interface :=
+| MakeVGA {a : Type} (e : MEMORY a) : VGA a.
 
-Definition vga_write_to `{ix :| DRAM <+> VGA} (addr : address) (val : cell)
+Definition vga_read_from `{Provide ix VGA} (addr : address) : impure ix cell :=
+  request (MakeVGA (ReadFrom addr)).
+
+Definition vga_write_to `{Provide ix VGA} (addr : address) (val : cell)
   : impure ix unit :=
-  request (in_right (WriteTo addr val)).
+  request (MakeVGA (WriteTo addr val)).
 
 (** ** Memory Controller *)
 
@@ -102,25 +105,25 @@ Definition unwrap_sumbool {A B} (x : { A } + { B }) : bool :=
 
 Coercion unwrap_sumbool : sumbool >-> bool.
 
-Definition dispatch {a} (addr : address)
-    (unpriv : address -> impure (DRAM <+> VGA) a)
-    (priv : address -> impure (DRAM <+> VGA) a)
-  : state_t bool (impure (DRAM <+> VGA)) a :=
+Definition dispatch {a} `{Provide3 ix (STORE bool) DRAM VGA}
+    (addr : address) (unpriv : address -> impure ix a) (priv : address -> impure ix a)
+  : impure ix a :=
   do var reg <- get in
-     lift (if (andb reg (in_smram addr))
-           then unpriv addr
-           else priv addr)
+     if (andb reg (in_smram addr))
+     then unpriv addr
+     else priv addr
   end.
 
-Definition memory_controller : component MEMORY_CONTROLLER (DRAM <+> VGA) bool :=
+Definition memory_controller `{Provide3 ix (STORE bool) DRAM VGA}
+  : component MEMORY_CONTROLLER ix :=
   fun _ op =>
     match op with
 
 (** When SMIACT is set, the CPU is in SMM.  According to its specification, the
     Memory Controller can simply forward the memory access to the DRAM *)
 
-    | Read smiact_set addr => lift (dram_read_from addr)
-    | Write smiact_set addr val => lift (dram_write_to addr val)
+    | Read smiact_set addr => dram_read_from addr
+    | Write smiact_set addr val => dram_write_to addr val
 
 (** On the contrary, when the SMIACT is not set, the CPU is not in SMM.  As a
     consequence, the memory controller implements a dedicated access control
@@ -150,7 +153,7 @@ Definition update_memory_view_address (ω : memory_view) (addr : address) (conte
 
 Definition update_dram_view (ω : memory_view) (a : Type) (p : DRAM a) (_ : a) : memory_view :=
   match p with
-  | WriteTo a v  => update_memory_view_address ω a v
+  | MakeDRAM (WriteTo a v)  => update_memory_view_address ω a v
   | _ => ω
   end.
 
@@ -158,10 +161,10 @@ Inductive dram_promises (ω : memory_view) : forall (a : Type), DRAM a -> a -> P
 
 | read_in_smram
     (a : address) (v : cell) (prom : in_smram a = true -> v = ω a)
-  : dram_promises ω cell (ReadFrom a) (ω a)
+  : dram_promises ω cell (MakeDRAM (ReadFrom a)) (ω a)
 
 | write (a : address) (v : cell) (r : unit)
-  : dram_promises ω unit (WriteTo a v) r.
+  : dram_promises ω unit (MakeDRAM (WriteTo a v)) r.
 
 Definition dram_specs : specs DRAM memory_view :=
   {| witness_update := update_dram_view
@@ -197,67 +200,59 @@ Definition mc_specs : specs MEMORY_CONTROLLER memory_view :=
 
 (** ** Main Theorem *)
 
-Definition memories_specs : specs (DRAM <+> VGA) (memory_view * unit) :=
-  dram_specs <.> no_specs VGA.
+Definition smram_pred (ωmc : memory_view) (ωmem : memory_view * bool) : Prop :=
+  snd ωmem = true /\ forall (a : address), in_smram a = true -> ωmc a = (fst ωmem) a.
 
-Definition smram_pred (ωmc : memory_view) (s : bool) (ωdram : memory_view * unit) : Prop :=
-  s = true /\ forall (a : address), in_smram a = true -> ωmc a = fst ωdram a.
+Lemma memory_controller_trustworthy `{StrictProvide3 ix (STORE bool) VGA DRAM}
+    (a : Type) (op : MEMORY_CONTROLLER a) (ω : memory_view)
+  : trustworthy_impure (dram_specs ⊙ store_specs bool) (ω, true) (memory_controller a op).
 
-Lemma memory_controller_trustworthy (a : Type) (op : MEMORY_CONTROLLER a)
-    (ω : memory_view) (r : unit)
-  : trustworthy_impure memories_specs (ω, r) (memory_controller a op true).
-  induction op; induction pin;
-    prove_impure; constructor.
+Proof.
+  destruct op; destruct pin;
+    prove_impure.
 Qed.
 
-Theorem memory_controller_correct (ω : memory_view)
-    (dram : semantics DRAM) (comp : compliant_semantics dram_specs ω dram)
-    (vga : semantics VGA)
-  : compliant_semantics mc_specs ω (derive_semantics memory_controller true (dram ⊗ vga)).
+#[local]
+Open Scope semantics_scope.
+#[local]
+Open Scope specs_scope.
+
+Theorem memory_controller_correct `{StrictProvide3 ix VGA (STORE bool) DRAM}
+    (ω : memory_view)
+    (sem : semantics ix) (comp : compliant_semantics (dram_specs <.> store_specs bool) (ω, true) sem)
+  : compliant_semantics mc_specs ω (derive_semantics memory_controller sem).
+
 Proof.
   apply correct_component_derives_compliant_semantics with (pred := smram_pred)
-                                                           (specj := memories_specs)
-                                                           (ωj := (ω, tt)).
-  + intros ωmc st [ωdram b] [st_true pred] a e req.
+                                                           (specj := dram_specs <.> store_specs bool)
+                                                           (ωj := (ω, true)).
+  + intros ωmc [ωdram b] [b_true pred] a e req; cbn in *.
     split.
-    ++ rewrite st_true.
+    ++ rewrite b_true.
        apply memory_controller_trustworthy.
-    ++ intros x st' [ωdram' b'] trustworthy.
+    ++ intros x [ωdram' st'] trustworthy.
        destruct e.
        +++ split; [| now unroll_impure_run trustworthy ].
-           unroll_impure_run trustworthy; constructor; intros pin_equ is_in_smram;
-             rewrite pred; auto;
-               now inversion prom; ssubst.
-       +++ split.
-           ++++ constructor.
+           destruct pin.
            ++++ unroll_impure_run trustworthy;
-                  split; auto;
-                    intros addr' is_in_smram';
-                    cbn; unfold update_memory_view_address;
-                      destruct address_eq_dec as [ equ | nequ ]; auto.
-                cbn in equ0.
-                rewrite (in_smram_morphism addr addr' equ) in equ0.
-                now rewrite equ0 in is_in_smram'.
+                  constructor;
+                  intros pin_equ is_in_smram;
+                  rewrite pred; auto;
+                    now inversion H8; ssubst.
+           ++++ now constructor.
+       +++ split.
+           ++++ now constructor.
+           ++++ unroll_impure_run trustworthy;
+                  (split; [ auto |]);
+                  intros addr' is_in_smram';
+                  unfold update_memory_view_address;
+                  cbn;
+                  rewrite pred; auto;
+                    destruct address_eq_dec; auto.
+                inversion H13; ssubst.
+                cbn in equ.
+                rewrite (in_smram_morphism _ _ a) in equ.
+                now rewrite equ in is_in_smram'.
   + split; auto.
-  + remember (semplus dram vga) as mems.
-    assert (compliant_semantics (dram_specs <.> no_specs VGA) (ω, tt) mems)
-      as memcomp. {
-      rewrite Heqmems.
-      now apply compliant_semantics_semplus_no_specs.
-    }
-    clear Heqmems comp dram vga.
-    remember (ω, tt) as ωmem.
-    clear Heqωmem ω.
-    revert memcomp;
-      revert mems ωmem;
-      cofix memory_controller_compliant_cofix;
-      intros ω mems comp.
-    constructor.
-    ++ intros a e req.
-       induction e; [| auto].
-       inversion comp.
-       now apply prom.
-    ++ intros a e req.
-       apply memory_controller_compliant_cofix.
-       now apply compliant_semantics_requirement_compliant.
+  + auto.
 Qed.

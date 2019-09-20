@@ -1,4 +1,5 @@
 -R core/theories FreeSpec
+-R core/examples FreeSpec.Examples
 -R exec/theories FreeSpec
 -I exec/src
 -R stdlib/theories FreeSpec
@@ -8,7 +9,7 @@
 core/theories/Core.v
 core/theories/Core/Impure.v
 core/theories/Core/Specs.v
-core/theories/Core/utils.v
+core/theories/Core/Notations.v
 
 exec/theories/Exec.v
 exec/theories/Exec/Debug.v
@@ -40,3 +41,6 @@ stdlib/console/console.ml
 stdlib/console/freespec_stdlib_console.mlpack
 stdlib/env/env.ml
 stdlib/env/freespec_stdlib_env.mlpack
+
+core/examples/airlock.v
+core/examples/smram.v

@@ -5,7 +5,7 @@ From Coq Require Import String.
 
 Generalizable All Variables.
 
-Definition inspect `{ix :| DEBUG} : impure ix string :=
+Definition inspect `{Provide ix DEBUG} : impure ix string :=
   do inspect "hi, dear.";
      var x <- iso true in
      inspect x

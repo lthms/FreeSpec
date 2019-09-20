@@ -77,8 +77,8 @@ Register DEBUG as freespec.exec.debug.type.
 Register Iso as freespec.exec.debug.Iso.
 Register Inspect as freespec.exec.debug.Inspect.
 
-Definition inspect `{HasExecIsomorphism a, ix :| DEBUG} (x : a) : impure ix string :=
+Definition inspect `{HasExecIsomorphism a, Provide ix DEBUG} (x : a) : impure ix string :=
   request (Inspect x).
 
-Definition iso `{HasExecIsomorphism a, ix :| DEBUG} (x : a) : impure ix a :=
+Definition iso `{HasExecIsomorphism a, Provide ix DEBUG} (x : a) : impure ix a :=
   request (Iso x).

@@ -4,6 +4,6 @@
   (modules Core
            Core.Impure
            Core.Specs
-           Core.utils))
+           Core.Notations))
 
 (include_subdirs qualified)

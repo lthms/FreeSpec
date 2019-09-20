@@ -28,6 +28,8 @@ From Coq Require Import Setoid Morphisms.
 From Prelude Require Import Tactics Equality Control.
 From FreeSpec.Core Require Export Impure.
 
+Generalizable All Variables.
+
 #[local]
 Open Scope prelude_scope.
 #[local]
@@ -100,23 +102,38 @@ Definition forbid_specs (i : interface) : specs i unit :=
     when we use [i]), then we can compose [speci : specs i Ωi] and [specj :
     specs j Ωj], such that [speci ⊙ specj] in a specification for [i ⊕ j]. *)
 
-Definition specsplus {i j Ωi Ωj} (speci : specs i Ωi) (specj : specs j Ωj)
-  : specs (i ⊕ j) (Ωi * Ωj) :=
-  {| witness_update := fun (ω : Ωi * Ωj) (a : Type) (e : (i ⊕ j) a) (x : a) =>
-                         match e with
-                         | in_left e => (witness_update speci (fst ω) e x, snd ω)
-                         | in_right e => (fst ω, witness_update specj (snd ω) e x)
-                         end
-  ;  requirements := fun (ω : Ωi * Ωj) (a : Type) (e : (i ⊕ j) a) =>
-                       match e with
-                       | in_left e => requirements speci (fst ω) e
-                       | in_right e => requirements specj (snd ω) e
-                       end
-  ;  promises := fun (ω : Ωi * Ωj) (a : Type) (e : (i ⊕ j) a) (x : a) =>
-                   match e with
-                   | in_left e => promises speci (fst ω) e x
-                   | in_right e => promises specj (snd ω) e x
-                   end
+Definition gen_witness_update `{MayProvide ix i} {Ω a} (c : specs i Ω)
+    (ω :  Ω) (e : ix a) (x : a)
+  : Ω :=
+  match unlift_eff e with
+  | Some e => witness_update c ω e x
+  | None => ω
+  end.
+
+Definition gen_requirements `{MayProvide ix i} {Ω a} (c : specs i Ω)
+    (ω :  Ω) (e : ix a)
+  : Prop :=
+  match unlift_eff e with
+  | Some e => requirements c ω e
+  | None => True
+  end.
+
+Definition gen_promises `{MayProvide ix i} {Ω a} (c : specs i Ω)
+    (ω :  Ω) (e : ix a) (x : a)
+  : Prop :=
+  match unlift_eff e with
+  | Some e => promises c ω e x
+  | None => True
+  end.
+
+Definition specsplus `{Provide ix i, Provide ix j} {Ωi Ωj} (speci : specs i Ωi) (specj : specs j Ωj)
+  : specs ix (Ωi * Ωj) :=
+  {| witness_update := fun (ω : Ωi * Ωj) (a : Type) (e : ix a) (x : a) =>
+                         (gen_witness_update speci (fst ω) e x, gen_witness_update specj (snd ω) e x)
+  ;  requirements := fun (ω : Ωi * Ωj) (a : Type) (e : ix a) =>
+                       gen_requirements speci (fst ω) e /\ gen_requirements specj (snd ω) e
+  ;  promises := fun (ω : Ωi * Ωj) (a : Type) (e : ix a) (x : a) =>
+                   gen_promises speci (fst ω) e x /\ gen_promises specj (snd ω) e x
   |}.
 
 Declare Scope specs_scope.
@@ -138,18 +155,16 @@ Inductive STORE (s : Type) : interface :=
 
     For [STORE s], the best witness is the actuall value of the mutable
     variable.  Therefore, the specification for [STORE s] may be [specs (STORE
-    s) s], and the witness will be updated after each [Put] call.
+    s) s], and the witness will be updated after each [Put] call. *)
 
-<<
 Definition store_update (s : Type) :=
   fun (x : s) (a : Type) (e : STORE s a) (_ : a) =>
     match e with
     | Get => x
     | Put x' => x'
     end.
->>
 
-    Assuming the mutable variable is being initialized prior to any impure
+(** Assuming the mutable variable is being initialized prior to any impure
     computation interpretation, we do not have any requirements over the use of
     [STORE s] primitives.  We will get back to this assertion once we have
     defined our specification, but in the meantime, we define its promises.
@@ -157,25 +172,21 @@ Definition store_update (s : Type) :=
     The logic of these promises is as follows: [Get] is expected to produce a
     result strictly equal to the witness, and we do not have any promises about
     the result of [Put] (which belongs to [unit] anyway, so there is not much to
-    tell).
+    tell). *)
 
-<<
 Inductive store_prom (s : Type) (x : s) : forall (a : Type), STORE s a -> a -> Prop :=
 | get_prom (x' : s) (equ : x = x') : store_prom s x s Get x'
 | put_prom (x' : s) (b : unit) : store_prom s x unit (Put x') b.
->>
 
-    The actual specification can therefore be defined as follows:
+(** The actual specification can therefore be defined as follows: *)
 
-<<
 Definition store_specs (s : Type) : specs (STORE s) s :=
   {| witness_update := store_update s
   ;  requirements := no_req
   ;  promises := store_prom s
   |}.
->>
 
-    Now, as we briefly mentionned, this specification allows for reasoning about
+(** Now, as we briefly mentionned, this specification allows for reasoning about
     an impure computation which uses the [STORE s] interface, assuming the
     mutable, global variable has been initialized.  We can define another
     specification that do not rely on such assumption, and on the contrary,
@@ -198,7 +209,7 @@ Definition store_specs (s : Type) : specs (STORE s) s :=
     accordance to a witness [ω] when it only uses primitives of [i] which
     satisfies [c] requirements. *)
 
-Inductive trustworthy_impure {i a Ω} (c : specs i Ω) (ω : Ω) : impure i a -> Prop :=
+Inductive trustworthy_impure `{MayProvide ix i} {a Ω} (c : specs i Ω) (ω : Ω) : impure ix a -> Prop :=
 
 (** - Given a term [x], the computation [local x] is always trustworthy wrt. [c]
       in accordance to [ω], since it does not use any primitives. *)
@@ -215,15 +226,17 @@ Inductive trustworthy_impure {i a Ω} (c : specs i Ω) (ω : Ω) : impure i a ->
       then the impure computation [request_then e f] is trustworthy wrt. [c] in
       accordance to [ω]. *)
 
-| trustworthy_request {b}
-    (e : i b) (req : requirements c ω e) (f : b -> impure i a)
+| trustworthy_request_some {b}
+    (e : ix b) (f : b -> impure ix a)
+    (req : gen_requirements c ω e)
     (prom : forall (x : b),
-        promises c ω e x -> trustworthy_impure c (witness_update c ω e x) (f x))
+        gen_promises c ω e x
+        -> trustworthy_impure c (gen_witness_update c ω e x) (f x))
   : trustworthy_impure c ω (request_then e f).
 
 #[program]
-Instance trustworthy_impure_Proper {i Ω} (a : Type) (c : specs i Ω) (ω : Ω)
-  : Proper ('equal ==> Basics.impl) (trustworthy_impure (a:=a) c ω).
+Instance trustworthy_impure_Proper `{MayProvide ix i} {Ω} (a : Type) (c : specs i Ω) (ω : Ω)
+  : Proper (@equal (impure ix a) _ ==> Basics.impl) (trustworthy_impure (a:=a) c ω).
 
 Next Obligation.
   add_morphism_tactic.
@@ -236,8 +249,8 @@ Next Obligation.
     inversion trust; ssubst.
     constructor.
     ++ exact req.
-    ++ intros x p.
-       apply H.
+    ++ intros x q.
+       apply H0.
        now apply prom.
 Qed.
 
@@ -254,8 +267,8 @@ Qed.
     [trustworthy_run] predicate, which describes the potential outcomes of a
     computation in terms of results and witnesses. *)
 
-Inductive trustworthy_run {i a Ω} (c : specs i Ω)
-  : impure i a -> Ω -> Ω -> a -> Prop :=
+Inductive trustworthy_run `{MayProvide ix i} {a Ω} (c : specs i Ω)
+  : impure ix a -> Ω -> Ω -> a -> Prop :=
 
 (** Given a term [x], and an initial witness [ω], then a trustworthy run of
     [local x] produces a result [x] and a witness state [ω]. *)
@@ -272,9 +285,9 @@ Inductive trustworthy_run {i a Ω} (c : specs i Ω)
 
 | run_request {b}
     (ω : Ω)
-    (e : i b) (req : requirements c ω e) (f : b -> impure i a)
-    (x : b) (prom : promises c ω e x)
-    (ω' : Ω) (y : a) (rec : trustworthy_run c (f x) (witness_update c ω e x) ω' y)
+    (e : ix b) (req : gen_requirements c ω e) (f : b -> impure ix a)
+    (x : b) (prom : gen_promises c ω e x)
+    (ω' : Ω) (y : a) (rec : trustworthy_run c (f x) (gen_witness_update c ω e x) ω' y)
   : trustworthy_run c (request_then e f) ω ω' y.
 
 (** Given a specification [c] and a witness [ω] an impure computation [p] and a
@@ -286,9 +299,9 @@ Inductive trustworthy_run {i a Ω} (c : specs i Ω)
 
     Then [bind p f] is trustworthy. *)
 
-Lemma trustworthy_bind_trustworthy_run {i a b Ω}
+Lemma trustworthy_bind_trustworthy_run `{MayProvide ix i} {a b Ω}
   (c : specs i Ω) (ω : Ω)
-  (p : impure i a) (f : a -> impure i b)
+  (p : impure ix a) (f : a -> impure ix b)
   (trust : trustworthy_impure c ω p)
   (run : forall (x : a) (ω' : Ω),
       trustworthy_run c p ω ω' x -> trustworthy_impure c ω' (f x))
@@ -304,7 +317,7 @@ Proof.
     constructor.
     ++ apply req.
     ++ intros y promx.
-       apply H; [ auto |].
+       apply H0; [ auto |].
        intros z ω' run'.
        apply run.
        econstructor; eauto.
@@ -312,9 +325,9 @@ Qed.
 
 Hint Resolve trustworthy_bind_trustworthy_run : freespec_scope.
 
-Lemma trustworthy_bind_exists_trustworthy_run {i a b Ω}
+Lemma trustworthy_bind_exists_trustworthy_run `{MayProvide ix i} {a b Ω}
     (c : specs i Ω) (ω ω' : Ω)
-    (p : impure i a) (f : a -> impure i b) (x : b)
+    (p : impure ix a) (f : a -> impure ix b) (x : b)
     (trust : trustworthy_run c (impure_bind p f) ω ω' x)
   : exists (ω'' : Ω) (y : a),
     trustworthy_run c p ω ω'' y /\ trustworthy_run c (f y) ω'' ω' x.
@@ -328,8 +341,7 @@ Proof.
     ++ constructor.
     ++ exact trust.
   + inversion trust; ssubst.
-    specialize H with x0 (witness_update c ω e x0) ω'.
-    apply H in rec.
+    apply H0 in rec.
     destruct rec as [ω'' [y [trust1 trust2]]].
     exists ω''; exists y.
     split; auto.
@@ -344,20 +356,40 @@ Qed.
     accordance to [ω'], where [ω'] is the new witness state after [e]
     interpretation then [sem] complies to [c] in accordance to [ω] *)
 
-CoInductive compliant_semantics {i Ω} (c : specs i Ω) : Ω -> semantics i -> Prop :=
+CoInductive compliant_semantics `{MayProvide ix i} {Ω} (c : specs i Ω) : Ω -> semantics ix -> Prop :=
 | compliant_semantics_rec
-    (sem : semantics i) (ω : Ω)
-    (prom : forall {a} (e : i a),
-        requirements c ω e -> promises c ω e (eval_effect sem e))
-    (next : forall {a} (e : i a),
-        requirements c ω e
-        -> compliant_semantics c (witness_update c ω e (eval_effect sem e)) (exec_effect sem e))
+    (sem : semantics ix) (ω : Ω)
+    (prom : forall {a} (e : ix a),
+        gen_requirements c ω e -> gen_promises c ω e (eval_effect sem e))
+    (next : forall {a} (e : ix a),
+        gen_requirements c ω e
+        -> compliant_semantics c (gen_witness_update c ω e (eval_effect sem e)) (exec_effect sem e))
   : compliant_semantics c ω sem.
 
-Lemma compliant_semantics_requirement_promises {i Ω a} (c : specs i Ω) (ω : Ω)
-  (e : i a) (req : requirements c ω e)
-  (sem : semantics i) (comp : compliant_semantics c ω sem)
-  : promises c ω e (eval_effect sem e).
+(** Proving that semantics obtained from the [store] function are compliant with
+    [store_specs] is relatively simple. *)
+
+Lemma store_complies_to_store_specs {s} (st : s)
+  : compliant_semantics (store_specs s) st (store st).
+
+Proof.
+  revert st; cofix compliant_semantics_rec; intros st.
+  constructor.
+  + intros a [|st'] _.
+    ++ now constructor.
+    ++ now constructor.
+  + intros a e req.
+    cbn.
+    assert (R : exec_effect (store st) e = store (store_update s st a e (eval_effect (store st) e)))
+      by now destruct e as [|st'].
+    rewrite R.
+    apply compliant_semantics_rec.
+Qed.
+
+Lemma compliant_semantics_requirement_promises `{MayProvide ix i} {Ω a} (c : specs i Ω) (ω : Ω)
+  (e : ix a) (req : gen_requirements c ω e)
+  (sem : semantics ix) (comp : compliant_semantics c ω sem)
+  : gen_promises c ω e (eval_effect sem e).
 
 Proof.
   inversion comp; ssubst.
@@ -366,10 +398,10 @@ Qed.
 
 Hint Resolve compliant_semantics_requirement_promises : freespec.
 
-Lemma compliant_semantics_requirement_compliant {i Ω a} (c : specs i Ω) (ω : Ω)
-  (e : i a) (req : requirements c ω e)
-  (sem : semantics i) (comp : compliant_semantics c ω sem)
-  : compliant_semantics c (witness_update c ω e (eval_effect sem e)) (exec_effect sem e).
+Lemma compliant_semantics_requirement_compliant `{MayProvide ix i} {Ω a} (c : specs i Ω) (ω : Ω)
+  (e : ix a) (req : gen_requirements c ω e)
+  (sem : semantics ix) (comp : compliant_semantics c ω sem)
+  : compliant_semantics c (gen_witness_update c ω e (eval_effect sem e)) (exec_effect sem e).
 
 Proof.
   inversion comp; ssubst.
@@ -378,9 +410,9 @@ Qed.
 
 Hint Resolve compliant_semantics_requirement_compliant : freespec.
 
-Lemma compliant_semantics_exec_effect_equ {i Ω a} (c : specs i Ω) (ω : Ω)
-  (sem sem' : semantics i) (equ : sem == sem')
-  (e : i a)
+Lemma compliant_semantics_exec_effect_equ `{MayProvide ix i} {Ω a} (c : specs i Ω) (ω : Ω)
+  (sem sem' : semantics ix) (equ : sem == sem')
+  (e : ix a)
   : exec_effect sem e == exec_effect sem' e.
 Proof.
   inversion equ; ssubst.
@@ -391,8 +423,8 @@ Qed.
 Hint Resolve compliant_semantics_exec_effect_equ : freespec.
 
 #[program]
-Instance compliant_semantics_Proper {i Ω} (c : specs i Ω) (ω : Ω)
-  : Proper ('equal ==> Basics.impl) (compliant_semantics c ω).
+Instance compliant_semantics_Proper `{MayProvide ix i} {Ω} (c : specs i Ω) (ω : Ω)
+  : Proper (@equal (semantics ix) _ ==> Basics.impl) (compliant_semantics c ω).
 
 Next Obligation.
   add_morphism_tactic.
@@ -403,14 +435,14 @@ Next Obligation.
   constructor.
   + now setoid_rewrite <- equ.
   + intros a e req.
-    apply (compliant_semantics_Proper (witness_update c ω e (eval_effect σ' e)) (exec_effect sem e)).
+    apply (compliant_semantics_Proper (gen_witness_update c ω e (eval_effect σ' e)) (exec_effect sem e)).
     ++ auto with freespec.
     ++ rewrite <- equ at 1.
        now apply next.
 Qed.
 
-Lemma no_specs_compliant_semantics {i}
-  (sem : semantics i) (ϵ : unit)
+Lemma no_specs_compliant_semantics `{MayProvide ix i}
+  (sem : semantics ix) (ϵ : unit)
   : compliant_semantics (no_specs i) ϵ sem.
 
 Proof.
@@ -419,53 +451,26 @@ Proof.
   constructor.
   + trivial.
   + intros a e req.
-    apply no_specs_compliant_semantics.
+    unfold gen_witness_update.
+    destruct (unlift_eff e); [ apply no_specs_compliant_semantics | auto ].
 Qed.
 
 Hint Resolve no_specs_compliant_semantics : freespec.
 
-Lemma compliant_semantics_semplus {i j Ωi Ωj}
-  (semi : semantics i) (semj : semantics j)
-  (ci : specs i Ωi) (ωi : Ωi) (compi : compliant_semantics ci ωi semi)
-  (cj : specs j Ωj) (ωj : Ωj) (compj : compliant_semantics cj ωj semj)
-  : compliant_semantics (ci ⊙ cj) (ωi, ωj) (semi ⊗ semj).
-
-Proof.
-  revert ωi ωj semi semj compi compj.
-  cofix compliant_semantics_semplus; intros ωi ωj semi semj compi compj.
-  constructor; intros a e req.
-  + destruct e; [ inversion compi | inversion compj ]; ssubst; now apply prom.
-  + destruct e; [ inversion compi | inversion compj ]; ssubst;
-      apply compliant_semantics_semplus;
-      auto;
-      now apply next.
-Qed.
-
-Hint Resolve compliant_semantics_semplus : freespec.
-
-Lemma compliant_semantics_semplus_no_specs {i j Ω}
-  (ci : specs i Ω) (ω : Ω) (semi : semantics i) (comp : compliant_semantics ci ω semi)
-  (semj : semantics j) (ϵ : unit)
-  : compliant_semantics (ci ⊙ no_specs j) (ω, ϵ) (semi ⊗ semj).
-
-Proof.
-  auto with freespec.
-Qed.
-
 #[local]
-Fixpoint witness_impure_aux {i Ω a}
-  (sem : semantics i) (p : impure i a) (c : specs i Ω) (ω : Ω) : interp_out i a * Ω :=
+Fixpoint witness_impure_aux `{MayProvide ix i} {Ω a}
+  (sem : semantics ix) (p : impure ix a) (c : specs i Ω) (ω : Ω) : interp_out ix a * Ω :=
   match p with
   | local x => (mk_out x sem, ω)
   | request_then e f =>
     let out := run_effect sem e in
     let res := interp_result out in
-    witness_impure_aux (interp_next out) (f res) c (witness_update c ω e res)
+    witness_impure_aux (interp_next out) (f res) c (gen_witness_update c ω e res)
   end.
 
 #[program]
-Instance witness_impure_aux_Proper_2 {i Ω a}
-  : Proper (eq ==> 'equal ==> eq ==> eq ==> eq) (@witness_impure_aux i Ω a).
+Instance witness_impure_aux_Proper_2 `{MayProvide ix i} {Ω a}
+  : Proper (eq ==> 'equal ==> eq ==> eq ==> eq) (@witness_impure_aux ix i _ Ω a).
 
 Next Obligation.
   add_morphism_tactic.
@@ -474,29 +479,29 @@ Next Obligation.
   induction equp; intros sem ω.
   + reflexivity.
   + cbn.
-    apply H.
+    apply H0.
 Qed.
 
-Lemma fst_witness_impure_aux_run_impure {i Ω a}
-  (sem : semantics i) (p : impure i a) (c : specs i Ω) (ω : Ω)
+Lemma fst_witness_impure_aux_run_impure `{MayProvide ix i} {Ω a}
+  (sem : semantics ix) (p : impure ix a) (c : specs i Ω) (ω : Ω)
   : fst (witness_impure_aux sem p c ω) = run_impure sem p.
 
 Proof.
   revert sem ω.
   induction p; intros sem ω.
   + reflexivity.
-  + apply H.
+  + apply H0.
 Qed.
 
 Hint Rewrite @fst_witness_impure_aux_run_impure : freespec.
 
-Definition witness_impure {i Ω a}
-  (sem : semantics i) (p : impure i a) (c : specs i Ω) (ω : Ω) : Ω :=
+Definition witness_impure `{MayProvide ix i} {Ω a}
+  (sem : semantics ix) (p : impure ix a) (c : specs i Ω) (ω : Ω) : Ω :=
   snd (witness_impure_aux sem p c ω).
 
 #[program]
-Instance witness_impure_Proper {i Ω a}
-  : Proper (eq ==> 'equal ==> eq ==> eq ==> eq) (@witness_impure i Ω a).
+Instance witness_impure_Proper `{MayProvide ix i} {Ω a}
+  : Proper (eq ==> 'equal ==> eq ==> eq ==> eq) (@witness_impure ix i _ Ω a).
 
 Next Obligation.
   add_morphism_tactic.
@@ -505,9 +510,9 @@ Next Obligation.
   now rewrite equp.
 Qed.
 
-Lemma compliant_semantics_trustworthy_impure_gives_trustworthy_run {i Ω a}
-  (c : specs i Ω) (ω : Ω) (p : impure i a) (trust : trustworthy_impure c ω p)
-  (sem : semantics i) (comp : compliant_semantics c ω sem)
+Lemma compliant_semantics_trustworthy_impure_gives_trustworthy_run `{MayProvide ix i} {Ω a}
+  (c : specs i Ω) (ω : Ω) (p : impure ix a) (trust : trustworthy_impure c ω p)
+  (sem : semantics ix) (comp : compliant_semantics c ω sem)
   : trustworthy_run c p ω (witness_impure sem p c ω) (eval_impure sem p).
 
 Proof.
@@ -517,7 +522,7 @@ Proof.
   + inversion trust; ssubst.
     inversion comp; ssubst.
     econstructor; auto.
-    apply H.
+    apply H0.
     ++ now apply next.
     ++ inversion trust; ssubst.
        apply prom1.
@@ -526,20 +531,20 @@ Qed.
 
 Hint Resolve compliant_semantics_trustworthy_impure_gives_trustworthy_run : freespec.
 
-Lemma witness_impure_request_then_equ {i Ω a b} (c : specs i Ω) (ω : Ω)
-  (sem : semantics i) (e : i a) (f : a -> impure i b)
+Lemma witness_impure_request_then_equ `{MayProvide ix i} {Ω a b} (c : specs i Ω) (ω : Ω)
+  (sem : semantics ix) (e : ix a) (f : a -> impure ix b)
   : witness_impure sem (request_then e f) c ω
     = witness_impure (exec_effect sem e)
                      (f (eval_effect sem e))
                      c
-                     (witness_update c ω e (eval_effect sem e)).
+                     (gen_witness_update c ω e (eval_effect sem e)).
 Proof eq_refl.
 
 Hint Rewrite @witness_impure_request_then_equ : freespec.
 
-Lemma trustworthy_impure_compliant_specs {i Ω a} (c : specs i Ω) (ω : Ω)
-  (p : impure i a) (trust : trustworthy_impure c ω p)
-  (sem : semantics i) (comp : compliant_semantics c ω sem)
+Lemma trustworthy_impure_compliant_specs `{MayProvide ix i} {Ω a} (c : specs i Ω) (ω : Ω)
+  (p : impure ix a) (trust : trustworthy_impure c ω p)
+  (sem : semantics ix) (comp : compliant_semantics c ω sem)
   : compliant_semantics c (witness_impure sem p c ω) (exec_impure sem p).
 
 Proof.
@@ -548,10 +553,53 @@ Proof.
   + exact comp.
   + inversion trust; ssubst.
     autorewrite with freespec.
-    apply H; auto with freespec.
+    apply H0; auto with freespec.
 Qed.
 
 Hint Resolve trustworthy_impure_compliant_specs : freespec.
+
+Lemma gen_promises_equ {a Ωi Ωj} `{Provide ix i} `{Provide ix j}
+    (ci : specs i Ωi) (ωi : Ωi)
+    (cj : specs j Ωj) (ωj : Ωj)
+    (e : ix a) (x : a)
+  : gen_promises ci ωi e x /\ gen_promises cj ωj e x
+    <-> gen_promises (ci ⊙ cj) (ωi, ωj) e x.
+
+Proof.
+  split; auto.
+Qed.
+
+Lemma gen_requirements_equ {a Ωi Ωj} `{Provide ix i} `{Provide ix j}
+    (ci : specs i Ωi) (ωi : Ωi) (cj : specs j Ωj) (ωj : Ωj) (e : ix a)
+  : gen_requirements ci ωi e /\ gen_requirements cj ωj e
+    <-> gen_requirements (ci ⊙ cj) (ωi, ωj) e.
+
+Proof.
+  split; auto.
+Qed.
+
+Lemma trustworthy_impure_generalize `{Provide ix i} `{Provide ix j} {a Ωi Ωj}
+    (p : impure ix a)
+    (speci : specs i Ωi) (ωi : Ωi) (specj : specs j Ωj) (ωj : Ωj)
+  : trustworthy_impure speci ωi p
+    -> trustworthy_impure specj ωj p
+    -> trustworthy_impure (speci ⊙ specj) (ωi, ωj) p.
+
+Proof.
+  revert ωi ωj.
+  induction p; intros ωi ωj.
+  + intros.
+    constructor.
+  + intros trust trust'.
+    inversion trust; ssubst.
+    inversion trust'; ssubst.
+    constructor.
+    ++ rewrite <- gen_requirements_equ.
+       now split.
+    ++ intros x gen_prom.
+       rewrite <- gen_promises_equ in gen_prom.
+       apply H3; [ apply prom | apply prom0 ]; apply gen_prom.
+Qed.
 
 (** ** Component Correctness *)
 
@@ -584,16 +632,16 @@ Hint Resolve trustworthy_impure_compliant_specs : freespec.
     (wrt.  [speci] effects, the updated values of [ωi], [ωj] and [st] continue
     to satisfy [pred]. *)
 
-Definition correct_component {i j Ωi Ωj s}
-  (c : component i j s)
+Definition correct_component {i jx Ωi Ωj}
+  (c : component i jx) `{MayProvide jx j}
   (speci : specs i Ωi) (specj : specs j Ωj)
-  (pred : Ωi -> s -> Ωj -> Prop) : Prop :=
-  forall (ωi : Ωi) (st : s) (ωj : Ωj) (init : pred ωi st ωj)
+  (pred : Ωi -> Ωj -> Prop) : Prop :=
+  forall (ωi : Ωi) (ωj : Ωj) (init : pred ωi ωj)
     (a : Type) (e : i a) (req : requirements speci ωi e),
-    trustworthy_impure specj ωj (c a e st) /\
-    forall (x : a) (st' : s) (ωj' : Ωj)
-      (run : trustworthy_run specj (c a e st) ωj ωj' (x, st')),
-      promises speci ωi e x /\ pred (witness_update speci ωi e x) st' ωj'.
+    trustworthy_impure specj ωj (c a e) /\
+    forall (x : a) (ωj' : Ωj)
+      (run : trustworthy_run specj (c a e) ωj ωj' x),
+      promises speci ωi e x /\ pred (witness_update speci ωi e x) ωj'.
 
 (** Once we have proven [c] is correct wrt. to [speci] and [specj] with [pred]
     acting as an invariant throughout [c] life, we show we can derive a
@@ -601,37 +649,54 @@ Definition correct_component {i j Ωi Ωj s}
     accordance to [ωi] if we use a semantics of [j] which complies to [specj] in
     accordance to [ωj], where [pred ωi st ωj] is satisfied. *)
 
-Lemma correct_component_derives_compliant_semantics {i j Ωi Ωj s}
-  (c : component i j s) (speci : specs i Ωi) (specj : specs j Ωj)
-  (pred : Ωi -> s -> Ωj -> Prop)
-  (correct : correct_component c speci specj pred)
-  (ωi : Ωi) (st : s) (ωj : Ωj) (inv : pred ωi st ωj)
-  (sem : semantics j) (comp : compliant_semantics specj ωj sem)
-  : compliant_semantics speci ωi (derive_semantics c st sem).
+Lemma trustworthy_impure_compliant_specs_trustworthy_run `{MayProvide ix i} {a Ω}
+    (spec : specs i Ω) (ω : Ω)
+    (sem : semantics ix) (comp : compliant_semantics spec ω sem)
+    (p : impure ix a) (trust : trustworthy_impure spec ω p)
+  : trustworthy_run spec p ω (witness_impure sem p spec ω) (eval_impure sem p).
 
 Proof.
-  revert inv sem comp.
-  revert ωi st ωj.
+  revert ω sem comp trust.
+  induction p; intros ω sem comp trust.
+  + constructor.
+  +  inversion trust; ssubst.
+     constructor 2 with (x := eval_effect sem e).
+     ++ exact req.
+     ++ auto with freespec.
+     ++ change (witness_impure sem (request_then e f) spec ω)
+          with (witness_impure (exec_effect sem e) (f (eval_effect sem e)) spec
+                               (gen_witness_update spec ω e (eval_effect sem e))).
+        change (eval_impure sem (request_then e f))
+          with (eval_impure (exec_effect sem e) (f (eval_effect sem e))).
+        apply H0;
+          auto with freespec.
+Qed.
+
+Lemma correct_component_derives_compliant_semantics `{MayProvide jx j} {i Ωi Ωj}
+  (c : component i jx) (speci : specs i Ωi) (specj : specs j Ωj)
+  (pred : Ωi -> Ωj -> Prop)
+  (correct : correct_component c speci specj pred)
+  (ωi : Ωi) (ωj : Ωj) (inv : pred ωi ωj)
+  (sem : semantics jx) (comp : compliant_semantics specj ωj sem)
+  : compliant_semantics speci ωi (derive_semantics c sem).
+
+Proof.
+  revert ωi ωj inv sem comp.
   cofix correct_component_derives_compliant_semantics.
-  intros ωi st ωj inv sem comp.
+  intros ωi ωj inv sem comp.
   unfold correct_component in correct.
-  specialize (correct ωi st ωj inv).
-  assert (R: forall (a : Type) (o : a * s), (fst o, snd o) = o) by now intros a [o1 o2].
+  specialize (correct ωi ωj inv).
   constructor; intros a e req; specialize (correct a e req);
-    destruct correct as [trust run];
-    specialize run with (fst (eval_impure sem (c a e st)))
-                        (snd (eval_impure sem (c a e st)))
-                        (witness_impure sem (c a e st) specj ωj).
+    destruct correct as [trust run].
+    specialize run with (eval_impure sem (c a e))
+                        (witness_impure (H := H) sem (c a e) specj ωj).
   + apply run.
-    rewrite R; clear R.
     auto with freespec.
   + eapply correct_component_derives_compliant_semantics.
     ++ apply run.
-       rewrite R; clear R.
+       apply trustworthy_impure_compliant_specs_trustworthy_run; auto.
+    ++ fold (exec_impure sem (c a e)).
        auto with freespec.
-    ++ fold (exec_impure sem (c a e st)).
-       apply trustworthy_impure_compliant_specs; [| exact comp ].
-       apply trust.
 Qed.
 
 (** * Tactics *)
@@ -670,6 +735,74 @@ Ltac destruct_if_when_in hyp :=
   end.
 
 Ltac prove_impure :=
+  repeat (cbn -[gen_requirements gen_promises gen_witness_update]; destruct_if_when);
+  lazymatch goal with
+
+  | H : ?a |- ?a => exact H
+
+  | |- _ /\ _ => split; prove_impure
+  | H : _ /\ _ |- _ => destruct H; prove_impure
+  | H : True |- _ => clear H; prove_impure
+
+  | |- context[gen_witness_update _ _ _ _] =>
+    unfold gen_witness_update;
+    repeat (rewrite unlift_lift_equ || rewrite distinguish);
+    prove_impure
+
+  | H : context[gen_witness_update _ _ _ _] |- _ =>
+    unfold gen_witness_update in H;
+    repeat (rewrite unlift_lift_equ in H || rewrite distinguish in H);
+    prove_impure
+
+  | |- trustworthy_impure ?c ?w (impure_bind (impure_bind ?p ?f) ?g) =>
+    rewrite (impure_bind_assoc p f g);
+    prove_impure
+
+  | |- trustworthy_impure ?c ?w (impure_bind ?p ?f) =>
+    let x := fresh "x" in
+    let w := fresh "w" in
+    let Hrun := fresh "Hrun" in
+    apply trustworthy_bind_trustworthy_run; [| intros x w Hrun;
+                                               prove_impure ]
+
+
+  | |- trustworthy_impure _ _ (local _) => constructor
+  | |- trustworthy_impure _ _ (impure_pure _) => constructor
+
+  | |- trustworthy_impure ?c ?w ?p =>
+    let p := (eval compute -[lift_eff unlift_eff] in p) in
+    match p with
+    | request_then _ _ =>
+      let req := fresh "req" in
+      assert (req : gen_requirements c w p); [ prove_impure
+                                             | constructor; prove_impure
+                                             ]
+    | _ => idtac
+    end
+  | |- context[gen_requirements _ _ _] =>
+    unfold gen_requirements;
+    repeat (rewrite unlift_lift_equ || rewrite distinguish);
+    prove_impure
+  | H: context[gen_requirements _ _ _] |- _ =>
+    cbn in H;
+    unfold gen_requirements in H;
+    repeat (rewrite unlift_lift_equ in H || rewrite distinguish in H);
+    prove_impure
+
+  | |- forall _, gen_promises _ _ _ _ -> _ =>
+    let x := fresh "x" in
+    let prom := fresh "prom" in
+    intros x prom;
+    cbn in prom;
+    unfold gen_promises in prom;
+    repeat (rewrite unlift_lift_equ in prom || rewrite distinguish in prom);
+    prove_impure
+
+  | |- ?a => auto
+  end.
+
+(*
+Ltac prove_impure :=
   repeat (cbn; destruct_if_when);
   lazymatch goal with
   (* 1st case: nested bind:
@@ -688,13 +821,20 @@ Ltac prove_impure :=
       generate a gool to prove the effect satisfies the precondition *)
   | |- trustworthy_impure ?c ?w (request_then ?e ?f) =>
     let Hpre := fresh "Hpre" in
-    assert (Hpre: requirements c w e); [| constructor; [apply Hpre |];
-                                          let sig := fresh "sig" in
-                                          let Hsig := fresh "Hsig" in
-                                          let res := fresh "res" in
-                                          let Hpost := fresh "Hpost" in
-                                          intros res Hpost;
-                                          prove_impure ]
+    assert (Hpre: gen_requirements c w e); [ unfold gen_requirements;
+                                             try rewrite unlift_lift_equ
+                                           | constructor; [apply Hpre |];
+                                             unfold gen_requirements in Hpre;
+                                             let sig := fresh "sig" in
+                                             let Hsig := fresh "Hsig" in
+                                             let res := fresh "res" in
+                                             let Hpost := fresh "Hpost" in
+                                             unfold gen_witness_update;
+                                             unfold gen_promises;
+                                             try rewrite unlift_lift_equ in Hpre;
+                                             try rewrite unlift_lift_equ;
+                                             intros res Hpost;
+                                             prove_impure ]
   (* 4st case: pure constructor
        conclude *)
   | |- trustworthy_impure ?c ?w (local ?x) => constructor
@@ -703,31 +843,76 @@ Ltac prove_impure :=
   | |- trustworthy_impure ?c ?w ?p => idtac
   | |- _ => fail "prove_impure aims to prove impure computation trustworthiness"
   end.
+*)
 
-Ltac unroll_impure_run run :=
-  repeat (cbn in run; destruct_if_when_in run);
+Ltac simpl_gens :=
+  cbn in *;
+  repeat lazymatch goal with
+         | H : gen_requirements _ _ _ /\ gen_requirements _ _ _ |- _ =>
+           destruct H
+         | H : gen_promises _ _ _ _ /\ gen_promises _ _ _ _ |- _ =>
+           destruct H
+         end;
+  repeat unfold gen_requirements in *;
+  repeat unfold gen_promises in *;
+  repeat unfold gen_witness_update in *;
+  repeat
+    lazymatch goal with
+    | H : context[unlift_eff (lift_eff ?e)] |- _ =>
+      (rewrite unlift_lift_equ in H || rewrite distinguish in H);
+      cbn in H
+    | |- context[unlift_eff (lift_eff ?e)] =>
+      (rewrite unlift_lift_equ || rewrite distinguish); cbn
+    end;
+  repeat
+    lazymatch goal with
+    | H : True |- _ => clear H
+    end.
+
+Ltac unroll_impure_run_aux run :=
+  repeat (cbn -[gen_witness_update gen_requirements gen_promises] in run; destruct_if_when_in run);
   lazymatch type of run with
-  | trustworthy_run ?specs (request_then ?p _) ?init ?final ?res =>
+
+  | trustworthy_run _ (impure_pure _) _ _ _ =>
+    inversion run; ssubst; clear run
+  | trustworthy_run _ (local _) _ _ _ =>
+    inversion run; ssubst; clear run
+
+  | trustworthy_run ?specs (request_then ?e ?f) ?init ?final ?res =>
     inversion run; ssubst;
     clear run;
     lazymatch goal with
-    | next : trustworthy_run specs _ (witness_update specs init p _) final res |- _ =>
-      unroll_impure_run next
-    | |- _ => fail "we could not find the next run to unroll"
+    | next : trustworthy_run specs _ _ final res |- _ =>
+    (* | next : trustworthy_run specs _ (gen_witness_update specs _ e _) _ _ |- _ => *)
+      unroll_impure_run_aux next
+    | |- _ => fail "unexpected error, consider reporting the issue"
     end
+
+  | trustworthy_run ?specs (impure_bind (impure_bind ?p ?f) ?g) ?init ?final ?res =>
+    rewrite (impure_bind_assoc p f g) in run;
+    unroll_impure_run_aux run
+
   | trustworthy_run ?specs (impure_bind ?p ?f) ?init ?final ?res =>
     apply (trustworthy_bind_exists_trustworthy_run specs init final p f res) in run;
     let run1 := fresh "run" in
     let run2 := fresh "run" in
     destruct run as [?ω'' [?y [run1 run2]]];
-    unroll_impure_run run1; unroll_impure_run run2
-  | trustworthy_run _ (impure_pure _) _ _ _ =>
-    inversion run; ssubst; clear run
-  | trustworthy_run _ (local _) _ _ _ =>
-    inversion run; ssubst; clear run
-  | trustworthy_run _ (request _) _ _ _ =>
-    unfold request in run; unroll_impure_run run
-  | trustworthy_run _ _ _ _ _ =>
-    idtac
-  | _ => fail "unknown pattern"
+    unroll_impure_run_aux run1; unroll_impure_run_aux run2
+
+  | trustworthy_run ?specs ?p ?init ?final ?res =>
+    lazymatch (eval compute -[lift_eff] in p) with
+    | request_then ?e ?f =>
+      inversion run; ssubst;
+      clear run;
+      lazymatch goal with
+      | next : trustworthy_run specs _ _ final res |- _ =>
+        unroll_impure_run_aux next
+      | |- _ => idtac specs init e final res
+      end
+    | _ => idtac
+    end
+
+  | ?e => fail "cannot handle goal of the form" e
   end.
+
+Ltac unroll_impure_run run := unroll_impure_run_aux run; simpl_gens.

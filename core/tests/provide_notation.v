@@ -18,30 +18,37 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From FreeSpec.Core Require Import Impure.
+From FreeSpec Require Import Core Notations.
+Generalizable All Variables.
 
-#[local]
-Definition provide_notation_test_1 {a}
-  (ix i1 i2 i3 : interface) `{ix :| i1, i2, i3} (p : i2 a) : ix a :=
+Axioms (i1 i2 i3 i4 : interface).
+
+Axiom p1 : forall `{Provide ix}, impure ix nat.
+Axiom p2 : forall `{Provide2 ix i3 i1}, impure ix nat.
+
+Definition p `{Provide4 ix i1 i4 i3 i2} : impure ix nat :=
+  do p1; p2 end.
+
+Definition provide_notation_test_1 {a} `{StrictProvide3 ix i1 i2 i3} (p : i2 a) : ix a :=
   lift_eff p.
 
-Definition provide_notation_test_2 {a} (ix i1 i2 i3 : interface) `{ix :| i1, i2, i3}
-  (p : forall i' `{ix :| i2, i3}, i' a)
-  : ix a :=
-  p ix.
+Lemma provide_notation_test_2 `{StrictProvide3 ix i1 i2 i3} : StrictProvide2 ix i2 i3.
 
-Definition provide_notation_test_3 {a} (i1 i2 i3 : interface) (p : i2 a)
-  : (i1 ⊕ i2 ⊕ i3) a :=
-  lift_eff p.
-
-Lemma provide_notation_test_4 (i1 i2 i3 : interface)
-  : i1 ⊕ (i2 ⊕ i3) :| i2.
 Proof.
   typeclasses eauto.
 Qed.
 
-Lemma provide_notation_test_5 (i1 i2 i3 : interface)
-  : i1 ⊕ i2 ⊕ i3 :| i2, i1.
+Definition provide_notation_test_3 {a} (i1 i2 i3 : interface) (p : i2 a) : (i1 ⊕ i2 ⊕ i3) a :=
+  lift_eff p.
+
+Lemma provide_notation_test_4 (i1 i2 i3 : interface) : Provide (i1 ⊕ (i2 ⊕ i3)) i2.
+
+Proof.
+  typeclasses eauto.
+Qed.
+
+Lemma provide_notation_test_5 (i1 i2 i3 : interface) : StrictProvide2 (i1 ⊕ i2 ⊕ i3) i2 i1.
+
 Proof.
   typeclasses eauto.
 Qed.

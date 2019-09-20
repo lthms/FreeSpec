@@ -40,7 +40,9 @@ From Coq.Program Require Import Equality Tactics Basics.
 From Coq Require Import Morphisms.
 From Coq Require Import Relations Setoid Morphisms.
 From Prelude Require Import Equality Control Control.Classes Tactics State.
-From FreeSpec.Core Require Import utils.
+
+#[local]
+Open Scope monad_scope.
 
 #[local]
 Open Scope signature_scope.
@@ -73,15 +75,16 @@ Notation "'⋄'" := iempty : type_scope.
 
     Another example of general-purpose interface we can define is the [STORE s]
     interface, where [s] is a type, and [STORE s] allows for manipulating a
-    global, mutable variable of type [s] within an impure computation.
+    global, mutable variable of type [s] within an impure computation. *)
 
-<<
 Inductive STORE (s : Type) : interface :=
 | Get : STORE s s
 | Put (x : s) : STORE s unit.
->>
 
-    According to the definition of [STORE s], an impure computation can use two
+Arguments Get {s}.
+Arguments Put [s] (x).
+
+(** According to the definition of [STORE s], an impure computation can use two
     primitives. The term [Get : STORE s s] describes a primitive expected to
     produce a result of type [s], that is the current value of the mutable
     variable.  Terms of the form [Put x : STORE s unit] describe a primitive
@@ -98,7 +101,6 @@ Inductive STORE (s : Type) : interface :=
     [<+>] or [⊕]) to compose interfaces together.  An impure computation
     parameterized by [i ⊕ j] can therefore leverages the privimites of both [i]
     and [j]. *)
-
 
 Inductive iplus (i j : interface) (a : Type) :=
 | in_left (e : i a) : iplus i j a
@@ -120,8 +122,25 @@ Infix "⊕" := iplus (at level 50, left associativity) : type_scope.
     introduce the [Provide] typeclass, such that [Provide ix i] implies impure
     computations parameterized by [ix] can use primitives of [i]. *)
 
-Class Provide (ix i : interface) : Type :=
+Class MayProvide (ix i : interface) : Type :=
+  { unlift_eff {a : Type} (e : ix a) : option (i a)
+  }.
+
+(* WARNING: [Provide] takes a [MayProvide] instance as argument rather than
+   embedding one for good reasons, and one shall be fully aware of this fact
+   before attempting (and failing) to change it. *)
+
+Class Provide (ix i : interface) `{MayProvide ix i} : Type :=
   { lift_eff {a : Type} (e : i a) : ix a
+  ; unlift_lift_equ {a : Type} (e : i a) : unlift_eff (lift_eff e) = Some e
+  }.
+
+Instance default_MayProvide (i j : interface) : MayProvide i j|1000 :=
+  { unlift_eff := fun _ _ => None
+  }.
+
+Instance refl_MayProvide (i : interface) : MayProvide i i :=
+  { unlift_eff := fun (a : Type) (e : i a) => Some e
   }.
 
 #[program]
@@ -129,15 +148,121 @@ Instance refl_Provide (i : interface) : Provide i i :=
   { lift_eff := fun (a : Type) (e : i a) => e
   }.
 
-#[program]
-Instance iplus_left_Provide (i i' j : interface) `{Provide i' i} : Provide (i' ⊕ j) i :=
-  { lift_eff := fun _ x => (in_left (lift_eff x))
+Instance iplus_left_MayProvide (ix i j : interface) `{MayProvide ix i}
+  : MayProvide (ix ⊕ j) i :=
+  { unlift_eff := fun (a : Type) (e : (ix ⊕ j) a) =>
+                    match e with
+                    | in_left e => unlift_eff e
+                    | _ => None
+                    end
   }.
 
 #[program]
-Instance iplus_right_Provide (i j j' : interface) `{Provide j' j} : Provide (i ⊕ j') j :=
-  { lift_eff := fun _ x => (in_right (lift_eff x))
+Instance iplus_left_Provide (ix i j : interface)
+   `{H : MayProvide ix i} `{@Provide ix i H}
+  : @Provide (ix ⊕ j) i (iplus_left_MayProvide ix i j) :=
+  { lift_eff := fun (a : Type) (e : i a) => in_left (lift_eff e)
   }.
+
+Next Obligation.
+  now rewrite unlift_lift_equ.
+Qed.
+
+Instance iplus_right_MayProvide (i jx j : interface) `{MayProvide jx j}
+  : MayProvide (i ⊕ jx) j :=
+  { unlift_eff := fun (a : Type) (e : (i ⊕ jx) a) =>
+                    match e with
+                    | in_right e => unlift_eff e
+                    | _ => None
+                    end
+  }.
+
+#[program]
+Instance iplus_right_Provide (i jx j : interface)
+   `{H : MayProvide jx j} `{@Provide jx j H}
+  : @Provide (i ⊕ jx) j (iplus_right_MayProvide i jx j) :=
+  { lift_eff := fun (a : Type) (e : j a) => in_right (lift_eff e)
+  }.
+
+Next Obligation.
+  now rewrite unlift_lift_equ.
+Qed.
+
+Ltac find_may_provide :=
+  match goal with
+  | |- MayProvide ?i ?i =>
+    apply refl_MayProvide
+  | |- MayProvide ?ix ?i =>
+    (apply iplus_left_MayProvide; find_may_provide) || (apply iplus_right_MayProvide; find_may_provide)
+  end.
+
+Hint Extern 1 (MayProvide (iplus _ _) _) => find_may_provide : typeclass_instances.
+
+Class Distinguish (ix i j : interface) `{Provide ix i} `{MayProvide ix j} : Prop :=
+  { distinguish : forall {a} (e : i a), unlift_eff (i := j) (lift_eff (ix := ix) e) = None
+  }.
+
+#[program]
+Instance refl_Distinguish (i j : interface)
+  : @Distinguish i i j  (@refl_MayProvide i) (@refl_Provide i) (@default_MayProvide i j).
+
+#[program]
+Instance iplus_left_default_Distinguish (ix jx i j : interface)
+   `{M1 : MayProvide ix i} `{P1 : @Provide ix i M1}
+  : @Distinguish (ix ⊕ jx) i j
+                 (@iplus_left_MayProvide ix i jx M1)
+                 (@iplus_left_Provide ix i jx M1 P1)
+                 (@default_MayProvide _ j).
+
+#[program]
+Instance iplus_right_default_Distinguish (ix jx i j : interface)
+   `{M1 : MayProvide jx i} `{P1 : @Provide jx i M1}
+  : @Distinguish (ix ⊕ jx) i j
+                 (@iplus_right_MayProvide ix jx i M1)
+                 (@iplus_right_Provide ix jx i M1 P1)
+                 (@default_MayProvide _ j).
+
+#[program]
+Instance iplus_left_may_right_Distinguish (ix jx i j : interface)
+   `{M1 : MayProvide ix i} `{P1 : @Provide ix i M1} `{M2 : MayProvide jx j}
+  : @Distinguish (ix ⊕ jx) i j
+                 (@iplus_left_MayProvide ix i jx M1)
+                 (@iplus_left_Provide ix i jx M1 P1)
+                 (@iplus_right_MayProvide ix jx j M2).
+
+#[program]
+Instance iplus_right_may_left_Distinguish (ix jx i j : interface)
+   `{M1 : MayProvide jx i} `{P1 : @Provide jx i M1} `{M2 : MayProvide ix j}
+  : @Distinguish (ix ⊕ jx) i j
+                 (@iplus_right_MayProvide ix jx i M1)
+                 (@iplus_right_Provide ix jx i M1 P1)
+                 (@iplus_left_MayProvide ix j jx M2).
+
+#[program]
+Instance iplus_left_distinguish_left_Distinguish (ix jx i j : interface)
+   `{M1 : MayProvide ix i} `{P1 : @Provide ix i M1} `{M2 : MayProvide ix j}
+   `{@Distinguish ix i j M1 P1 M2}
+  : @Distinguish (ix ⊕ jx) i j
+                 (@iplus_left_MayProvide ix i jx M1)
+                 (@iplus_left_Provide ix i jx M1 P1)
+                 (@iplus_left_MayProvide ix j jx M2).
+
+Next Obligation.
+  apply distinguish.
+Defined.
+
+#[program]
+Instance iplus_right_distinguish_right_Distinguish (ix jx i j : interface)
+   `{M1 : MayProvide jx i} `{P1 : @Provide jx i M1} `{M2 : MayProvide jx j}
+   `{@Distinguish jx i j M1 P1 M2}
+  : @Distinguish (ix ⊕ jx) i j
+                 (@iplus_right_MayProvide ix jx i M1)
+                 (@iplus_right_Provide ix jx i M1 P1)
+                 (@iplus_right_MayProvide ix jx j M2).
+
+Next Obligation.
+  apply distinguish.
+Defined.
 
 (** We introduce a dedicated notation for conveniently declare interface
     requirements.  Our main source of inspiration is the PureScript row of
@@ -145,16 +270,6 @@ Instance iplus_right_Provide (i j j' : interface) `{Provide j' j} : Provide (i �
 
     Afterwards, we can write [`{ix :| INTERFACE1, INTERFACE2}] to say that [ix]
     provides at least [INTERFACE1] and [INTERFACE2] primitives. *)
-
-Notation "ix ':|' i1 ',' i2 ',' .. ',' i3" :=
-  (CCons (Provide ix i1) (CCons (Provide ix i2) .. (CCons (Provide ix i3) CNil) ..))
-    (at level 78, i1, i2, i3 at next level, no associativity)
-  : type_scope.
-
-Notation "ix ':|' i" :=
-  (Provide ix i)
-    (at level 78, i at next level, no associativity)
-  : type_scope.
 
 (** * Operational Semantics *)
 
@@ -194,16 +309,14 @@ Arguments mk_out [i a] (x sem).
 Definition semempty : semantics ⋄ :=
   mk_semantics (fun (a : Type) (e : iempty a) => match e with end).
 
-(** As an example, we provide a semantics for the [STORE s] interface:
+(** As an example, we provide a semantics for the [STORE s] interface: *)
 
-<<
 CoFixpoint store {s} (init : s) : semantics (STORE s) :=
   mk_semantics (fun (a : Type) (e : STORE s a) =>
                   match e with
                   | Get => mk_out init (store init)
                   | Put next => mk_out tt (store next)
                   end).
->> *)
 
 (** We provide several helper functions to interpret primitives with
     semantics. *)
@@ -768,7 +881,7 @@ Defined.
     generic interface [ix].  [ix] is constrained with the [Provide] notation, so
     that it has to provide at least [i]'s primitives.  *)
 
-Definition request {ix i} `{ix :| i} {a : Type} (e : i a) : impure ix a :=
+Definition request {ix i} `{Provide ix i} {a : Type} (e : i a) : impure ix a :=
   request_then (lift_eff e) (fun x => local x).
 
 (** Note: there have been attempts to turn [request] into a typeclass
@@ -784,6 +897,12 @@ Definition request {ix i} `{ix :| i} {a : Type} (e : i a) : impure ix a :=
     inside the [monad_scope] scope. *)
 
 Bind Scope monad_scope with impure.
+
+Instance store_monad_state (s : Type) (ix : interface) `{Provide ix (STORE s)}
+  : MonadState s (impure ix) :=
+  { put := fun (x : s) => request (Put x)
+  ; get := request Get
+  }.
 
 (** ** Interpreting Impure Computations *)
 
@@ -976,9 +1095,8 @@ Qed.
     s] interface discussed previously, but we believe using [state_t] simplifies
     the reasoning process of FreeSpec. *)
 
-Definition component (i j : interface) (s : Type) : Type :=
-  forall (a : Type), i a -> state_t s (impure j) a.
-
+Definition component (i j : interface) : Type :=
+  forall (a : Type), i a -> impure j a.
 
 (** The similarity between FreeSpec components and operational semantics may be
     confusing at first.  The main difference between the two concepts is simple:
@@ -991,12 +1109,13 @@ Definition component (i j : interface) (s : Type) : Type :=
     Given an initial state and and initial semantics for [j], we can however
     derive an operational semantics for [i] from a component [c]. *)
 
-CoFixpoint derive_semantics {i j s} (c : component i j s) (st : s) (sem : semantics j) :=
-  mk_semantics (fun (a : Type) (e : i a) =>
-                  let out := run_impure sem (c a e st) in
-                  let res := interp_result out in
-                  let sem' := interp_next out in
-                  mk_out (fst res) (derive_semantics c (snd res) sem')).
+CoFixpoint derive_semantics {i j} (c : component i j) (sem : semantics j)
+  : semantics i :=
+  mk_semantics (fun (a : Type) (p : i a) =>
+                  let run := run_impure sem (c a p) in
+                  let res := interp_result run in
+                  let next := interp_next run in
+                  mk_out res (derive_semantics c next)).
 
 (** So, [⊕] on the one hand allows for composing operational semantics
     horizontally, and [derive_semantics] allows for composing components
@@ -1004,5 +1123,5 @@ CoFixpoint derive_semantics {i j s} (c : component i j s) (st : s) (sem : semant
     modular manner, by defining each of its component independently, then
     composing them together with [⊕] and [derive_semantics]. *)
 
-Definition bootstrap {i s} (c : component i ⋄ s) (st : s) :=
-  derive_semantics c st semempty.
+Definition bootstrap {i} (c : component i <>) : semantics i :=
+  derive_semantics c semempty.

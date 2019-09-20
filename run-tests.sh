@@ -3,6 +3,8 @@
 bold=$(tput bold)
 normal=$(tput sgr0)
 
+exit_code=0
+
 function fancy_diff () {
     local f1="${1}"
     local f2="${2}"
@@ -11,6 +13,7 @@ function fancy_diff () {
 }
 
 function run_test () {
+    local has_failed=0
     local test="$1"
     local input="${test%.v}.input"
     local golden_output="${test%.v}.output"
@@ -27,13 +30,8 @@ function run_test () {
 
     # we first check whether or not `coqc' was happy with our test
     if [ $? -ne 0 ]; then
-        echo -e "\r  ${test}... \e[31mfail\e[39m"
-        echo ""
-        echo "${bold}Output was:${normal}"
-        cat "${output}"
-
-        rm "${output}"
-        exit 1
+        has_failed=1
+        exit_code=1
     fi
 
     # then, we check the output produced by the command if necessary
@@ -41,17 +39,28 @@ function run_test () {
         local diff=$(fancy_diff "${golden_output}" "${output}")
 
         if [[ ! -z ${diff} ]]; then
-            echo ""
+            echo -e "\r                                                                        "
             echo "${bold}Output differed from expected:${normal}"
             echo "${diff}"
+            echo ""
 
-        rm "${output}"
-        exit 2
+            has_failed=1
+            exit_code=1
         fi
+
     fi
 
     # turns out everything went fine
-    echo -e "\r  ${test}... \e[32mpass\e[39m"
+    if [[ ${has_failed} -eq 0 ]]; then
+        echo -e "\r  ${test}... \e[32mpass\e[39m"
+    else
+        echo -e "\r  ${test}... \e[31mfail\e[39m"
+        echo ""
+        echo "${bold}Output was:${normal}"
+        cat "${output}"
+        echo ""
+
+    fi
 
     rm ${output}
 }
@@ -63,3 +72,5 @@ for dir in ${tests}; do
         run_test ${test}
     done
 done
+
+exit ${exit_code=}
