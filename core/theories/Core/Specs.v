@@ -754,6 +754,10 @@ Ltac prove_impure :=
     repeat (rewrite unlift_lift_equ in H || rewrite distinguish in H);
     prove_impure
 
+  | |- trustworthy_impure ?c ?w (impure_map ?f ?p) =>
+    unfold impure_map;
+    prove_impure
+
   | |- trustworthy_impure ?c ?w (impure_bind (impure_bind ?p ?f) ?g) =>
     rewrite (impure_bind_assoc p f g);
     prove_impure
@@ -887,6 +891,10 @@ Ltac unroll_impure_run_aux run :=
       unroll_impure_run_aux next
     | |- _ => fail "unexpected error, consider reporting the issue"
     end
+
+  | trustworthy_run ?specs (impure_map ?f ?p) ?init ?final ?res =>
+    unfold impure_map in run;
+    unroll_impure_run_aux run
 
   | trustworthy_run ?specs (impure_bind (impure_bind ?p ?f) ?g) ?init ?final ?res =>
     rewrite (impure_bind_assoc p f g) in run;
