@@ -23,11 +23,12 @@ DECLARE PLUGIN "freespec_exec"
 { open Stdarg }
 
 VERNAC COMMAND EXTEND Exec CLASSIFIED AS SIDEFF
-    | ![proof] [ "Exec" constr(def) ] ->
+    | #[ strat = Exec.reduce_strategy ] ![proof] [ "Exec" constr(def) ] ->
     { fun ~pstate ->
+        let _ = Interfaces.force_interface_initializers () in
         let (evm, env) = let env = Global.env () in Evd.(from_env env, env) in
         let (def, _) = Constrintern.interp_constr env evm def in
         let def = EConstr.to_constr evm def in
-        Exec.exec env evm def
+        Exec.exec strat env evm def
     }
 END

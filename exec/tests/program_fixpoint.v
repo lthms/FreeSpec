@@ -13,6 +13,4 @@ Fixpoint enum {a b ix} (p : a -> impure ix b) (l : list a) {measure (length l)} 
                   end
   end.
 
-Eval compute in (enum inspect [true; true; false]).
-
-Exec (enum inspect [true; true; false]).
+#[nf] Exec (enum inspect [true; true; false]).

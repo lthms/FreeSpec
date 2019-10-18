@@ -22,11 +22,22 @@ open Constr
 open Query
 open Utils
 open Interfaces
+open Attributes
+open Attributes.Notations
+
+let reduce_head env evm trm =
+  EConstr.to_constr evm (Reductionops.whd_all env evm (EConstr.of_constr trm))
 
 let reduce_all env evm trm =
   EConstr.to_constr evm (Reductionops.nf_all env evm (EConstr.of_constr trm))
 
-let exec_request instr_t instr_trm func_trm =
+let reduce_strategy =
+  bool_attribute ~name:"Reduce Strategy" ~on:"nf" ~off:"whd" >>=
+    function
+    | Some true -> return reduce_all
+    | _ -> return reduce_head
+
+let exec_request instr_trm func_trm =
   let rec find_primitive instr_trm =
     let (instr_trm, args) = app_full instr_trm in
     match (kind instr_trm, args) with
@@ -47,16 +58,18 @@ let exec_request instr_t instr_trm func_trm =
   let res = primitive_semantic c args in
   mkApp (func_trm, Array.of_list [res])
 
-let rec exec env evm def =
-  Interfaces.force_interface_initializers ();
-  let def = reduce_all env evm def in
+let rec exec head_red env evm def =
+  let def = head_red env evm def in
   let (def, args) = app_full def in
-  match (Ind.Program.constructor_of def, args) with
-  | (Some RequestThen_impure,
-     [instr_t; _ret_t; _instr_ret_t; instr_trm; func_trm])
-    -> let instr_trm = reduce_all env evm instr_trm in
-       exec env evm (exec_request instr_t instr_trm func_trm)
-  | (Some Local_impure, _)
+  match Ind.Program.constructor_of def with
+  | Some RequestThen_impure ->
+     begin match args with
+     | [_instr_t; _ret_t; _instr_ret_t; instr_trm; func_trm] ->
+        let instr_trm = reduce_all env evm instr_trm in
+        exec head_red env evm (exec_request instr_trm func_trm)
+     | _ -> assert false
+     end
+  | Some Local_impure
     -> None
   | _
     -> raise (UnsupportedTerm "FreeSpe.Exec only handles [FreeSpec.Program] terms.")
