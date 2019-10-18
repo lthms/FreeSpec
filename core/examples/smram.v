@@ -209,7 +209,8 @@ Lemma memory_controller_trustworthy `{StrictProvide3 ix (STORE bool) VGA DRAM}
 
 Proof.
   destruct op; destruct pin;
-    prove_impure.
+    prove_impure;
+    constructor.
 Qed.
 
 #[local]

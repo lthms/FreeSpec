@@ -774,11 +774,11 @@ Ltac prove_impure :=
   | |- trustworthy_impure _ _ (impure_pure _) => constructor
 
   | |- trustworthy_impure ?c ?w ?p =>
-    let p := (eval compute -[lift_eff unlift_eff] in p) in
+    let p := (eval hnf in p) in
     match p with
-    | request_then _ _ =>
+    | request_then ?e _ =>
       let req := fresh "req" in
-      assert (req : gen_requirements c w p); [ prove_impure
+      assert (req : gen_requirements c w e); [ prove_impure
                                              | constructor; prove_impure
                                              ]
     | _ => idtac
