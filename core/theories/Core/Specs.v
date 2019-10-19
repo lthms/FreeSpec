@@ -348,6 +348,25 @@ Proof.
     constructor 2 with (x := x0); auto.
 Qed.
 
+#[program]
+Instance trustworthy_run_Proper `{MayProvide ix i} {Ω} (a : Type) (c : specs i Ω)
+  : Proper (@equal (impure ix a) _ ==> eq ==> eq ==> eq ==> Basics.impl) (trustworthy_run (a:=a) c).
+
+Next Obligation.
+  add_morphism_tactic.
+  unfold Basics.impl.
+  intros p q equ.
+  induction equ.
+  + intros ω ω' y run.
+    now inversion run; subst.
+  + intros ω ω' y run.
+    inversion run; ssubst.
+    constructor 2 with (x := x).
+    ++ auto.
+    ++ auto.
+    ++ now apply H0.
+Qed.
+
 (** ** Semantics Compliance *)
 
 (** Given a semantics [sem], and a witness [ω] if [sem] computes results which
