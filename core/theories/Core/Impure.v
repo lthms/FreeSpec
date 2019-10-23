@@ -189,12 +189,7 @@ Next Obligation.
 Qed.
 
 Ltac find_may_provide :=
-  match goal with
-  | |- MayProvide ?i ?i =>
-    apply refl_MayProvide
-  | |- MayProvide ?ix ?i =>
-    (apply iplus_left_MayProvide; find_may_provide) || (apply iplus_right_MayProvide; find_may_provide)
-  end.
+  apply refl_MayProvide + (eapply iplus_left_MayProvide; find_may_provide) + (eapply iplus_right_MayProvide; find_may_provide).
 
 Hint Extern 1 (MayProvide (iplus _ _) _) => find_may_provide : typeclass_instances.
 
