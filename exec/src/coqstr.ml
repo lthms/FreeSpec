@@ -85,3 +85,5 @@ let bytes_of_coqstr coqstr =
 
 let string_of_coqstr str =
   Bytes.to_string (bytes_of_coqstr str)
+
+let coqstr_t = Ind.String.mkInductive

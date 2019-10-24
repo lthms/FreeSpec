@@ -26,3 +26,5 @@ val bytes_to_coqstr: bytes -> Constr.constr
 
 val string_to_coqstr: string -> Constr.constr
 val string_of_coqstr: Constr.constr -> string
+
+val coqstr_t : Constr.constr

@@ -20,3 +20,8 @@
 
 val int_of_coqz: Constr.constr -> int
 val int_to_coqz: int -> Constr.constr
+
+val int_of_coqint : Constr.constr -> int
+val int_to_coqint : int -> Constr.constr
+
+val coqint_t : Constr.constr

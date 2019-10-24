@@ -5,6 +5,7 @@
 -R stdlib/theories FreeSpec
 -I stdlib/console
 -I stdlib/env
+-I stdlib/files
 
 core/theories/Core.v
 core/theories/Core/Impure.v
@@ -30,17 +31,28 @@ exec/src/coqbool.mli
 exec/src/coqbool.ml
 exec/src/coqnum.mli
 exec/src/coqnum.ml
+exec/src/coqsum.mli
+exec/src/coqsum.ml
+exec/src/coqprod.mli
+exec/src/coqprod.ml
 exec/src/query.ml
 exec/src/utils.ml
 
-stdlib/theories/Stdlib/Console.v
+stdlib/theories/Stdlib/Raise.v
 stdlib/theories/Stdlib/Env.v
 stdlib/theories/Stdlib/Args.v
+stdlib/theories/Stdlib/Files.v
+
+stdlib/theories/Stdlib/Console.v
 
 stdlib/console/console.ml
 stdlib/console/freespec_stdlib_console.mlpack
 stdlib/env/env.ml
 stdlib/env/freespec_stdlib_env.mlpack
+stdlib/files/datatypes.ml
+stdlib/files/datatypes.mli
+stdlib/files/files.ml
+stdlib/files/freespec_stdlib_files.mlpack
 
 core/examples/airlock.v
 core/examples/smram.v

@@ -25,7 +25,12 @@ From FreeSpec.Exec Require Export Debug.
 Register unit as core.unit.type.
 Register tt as core.unit.tt.
 
-From Coq Require Import String Ascii.
+Register pair as core.prod.pair.
+Register sum as core.sum.type.
+Register inl as core.sum.inl.
+Register inr as core.sum.inr.
+
+From Coq Require Import String Ascii Int63.
 
 Register string as plugins.syntax.string.type.
 Register EmptyString as plugins.syntax.string.EmptyString.

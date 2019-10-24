@@ -76,3 +76,16 @@ let int_to_coqz = function
   | x when x > 0 -> mkApp (Ind.Z.mkConstructor "Zpos", Array.of_list [int_to_coqpositive x])
   | 0 -> Ind.Z.mkConstructor "Z0"
   | x -> mkApp (Ind.Z.mkConstructor "Zneg", Array.of_list [int_to_coqpositive (-1 * x)])
+
+let int_of_coqint coqint =
+  match Constr.kind coqint with
+  | Constr.Int i -> snd (Uint63.to_int2 i)
+  | _ -> raise (UnsupportedTerm "Not a native integer")
+
+let int_to_coqint v =
+  Constr.(of_kind (Int (Uint63.of_int v)))
+
+let coqint_t =
+  match Coqlib.lib_ref "num.int63.type" with
+  | Globnames.ConstRef c -> Constr.mkConst c
+  | _ -> raise (Utils.Anomaly "Could not construct the type int")

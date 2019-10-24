@@ -46,6 +46,12 @@ module Inductive = struct
         | _ -> None
       in aux I.names
 
+    let mkInductive =
+      let ref = Coqlib.lib_ref (I.namespace ^ ".type") in
+      match ref with
+      | Globnames.IndRef i -> Constr.mkInd i
+      | _ -> raise (Utils.Anomaly "Could not construct inductive type")
+
     let mkConstructor cstr =
       let ref = Coqlib.lib_ref (I.namespace ^ "." ^ cstr) in
       match ref with
@@ -69,6 +75,8 @@ type string_constructor = EmptyString_string | String_string
 type ascii_constructor = Ascii_ascii
 type positive_constructor = XI_positive | XO_positive | XH_positive
 type z_constructor = Z0_Z | Zpos_Z | Zneg_Z
+type prod_constructor = Pair_prod
+type sum_constructor = InL_sum | InR_sum
 
 module Ind = struct
   module Program =
@@ -133,5 +141,21 @@ module Ind = struct
         let type_name = "unit"
         let namespace = "core.unit"
         let names = [("tt", ())]
+      end)
+
+  module Prod =
+    Inductive.Make(struct
+        type constructor = prod_constructor
+        let type_name = "prod"
+        let namespace = "core.prod"
+        let names = [("pair", Pair_prod)]
+      end)
+
+  module Sum =
+    Inductive.Make(struct
+        type constructor = sum_constructor
+        let type_name = "sum"
+        let namespace = "core.sum"
+        let names = [("inl", InL_sum); ("inr", InR_sum)]
       end)
 end
