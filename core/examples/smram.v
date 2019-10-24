@@ -1,21 +1,21 @@
-From FreeSpec Require Import Core Notations.
-From Prelude Require Import Integer State Tactics.
+From FreeSpec Require Import Core.
+From Prelude Require Import All.
 From Coq Require Import ZArith.
 
 Generalizable All Variables.
 
 (** This library introduces the starting point of the FreeSpec framework, that
-    is the original the original example which motivates everything else. *)
+    is the original example that has motivated everything else. *)
 
 (** * The Verification Problem *)
 
 (** We model a small subset of a x86 architecture, where a Memory Controller
-    (now integrated into the CPU die) received memory accesses from cores, and
-    dispatches these accesses to differont controllers.  In our case, we only
+    (now integrated inside the CPU) received memory accesses from cores, and
+    dispatches these accesses to different controllers.  In our case, we only
     consider the DRAM and VGA controllers.
 
     From a FreeSpec perspective, we therefore consider three components and as
-    many interfaces, whith the memory controller exposing its own interfaces and
+    many interfaces, with the memory controller exposing its own interfaces and
     relying on the interfaces of the two other controllers.
 
     The DRAM contains a special-purpose memory region called the SMRAM,
@@ -25,7 +25,7 @@ Generalizable All Variables.
 
 (** * Specifying the Subsystem *)
 
-(** The overview of the system we want to moder is the following:
+(** The overview of the system we want to model is the following:
 
 <<
              |
@@ -108,7 +108,7 @@ Coercion unwrap_sumbool : sumbool >-> bool.
 Definition dispatch {a} `{Provide3 ix (STORE bool) DRAM VGA}
     (addr : address) (unpriv : address -> impure ix a) (priv : address -> impure ix a)
   : impure ix a :=
-  do var reg <- get in
+  do let* reg <- get in
      if (andb reg (in_smram addr))
      then unpriv addr
      else priv addr
@@ -120,7 +120,7 @@ Definition memory_controller `{Provide3 ix (STORE bool) DRAM VGA}
     match op with
 
 (** When SMIACT is set, the CPU is in SMM.  According to its specification, the
-    Memory Controller can simply forward the memory access to the DRAM *)
+    Memory Controller can simply forward the memory access to the DRAM. *)
 
     | Read smiact_set addr => dram_read_from addr
     | Write smiact_set addr val => dram_write_to addr val
@@ -157,19 +157,19 @@ Definition update_dram_view (ω : memory_view) (a : Type) (p : DRAM a) (_ : a) :
   | _ => ω
   end.
 
-Inductive dram_promises (ω : memory_view) : forall (a : Type), DRAM a -> a -> Prop :=
+Inductive dram_o_callee (ω : memory_view) : forall (a : Type), DRAM a -> a -> Prop :=
 
 | read_in_smram
     (a : address) (v : cell) (prom : in_smram a = true -> v = ω a)
-  : dram_promises ω cell (MakeDRAM (ReadFrom a)) (ω a)
+  : dram_o_callee ω cell (MakeDRAM (ReadFrom a)) (ω a)
 
 | write (a : address) (v : cell) (r : unit)
-  : dram_promises ω unit (MakeDRAM (WriteTo a v)) r.
+  : dram_o_callee ω unit (MakeDRAM (WriteTo a v)) r.
 
-Definition dram_specs : specs DRAM memory_view :=
+Definition dram_specs : contract DRAM memory_view :=
   {| witness_update := update_dram_view
-   ; requirements := no_req
-   ; promises := dram_promises
+   ; caller_obligation := no_caller_obligation
+   ; callee_obligation := dram_o_callee
    |}.
 
 (** *** Memory Controller Specification *)
@@ -182,20 +182,20 @@ Definition update_memory_controller_view (ω : memory_view)
   | _ => ω
   end.
 
-Inductive memory_controller_promises (ω : memory_view)
+Inductive memory_controller_o_caller (ω : memory_view)
   : forall (a : Type) (p : MEMORY_CONTROLLER a) (x : a), Prop :=
 
-| memory_controller_read_promises (pin : smiact) (addr : address) (content : cell)
+| memory_controller_read_o_caller (pin : smiact) (addr : address) (content : cell)
     (prom : pin = smiact_set -> in_smram addr = true -> ω addr = content)
-  : memory_controller_promises ω cell (Read pin addr) content
+  : memory_controller_o_caller ω cell (Read pin addr) content
 
-| memory_controller_write_promises (pin : smiact) (addr : address) (content : cell) (b : unit)
-  : memory_controller_promises ω unit (Write pin addr content) b.
+| memory_controller_write_o_caller (pin : smiact) (addr : address) (content : cell) (b : unit)
+  : memory_controller_o_caller ω unit (Write pin addr content) b.
 
-Definition mc_specs : specs MEMORY_CONTROLLER memory_view :=
+Definition mc_specs : contract MEMORY_CONTROLLER memory_view :=
   {| witness_update := update_memory_controller_view
-   ; requirements := no_req
-   ; promises := memory_controller_promises
+   ; caller_obligation := no_caller_obligation
+   ; callee_obligation := memory_controller_o_caller
    |}.
 
 (** ** Main Theorem *)
@@ -203,9 +203,9 @@ Definition mc_specs : specs MEMORY_CONTROLLER memory_view :=
 Definition smram_pred (ωmc : memory_view) (ωmem : memory_view * bool) : Prop :=
   snd ωmem = true /\ forall (a : address), in_smram a = true -> ωmc a = (fst ωmem) a.
 
-Lemma memory_controller_trustworthy `{StrictProvide3 ix (STORE bool) VGA DRAM}
+Lemma memory_controller_respectful `{StrictProvide3 ix (STORE bool) VGA DRAM}
     (a : Type) (op : MEMORY_CONTROLLER a) (ω : memory_view)
-  : trustworthy_impure (dram_specs ⊙ store_specs bool) (ω, true) (memory_controller a op).
+  : respectful_impure (dram_specs + store_specs bool) (ω, true) (memory_controller a op).
 
 Proof.
   destruct op; destruct pin;
@@ -215,27 +215,28 @@ Qed.
 
 #[local]
 Open Scope semantics_scope.
+
 #[local]
-Open Scope specs_scope.
+Open Scope contract_scope.
 
 Theorem memory_controller_correct `{StrictProvide3 ix VGA (STORE bool) DRAM}
     (ω : memory_view)
-    (sem : semantics ix) (comp : compliant_semantics (dram_specs <.> store_specs bool) (ω, true) sem)
+    (sem : semantics ix) (comp : compliant_semantics (dram_specs + store_specs bool) (ω, true) sem)
   : compliant_semantics mc_specs ω (derive_semantics memory_controller sem).
 
 Proof.
   apply correct_component_derives_compliant_semantics with (pred := smram_pred)
-                                                           (specj := dram_specs <.> store_specs bool)
+                                                           (cj := dram_specs + store_specs bool)
                                                            (ωj := (ω, true)).
   + intros ωmc [ωdram b] [b_true pred] a e req; cbn in *.
     split.
     ++ rewrite b_true.
-       apply memory_controller_trustworthy.
-    ++ intros x [ωdram' st'] trustworthy.
+       apply memory_controller_respectful.
+    ++ intros x [ωdram' st'] respectful.
        destruct e.
-       +++ split; [| now unroll_impure_run trustworthy ].
+       +++ split; [| now unroll_respectful_run respectful ].
            destruct pin.
-           ++++ unroll_impure_run trustworthy;
+           ++++ unroll_respectful_run respectful;
                   constructor;
                   intros pin_equ is_in_smram;
                   rewrite pred; auto;
@@ -243,7 +244,7 @@ Proof.
            ++++ now constructor.
        +++ split.
            ++++ now constructor.
-           ++++ unroll_impure_run trustworthy;
+           ++++ unroll_respectful_run respectful;
                   (split; [ auto |]);
                   intros addr' is_in_smram';
                   unfold update_memory_view_address;

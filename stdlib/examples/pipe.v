@@ -18,10 +18,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-Generalizable All Variables.
 From FreeSpec Require Import Console.
 
-Definition pipe `{ix :| CONSOLE}: impure ix unit :=
+Generalizable All Variables.
+
+Definition pipe `{Provide ix CONSOLE}: impure ix unit :=
   scan >>= echo.
 
 Exec pipe.

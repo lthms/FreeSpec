@@ -38,6 +38,6 @@ Definition get_env `{Provide ix ENV} (name : string) : impure ix string :=
   request (GetEnv name).
 
 Definition set_env `{Provide ix ENV} (name : string) (value : string) : impure ix unit :=
-    request (SetEnv name value).
+  request (SetEnv name value).
 
 Declare ML Module "freespec_stdlib_env".

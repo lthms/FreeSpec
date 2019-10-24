@@ -18,10 +18,5 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Export Control Control.Classes.
-From FreeSpec.Core Require Export Impure Specs.
-
-#[global]
-Open Scope prelude_scope.
-#[global]
-Open Scope monad_scope.
+From Prelude Require Export All.
+From FreeSpec.Core Require Export Interface Impure Semantics Contract Tactics.

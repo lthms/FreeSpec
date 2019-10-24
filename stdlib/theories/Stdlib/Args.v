@@ -23,25 +23,21 @@ From FreeSpec Require Import Exec.
 From FreeSpec.Stdlib Require Import Env.
 From Prelude Require Import Z.
 
-Generalizable All Variables.
-
 Inductive ARGS : interface :=
 | ArgCount : ARGS Z
 | ArgValue (nth : Z) : ARGS string.
 
-Definition arg_count `{Provide ix ARGS} : impure ix Z :=
-  request ArgCount.
+Definition arg_count `{Provide ix ARGS} : impure ix Z := request ArgCount.
 
-Definition arg_value `{Provide ix ARGS} (nth : Z) : impure ix string :=
-  request (ArgValue nth).
+Definition arg_value `{Provide ix ARGS} (nth : Z) : impure ix string := request (ArgValue nth).
 
 #[local]
 Definition args `{Provide ix ENV} : component ARGS ix :=
-  fun (a : Type) (e : ARGS a) =>
+  fun* (a : Type) (e : ARGS a) =>
     match e with
     | ArgCount => Z_of_string <$> get_env "FREESPEC_EXEC_ARGC"
     | ArgValue n => get_env (append "FREESPEC_EXEC_ARGV_" (string_of_Z n))
     end.
 
-Definition with_args {a} `{Provide ix ENV} : impure (ARGS ⊕ ix) a -> impure ix a :=
+Definition with_args {a} `{Provide ix ENV} : impure (ix + ARGS) a -> impure ix a :=
   with_component (pure tt) args (pure tt).

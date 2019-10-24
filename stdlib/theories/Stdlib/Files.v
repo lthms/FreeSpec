@@ -1,17 +1,12 @@
 From FreeSpec Require Export Core Exec.
-From FreeSpec Require Import Core.Notations.
 From FreeSpec.Stdlib Require Export Raise.
 From Coq Require Export String Int63.
-
-#[local] Close Scope nat_scope.
-
-Generalizable All Variables.
 
 Axiom file_descriptor : Type.
 
 Inductive files_err := make_files_err (code : int).
 
-Inductive FILES : interface :=
+Inductive FILES : Type -> Type :=
 | Open (path : string) : FILES (files_err + file_descriptor)
 | FSize (fd : file_descriptor) : FILES (files_err + int)
 | Read (fd : file_descriptor) (size : int) : FILES (files_err + (int * string))

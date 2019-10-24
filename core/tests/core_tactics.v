@@ -24,7 +24,7 @@ From Coq Require Import Lia.
 Generalizable All Variables.
 
 (** The goal of this file is to provide a simple test case for [prove_impure]
-    and [unroll_impure_run]. *)
+    and [unroll_respectful_run]. *)
 
 Inductive COUNTER : interface :=
 | Get : COUNTER nat
@@ -43,8 +43,10 @@ Definition counter_dec `{Provide ix COUNTER} : impure ix unit :=
 Fixpoint repeat `{Monad m} {a} (n : nat) (c : m a) : m unit :=
   match n with
   | O => pure tt
-  | S n => c >>= fun _ => repeat n c
+  | S n => (c >>= fun _ => repeat n c)%monad
   end.
+
+Arguments repeat [m _ a] (n%nat c%monad).
 
 Definition update_counter (x : nat) : forall (a : Type), COUNTER a -> a -> nat :=
   fun (a : Type) (p : COUNTER a) (_ : a) =>
@@ -54,24 +56,24 @@ Definition update_counter (x : nat) : forall (a : Type), COUNTER a -> a -> nat :
     | _ => x
     end.
 
-Definition counter_req (x : nat) : forall (a : Type), COUNTER a -> Prop :=
+Definition counter_o_caller (x : nat) : forall (a : Type), COUNTER a -> Prop :=
   fun (a : Type) (p : COUNTER a) =>
     match p with
     | Dec => 0 < x
     | _ => True
     end.
 
-Definition counter_promises (x : nat) : forall (a : Type), COUNTER a -> a -> Prop :=
+Definition counter_o_callee (x : nat) : forall (a : Type), COUNTER a -> a -> Prop :=
   fun (a : Type) (p : COUNTER a) (r : a) =>
     match p, r with
     | Get, r => r = x
     | _, _ => True
     end.
 
-Definition counter_specs : specs COUNTER nat :=
+Definition counter_specs : contract COUNTER nat :=
   {| witness_update := update_counter
-   ; requirements := counter_req
-   ; promises := counter_promises
+   ; caller_obligation := counter_o_caller
+   ; callee_obligation := counter_o_callee
    |}.
 
 Definition dec_then_inc `{Provide ix COUNTER} (x y : nat) : impure ix nat :=
@@ -80,9 +82,9 @@ Definition dec_then_inc `{Provide ix COUNTER} (x y : nat) : impure ix nat :=
      counter_get
    end.
 
-Theorem dec_then_inc_trustworthy `{Provide ix COUNTER} (cpt x y : nat)
+Theorem dec_then_inc_respectful `{Provide ix COUNTER} (cpt x y : nat)
     (init_cpt : x < cpt)
-  : trustworthy_impure counter_specs cpt (dec_then_inc x y).
+  : respectful_impure counter_specs cpt (dec_then_inc x y).
 
 Proof.
   prove_impure.
@@ -99,41 +101,41 @@ Proof.
 Qed.
 
 Lemma repeat_dec_cpt_output (cpt x cpt' : nat) (init_cpt : x < cpt)
-    (run : trustworthy_run counter_specs (repeat x counter_dec) cpt cpt' tt)
+    (run : respectful_run counter_specs (repeat x counter_dec) cpt cpt' tt)
   : cpt' = cpt - x.
 
 Proof.
   revert init_cpt run; revert cpt; induction x; intros cpt init_cpt run.
-  + unroll_impure_run run.
+  + unroll_respectful_run run.
     now rewrite PeanoNat.Nat.sub_0_r.
   + cbn in run.
-    unroll_impure_run run.
+    unroll_respectful_run run.
     apply IHx in rec; [| lia ].
     rewrite rec.
     lia.
 Qed.
 
 Lemma repeat_inc_cpt_output (cpt x cpt' : nat)
-    (run : trustworthy_run counter_specs (repeat x counter_inc) cpt cpt' tt)
+    (run : respectful_run counter_specs (repeat x counter_inc) cpt cpt' tt)
   : cpt' = cpt + x.
 
 Proof.
   revert run; revert cpt; induction x; intros cpt run.
-  + unroll_impure_run run.
+  + unroll_respectful_run run.
     now rewrite PeanoNat.Nat.add_0_r.
-  + unroll_impure_run run.
+  + unroll_respectful_run run.
     apply IHx in rec.
     rewrite rec.
     lia.
 Qed.
 
 Lemma get_cpt_output (cpt x cpt' : nat)
-    (run : trustworthy_run counter_specs counter_get cpt cpt' x)
+    (run : respectful_run counter_specs counter_get cpt cpt' x)
   : cpt' = cpt.
 
 Proof.
   unfold counter_get, request in run.
-  now unroll_impure_run run.
+  now unroll_respectful_run run.
 Qed.
 
 #[local]
@@ -141,10 +143,10 @@ Opaque counter_get.
 
 Theorem dec_then_inc_cpt_output (cpt x y cpt' r : nat)
     (init_cpt : x < cpt)
-    (run : trustworthy_run counter_specs (dec_then_inc x y) cpt cpt' r)
+    (run : respectful_run counter_specs (dec_then_inc x y) cpt cpt' r)
   : cpt' = cpt - x + y.
 Proof.
-  unroll_impure_run run.
+  unroll_respectful_run run.
   destruct y0; apply repeat_dec_cpt_output in run0; [| exact init_cpt ].
   destruct y1; apply repeat_inc_cpt_output in run.
   apply get_cpt_output in run2. lia.
@@ -155,8 +157,8 @@ Transparent counter_get.
 
 Theorem dec_then_inc_output (cpt x y cpt' r : nat)
     (init_cpt : x < cpt)
-    (run : trustworthy_run counter_specs (dec_then_inc x y) cpt cpt' r)
+    (run : respectful_run counter_specs (dec_then_inc x y) cpt cpt' r)
   : cpt' = r.
 Proof.
-  now unroll_impure_run run.
+  now unroll_respectful_run run.
 Qed.

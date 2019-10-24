@@ -8,9 +8,12 @@
 -I stdlib/files
 
 core/theories/Core.v
+core/theories/Core/Interface.v
+core/theories/Core/Semantics.v
+core/theories/Core/Component.v
 core/theories/Core/Impure.v
-core/theories/Core/Specs.v
-core/theories/Core/Notations.v
+core/theories/Core/Contract.v
+core/theories/Core/Tactics.v
 
 exec/theories/Exec.v
 exec/theories/Exec/Debug.v
@@ -42,7 +45,6 @@ stdlib/theories/Stdlib/Raise.v
 stdlib/theories/Stdlib/Env.v
 stdlib/theories/Stdlib/Args.v
 stdlib/theories/Stdlib/Files.v
-
 stdlib/theories/Stdlib/Console.v
 
 stdlib/console/console.ml

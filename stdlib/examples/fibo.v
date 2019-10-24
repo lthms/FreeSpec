@@ -123,9 +123,9 @@ Defined.
 Definition fibonacci n :=
   fst (fibonacci_aux n (fun _ => None)).
 
-Definition fibo `{ix :| CONSOLE} : impure ix unit :=
+Definition fibo `{Provide ix CONSOLE} : impure ix unit :=
   do Console.echo "Go! ";
-     var x <- scan in
+     let* x <- scan in
      let res := fibonacci (N_of_string x) in
      echo (string_of_N res)
   end.

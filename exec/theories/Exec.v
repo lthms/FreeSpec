@@ -45,8 +45,8 @@ Declare ML Module "freespec_exec".
 (** * Extending FreeSpec.Exec *)
 
 (** The FreeSpec.Exec plugin has been designed to be extensible, meaning it
-    shall be easy for FreeSpec users to be able to provide handlers for their
-    own interfaces. *)
+    shall be easy for FreeSpec users to provide handlers for their own
+    interfaces. *)
 
 (** ** By Means of OCaml plugins
 
@@ -55,7 +55,7 @@ Declare ML Module "freespec_exec".
     <<effectful_semantic>> for these constructors which aim to compute the
     related primitive results.
 
-    The Ocaml type <<effectful_semantic>> is defined as follows:
+    The OCaml type <<effectful_semantic>> is defined as follows:
 
 <<
 type effectful_semantic =
@@ -64,7 +64,7 @@ type effectful_semantic =
 
     If you are not familiar with Coq internals, <<Constr.constr>> is the
     representation of Coq terms. Therefore, an <<effectful_semantic>> is an
-    Ocaml function which maps a list of Coq terms (the arguments of the
+    OCaml function which maps a list of Coq terms (the arguments of the
     primitives) to its result.
 
     For instance, if we consider the following interface:
@@ -111,30 +111,30 @@ let readline = function
 
     First, manipulating <<Constr.constr>> value manually shall not be required
     most of the time, since the FreeSpec.Exec plugin provides several helpers
-    isomorphisms to turn Coq term into Ocmal values and vice-versa.
+    isomorphisms to turn Coq term into OCaml values and vice-versa.
     Hence, <<bytes_of_coqstr>> translates a [string] term into a [bytes] value,
-    while <<string_to_coqstr>> translates a Ocaml [string] value into a Coq
+    while <<string_to_coqstr>> translates a OCaml [string] value into a Coq
     [string] term.
 
     Secondly, it is the responsibility of plugin developers to ensure they
     consider the right number of arguments for their <<effectful_semantic>>. The
-    <<WriteLine>> constructor has one argument, so the <<writeline>> Ocaml
-    function only consider one-element lists. The <<ReadLine>> constructor has
-    no argument, so the <<readline>> Ocaml function only handles the empty list.
+    <<WriteLine>> constructor has one argument, so the <<writeline>> OCaml
+    function only considers one-element lists. The <<ReadLine>> constructor has
+    no argument, so the <<readline>> OCaml function only handles the empty list.
 
-    Thirdly, it is also the responsibility of plugin developers to forged a
+    Thirdly, it is also the responsibility of plugin developers to forge a
     well-typed result for their primitives.
 
     Once the <<effectful_semantic>> have been defined, they need to be
     registered to FreeSpec.Exec, so that the plugin effectively use them. The
-    <<Extends>> Ocaml module of FreeSpec.Exec provides a function to that hand:
+    <<Extends>> OCaml module of FreeSpec.Exec provides a function to that hand:
 
 <<
 val register_interface :
   (* The base path we have chosen to register our interface. *)
      string
   (* A list to map each constructor of this interface
-     to an effectfull semantic. *)
+     to an effectful semantic. *)
   -> (string * effectful_semantic) list
   -> unit
 >>
@@ -149,16 +149,16 @@ let _ =
 >>
 
     For a concrete example of the use of FreeSpec.Exec extensible feature,
-    interested readers can have a look at the FreeSpec.Stdlib project.
-
-*)
+    interested readers can have a look at the FreeSpec.Stdlib project in the
+    <<stdlib/>> folder of this repository. *)
 
 (** ** By Means of Compoments *)
 
 (** The second way to extend FreeSpec.Exec is to write handlers in Coq, in the
     form of FreeSpec compoments. This approach has an important advantage over
     writing an OCaml plugin: it is possible to verify a FreeSpec
-    [component]. However, we forsee an impact over FreeSpec performances.
+    [component]. However, we foresee an impact over the resulting program
+    performances.
 
     The function [with_component] allows for locally providing a novel interface
     [j] in addition to an impure computation [p], by means of a FreeSpec
@@ -167,38 +167,38 @@ let _ =
     to clean-up the final state of [c] after the interpretation of [p]. *)
 
 #[local]
-Fixpoint with_component_aux {ix j a} (c : component j ix) (p : impure (j ⊕ ix) a)
-  : impure ix a :=
+Fixpoint with_component_aux {ix j α} (c : component j ix) (p : impure (ix + j) α)
+  : impure ix α :=
   match p with
   | local x => local x
-  | request_then (in_left e) f =>
-    c _ e >>= fun res => with_component_aux c (f res)
   | request_then (in_right e) f =>
+    c _ e >>= fun res => with_component_aux c (f res)
+  | request_then (in_left e) f =>
     request_then e (fun x => with_component_aux c (f x))
   end.
 
-Definition with_component {ix j a}
+Definition with_component {ix j α}
   (initializer : impure ix unit)
   (c : component j ix)
   (finalizer : impure ix unit)
-  (p : impure (j ⊕ ix) a)
-  : impure ix a :=
+  (p : impure (ix + j) α)
+  : impure ix α :=
   do initializer;
-     var res <- with_component_aux c p in
+     let* res <- with_component_aux c p in
      finalizer;
      pure res
   end.
 
 #[local]
-Fixpoint with_semantics {ix j a} (sem : semantics j) (p : impure (j ⊕ ix) a)
-  : impure ix a :=
+Fixpoint with_semantics {ix j α} (sem : semantics j) (p : impure (ix + j) α)
+  : impure ix α :=
   match p with
   | local x => local x
-  | request_then (in_left e) f =>
+  | request_then (in_right e) f =>
     let run := run_effect sem e in
     let res := interp_result run in
     let next := interp_next run in
     with_semantics next (f res)
-  | request_then (in_right e) f =>
+  | request_then (in_left e) f =>
     request_then e (fun x => with_semantics sem (f x))
   end.

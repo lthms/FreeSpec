@@ -2,8 +2,11 @@
   (name FreeSpec)
   (public_name freespec-core.theories)
   (modules Core
+           Core.Interface
            Core.Impure
-           Core.Specs
-           Core.Notations))
+           Core.Semantics
+           Core.Component
+           Core.Contract
+           Core.Tactics))
 
 (include_subdirs qualified)
