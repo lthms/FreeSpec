@@ -16,12 +16,11 @@ env:
   global:
     - NJOBS=2
     - COMPILER="4.08.0"
-    - CAMLP5_VER="7.06"
-    - FINDLIB_VER="1.8.0"
     - NATIVE_COMP="yes"
-    - COQ_VER="8.10+beta2"
-    - DUNE_VER="1.11.0"
+    - COQ_VER="8.10.1"
+    - DUNE_VER="1.11.4"
     - OPAMVERBOSE=3
+    - COQ_PRELUDE_HASH="16a36b7b072dcb3a3eb8a29afe7265170ade9d3d"
 
 install:
   - curl -sL https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh > install.sh
@@ -31,14 +30,12 @@ install:
   - opam update
   - eval $(opam config env)
   - opam config list
-  - opam repo add coq-core-dev https://coq.inria.fr/opam/core-dev || echo "coq-core-dev registered"
-  - opam install -j ${NJOBS} -y camlp5.${CAMLP5_VER} ocamlfind.${FINDLIB_VER} dune.${DUNE_VER} coq.${COQ_VER}
-  - opam upgrade -y coq.${COQ_VER}
+  - opam install -j ${NJOBS} -y dune.${DUNE_VER} coq.${COQ_VER}
   - opam list
   - |
     git clone https://github.com/ANSSI-FR/coq-prelude ${HOME}/coq-prelude
     cd ${HOME}/coq-prelude
-    git checkout refactoring
+    git checkout ${COQ_PRELUDE_HASH}
     dune build
     dune install
     cd -
