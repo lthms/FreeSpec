@@ -1,22 +1,23 @@
 From FreeSpec Require Export Core Exec.
 From FreeSpec.Stdlib Require Export Raise.
-From Coq Require Export String Int63.
+From Coq Require Export Int63.
+From Prelude Require Import Text Bytes.
 
 Axiom file_descriptor : Type.
 
 Inductive files_err := make_files_err (code : int).
 
 Inductive FILES : Type -> Type :=
-| Open (path : string) : FILES (files_err + file_descriptor)
+| Open (path : bytes) : FILES (files_err + file_descriptor)
 | FSize (fd : file_descriptor) : FILES (files_err + int)
-| Read (fd : file_descriptor) (size : int) : FILES (files_err + (int * string))
+| Read (fd : file_descriptor) (size : int) : FILES (files_err + (int * bytes))
 | Close (fd : file_descriptor) : FILES unit.
 
-Definition open `{Provide ix FILES} (path : string)
+Definition open `{Provide ix FILES} (path : bytes)
   : impure ix (files_err + file_descriptor) :=
   request (Open path).
 
-Definition try_open `{Into files_err err, Provide2 ix (RAISE err) FILES} (path : string)
+Definition try_open `{Into files_err err, Provide2 ix (RAISE err) FILES} (path : bytes)
   : impure ix file_descriptor :=
   try (open path).
 
@@ -30,12 +31,12 @@ Definition try_file_size `{Into files_err err, Provide2 ix (RAISE err) FILES}
   try (file_size fd).
 
 Definition read `{Provide ix FILES} (fd : file_descriptor) (size : int)
-  : impure ix (files_err + (int * string)) :=
+  : impure ix (files_err + (int * bytes)) :=
   request (Read fd size).
 
 Definition try_read `{Into files_err err, Provide2 ix (RAISE err) FILES}
     (fd : file_descriptor) (size : int)
-  : impure ix (int * string) :=
+  : impure ix (int * bytes) :=
   try (request (Read fd size)).
 
 Definition close `{Provide ix FILES} (fd : file_descriptor)

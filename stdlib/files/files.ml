@@ -14,7 +14,7 @@ let try_unix typ to_coq fop =
 
 let files_open = function
     | [coqpath] ->
-       let path = string_of_coqstr coqpath in
+       let path = string_of_coqbytes coqpath in
        try_unix coqfd_t fd_to_coqfd (fun _ -> openfile path [O_RDONLY] 0o640)
     | _ -> assert false
 
@@ -37,8 +37,8 @@ let files_read = function
        let size = int_of_coqint coqsize in
 
        try_unix
-         (coqprod_t coqint_t coqstr_t)
-         (prod_to_coqprod coqint_t int_to_coqint coqstr_t bytes_to_coqstr)
+         (coqprod_t coqint_t coqbytes_t)
+         (prod_to_coqprod coqint_t int_to_coqint coqbytes_t bytes_to_coqbytes)
          (fun _ ->
            let buffer = Bytes.create size in
            let read = read fd buffer 0 size in

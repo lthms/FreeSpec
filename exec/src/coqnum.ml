@@ -87,5 +87,5 @@ let int_to_coqint v =
 
 let coqint_t =
   match Coqlib.lib_ref "num.int63.type" with
-  | Globnames.ConstRef c -> Constr.mkConst c
+  | Names.GlobRef.ConstRef c -> Constr.mkConst c
   | _ -> raise (Utils.Anomaly "Could not construct the type int")

@@ -24,6 +24,6 @@ From FreeSpec.Stdlib Require Import Console.
 Generalizable All Variables.
 
 Definition hello `{Provide ix CONSOLE} : impure ix unit :=
-  Console.echo "Hello, world".
+  Console.echo "Hello, world\n".
 
 Exec hello.

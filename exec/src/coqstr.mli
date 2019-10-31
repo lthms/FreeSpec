@@ -18,13 +18,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-val char_of_coqascii: Constr.constr -> char
-val char_to_coqascii: char -> Constr.constr
+val char_of_coqascii : Constr.constr -> char
+val char_to_coqascii : char -> Constr.constr
 
-val bytes_of_coqstr: Constr.constr -> bytes
-val bytes_to_coqstr: bytes -> Constr.constr
+val bytes_of_coqstr : Constr.constr -> bytes
+val bytes_to_coqstr : bytes -> Constr.constr
 
-val string_to_coqstr: string -> Constr.constr
-val string_of_coqstr: Constr.constr -> string
+val string_to_coqstr : string -> Constr.constr
+val string_of_coqstr : Constr.constr -> string
+
+val bytes_of_coqbytes : Constr.constr -> bytes
+val bytes_to_coqbytes : bytes -> Constr.constr
+
+val string_to_coqbytes : string -> Constr.constr
+val string_of_coqbytes : Constr.constr -> string
 
 val coqstr_t : Constr.constr
+val coqbytes_t : Constr.constr

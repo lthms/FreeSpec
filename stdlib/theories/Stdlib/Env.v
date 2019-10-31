@@ -18,26 +18,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Coq Require Import String.
+From Prelude Require Export Bytes.
 From FreeSpec Require Export Exec.
-
-#[local]
-Open Scope string_scope.
 
 Generalizable All Variables.
 
 Inductive ENV : interface :=
-| GetEnv (name : string) : ENV string
-| SetEnv (name : string) (value : string) : ENV unit.
+| GetEnv (name : bytes) : ENV bytes
+| SetEnv (name : bytes) (value : bytes) : ENV unit.
 
 Register ENV as freespec.stdlib.env.type.
 Register GetEnv as freespec.stdlib.env.GetEnv.
 Register SetEnv as freespec.stdlib.env.SetEnv.
 
-Definition get_env `{Provide ix ENV} (name : string) : impure ix string :=
+Definition get_env `{Provide ix ENV} (name : bytes) : impure ix bytes :=
   request (GetEnv name).
 
-Definition set_env `{Provide ix ENV} (name : string) (value : string) : impure ix unit :=
+Definition set_env `{Provide ix ENV} (name : bytes) (value : bytes) : impure ix unit :=
   request (SetEnv name value).
 
 Declare ML Module "freespec_stdlib_env".

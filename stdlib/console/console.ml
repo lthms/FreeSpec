@@ -26,10 +26,11 @@ let path = "freespec.stdlib.console"
 
 let install_interface =
   let scan = function
-    | [] -> string_to_coqstr (read_line ())
+    | [] -> bytes_to_coqbytes (Bytes.of_string @@ read_line ())
     | _ -> assert false in
   let echo = function
-    | [str] -> print_bytes (bytes_of_coqstr str);
+    | [str] -> print_bytes (bytes_of_coqbytes str);
+               flush stdout;
                coqtt
     | _ -> assert false in
   register_interface path [("Scan", scan); ("Echo", echo)]

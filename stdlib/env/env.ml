@@ -27,16 +27,16 @@ let path = "freespec.stdlib.env"
 let install_interface =
   let get = function
     | [var]
-      -> let str = try
-             Unix.getenv (string_of_coqstr var)
-           with
-           | _ -> ""
-         in string_to_coqstr str
+      -> let str = try Unix.getenv (Bytes.to_string @@ bytes_of_coqbytes var)
+                   with _ -> ""
+         in bytes_to_coqbytes @@ Bytes.of_string str
     | _
       -> assert false in
   let set = function
     | [var; value]
-      -> Unix.putenv (string_of_coqstr var) (string_of_coqstr value);
+      -> Unix.putenv
+           (Bytes.to_string @@ bytes_of_coqbytes var)
+           (Bytes.to_string @@ bytes_of_coqbytes value);
          coqtt
     | _ -> assert false
   in register_interface path [("GetEnv", get); ("SetEnv", set)]

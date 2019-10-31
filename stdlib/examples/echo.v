@@ -1,5 +1,4 @@
-From FreeSpec Require Import Args Console.
-From FreeSpec Require Import Core.Notations.
+From FreeSpec Require Import Core Args Console.
 From Coq Require Import ZArith.
 
 Generalizable All Variables.
@@ -7,7 +6,7 @@ Generalizable All Variables.
 #[local]
 Open Scope Z_scope.
 
-Definition echo_arg `{Provide2 ix CONSOLE ARGS} : impure ix unit :=
+Definition echo_arg `{Provide ix CONSOLE, Provide ix ARGS} : impure ix unit :=
   do let* argc <- arg_count in
      if argc =? 1
      then (arg_value 0 >>= Console.echo)

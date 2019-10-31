@@ -19,22 +19,22 @@
  *)
 
 From FreeSpec Require Export Exec.
-From Coq Require Export String.
+From Prelude Require Export Bytes.
 
 Generalizable All Variables.
 
 Inductive CONSOLE : interface :=
-| Scan : CONSOLE string
-| Echo (str : string) : CONSOLE unit.
+| Scan : CONSOLE bytes
+| Echo (str : bytes) : CONSOLE unit.
 
 Register CONSOLE as freespec.stdlib.console.type.
 Register Scan as freespec.stdlib.console.Scan.
 Register Echo as freespec.stdlib.console.Echo.
 
-Definition scan `{Provide ix CONSOLE} : impure ix string :=
+Definition scan `{Provide ix CONSOLE} : impure ix bytes :=
   request Scan.
 
-Definition echo `{Provide ix CONSOLE} (str: string) : impure ix unit :=
+Definition echo `{Provide ix CONSOLE} (str: bytes) : impure ix unit :=
   request (Echo str).
 
 Declare ML Module "freespec_stdlib_console".

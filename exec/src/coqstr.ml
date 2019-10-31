@@ -22,6 +22,8 @@ open Array
 open Constr
 open Query
 open Utils
+open Coqlist
+open Coqbyte
 
 let char_of_coqascii ascii =
   let (c, args) = app_full ascii in
@@ -87,3 +89,35 @@ let string_of_coqstr str =
   Bytes.to_string (bytes_of_coqstr str)
 
 let coqstr_t = Ind.String.mkInductive
+
+let coqbytes_unwrap trm =
+  let (c, args) = app_full trm in
+  match (Ind.Bytes.constructor_of c, args) with
+  | (Some Wrap_bytes, [v]) -> v
+  | _ -> assert false
+
+let coqbytes_wrap trm =
+  mkApp (Ind.Bytes.mkConstructor "wrap_bytes", of_list [trm])
+
+let bytes_of_coqbytes trm =
+  let trm = coqbytes_unwrap trm in
+  let size = coqlist_fold_left (fun x _ -> x + 1) trm 0 in
+  let buffer = Bytes.create size in
+  let aux idx c = Bytes.set buffer idx (char_of_coqbyte c) in
+  let _ = coqlist_iteri aux trm in
+  buffer
+
+let bytes_to_coqbytes buffer =
+  coqbytes_wrap @@ Seq.fold_left
+                     (fun cont c next -> cont (coqlist_cons coqbyte_t (char_to_coqbyte c) next))
+                     (fun x -> x)
+                     (Bytes.to_seq buffer)
+                     (coqlist_nil coqbyte_t)
+
+let coqbytes_t = Ind.Bytes.mkInductive
+
+let string_of_coqbytes trm =
+  Bytes.to_string (bytes_of_coqbytes trm)
+
+let string_to_coqbytes str =
+  bytes_to_coqbytes (Bytes.of_string str)

@@ -34,7 +34,7 @@ module Inductive = struct
         match Constr.kind c with
         | Constr.Construct (c, _)
           -> Names.GlobRef.equal
-               (Globnames.ConstructRef c)
+               (Names.GlobRef.ConstructRef c)
                (Coqlib.lib_ref (I.namespace ^ "." ^ cstr))
         | _ -> false
       in
@@ -49,20 +49,20 @@ module Inductive = struct
     let mkInductive =
       let ref = Coqlib.lib_ref (I.namespace ^ ".type") in
       match ref with
-      | Globnames.IndRef i -> Constr.mkInd i
+      | Names.GlobRef.IndRef i -> Constr.mkInd i
       | _ -> raise (Utils.Anomaly "Could not construct inductive type")
 
     let mkConstructor cstr =
       let ref = Coqlib.lib_ref (I.namespace ^ "." ^ cstr) in
       match ref with
-      | Globnames.ConstructRef c -> Constr.mkConstruct c
+      | Names.GlobRef.ConstructRef c -> Constr.mkConstruct c
       | _ -> raise (Utils.Anomaly "Could not construct the term")
 
     let ref_is i =
       match Constr.kind i with
       | Constr.Ind (i, _)
         -> Names.GlobRef.equal
-             (Globnames.IndRef i)
+             (Names.GlobRef.IndRef i)
              (Coqlib.lib_ref (I.namespace ^ ".type"))
       | _ -> false
 
@@ -77,6 +77,8 @@ type positive_constructor = XI_positive | XO_positive | XH_positive
 type z_constructor = Z0_Z | Zpos_Z | Zneg_Z
 type prod_constructor = Pair_prod
 type sum_constructor = InL_sum | InR_sum
+type list_constructor = Cons_list | Nil_list
+type bytes_constructor = Wrap_bytes
 
 module Ind = struct
   module Program =
@@ -157,5 +159,29 @@ module Ind = struct
         let type_name = "sum"
         let namespace = "core.sum"
         let names = [("inl", InL_sum); ("inr", InR_sum)]
+      end)
+
+  module List =
+    Inductive.Make(struct
+        type constructor = list_constructor
+        let type_name = "list"
+        let namespace = "core.list"
+        let names = [("cons", Cons_list); ("nil", Nil_list)]
+      end)
+
+  module Byte =
+    Inductive.Make(struct
+        type constructor = unit
+        let type_name = "byte"
+        let namespace = "coq.byte"
+        let names = []
+      end)
+
+  module Bytes =
+    Inductive.Make(struct
+        type constructor = bytes_constructor
+        let type_name = "bytes"
+        let namespace = "prelude.data.bytes"
+        let names = [("wrap_bytes", Wrap_bytes)]
       end)
 end
