@@ -35,7 +35,7 @@ Definition arg_value `{Provide ix ARGS} (nth : int) : impure ix bytes := request
 Definition args `{Provide ix ENV} : component ARGS ix :=
   fun* (a : Type) (e : ARGS a) =>
     match e with
-    | ArgCount => do let* x <- get_env (bytes_of_text t#"FREESPEC_EXEC_ARGC") in
+    | ArgCount => do let* x := get_env (bytes_of_text t#"FREESPEC_EXEC_ARGC") in
                      match text_of_bytes x >>= int_of_text with
                      | Some x => pure x
                      | None => pure 0%int63

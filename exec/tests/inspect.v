@@ -7,7 +7,7 @@ Generalizable All Variables.
 
 Definition inspect `{Provide ix DEBUG} : impure ix string :=
   do inspect "hi, dear.";
-     let* x <- iso true in
+     let* x := iso true in
      inspect x
   end.
 

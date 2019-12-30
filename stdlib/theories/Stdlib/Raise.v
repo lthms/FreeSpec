@@ -17,7 +17,7 @@ Definition raise `{Into δ α, Provide ix (RAISE α)} {β} (x : δ) : impure ix 
   request (Raise (into x)).
 
 Definition try `{Into δ α, Provide ix (RAISE α)} {β} (p : impure ix (δ + β)) : impure ix β :=
-  do let* res <- p in
+  do let* res := p in
      match res with
      | inl e => raise e
      | inr x => pure x

@@ -125,7 +125,7 @@ Definition fibonacci n :=
 
 Definition fibo `{Provide ix CONSOLE} : impure ix unit :=
   do Console.echo "Go! ";
-     let* x <- scan in
+     let* x := scan in
      let res := fibonacci (N_of_string x) in
      echo (string_of_N res)
   end.

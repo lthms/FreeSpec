@@ -44,12 +44,12 @@ Definition toggle `{Provide ix DOORS} (d : door) : impure ix unit :=
   request (Toggle d).
 
 Definition open_door `{Provide ix DOORS} (d : door) : impure ix unit :=
-  do let* open <- is_open d in
+  do let* open := is_open d in
      when (negb open) (toggle d)
   end.
 
 Definition close_door `{Provide ix DOORS} (d : door) : impure ix unit :=
-  do let* open <- is_open d in
+  do let* open := is_open d in
      when open (toggle d)
    end.
 
@@ -75,7 +75,7 @@ Definition controller `{Provide ix DOORS, Provide ix (STORE nat)} : component CO
   fun _ op =>
     match op with
     | Tick =>
-      do let* cpt <- get in
+      do let* cpt := get in
          when (15 <? cpt) do
            close_door left;
            close_door right;

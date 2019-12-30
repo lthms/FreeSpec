@@ -108,7 +108,7 @@ Coercion unwrap_sumbool : sumbool >-> bool.
 Definition dispatch {a} `{Provide3 ix (STORE bool) DRAM VGA}
     (addr : address) (unpriv : address -> impure ix a) (priv : address -> impure ix a)
   : impure ix a :=
-  do let* reg <- get in
+  do let* reg := get in
      if (andb reg (in_smram addr))
      then unpriv addr
      else priv addr

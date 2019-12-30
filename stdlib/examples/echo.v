@@ -7,9 +7,9 @@ Generalizable All Variables.
 Open Scope Z_scope.
 
 Definition echo_arg `{Provide ix CONSOLE, Provide ix ARGS} : impure ix unit :=
-  do let* argc <- arg_count in
+  do let* argc := arg_count in
      if argc =? 1
-     then (arg_value 0 >>= Console.echo)
+     then arg_value 0 >>= Console.echo
      else echo
          "usage: FREESPEC_EXEC_ARGC=1 FREESPEC_EXEC_ARGV_0=<text> coqc examples/echo.v"
   end.

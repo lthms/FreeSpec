@@ -20,7 +20,7 @@ env:
     - COQ_VER="8.10.1"
     - DUNE_VER="1.11.4"
     - OPAMVERBOSE=3
-    - COQ_PRELUDE_HASH="be676daaaaecdcf443f02704bd662bdaaf0e1efe"
+    - COQ_PRELUDE_HASH="193d9550258a57f6c68e3ba098ae95df779aafa5"
 
 install:
   - curl -sL https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh > install.sh

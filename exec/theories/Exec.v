@@ -187,7 +187,7 @@ Definition with_component {ix j α}
   (p : impure (ix + j) α)
   : impure ix α :=
   do initializer;
-     let* res <- with_component_aux c p in
+     let* res := with_component_aux c p in
      finalizer;
      pure res
   end.
