@@ -26,6 +26,10 @@ exec/src/debug.ml
 exec/src/exec.ml
 exec/src/freespec_exec.mlpack
 exec/src/g_freespec_exec.mlg
+exec/src/coqbyte.mli
+exec/src/coqbyte.ml
+exec/src/coqlist.mli
+exec/src/coqlist.ml
 exec/src/coqunit.mli
 exec/src/coqunit.ml
 exec/src/coqstr.mli
