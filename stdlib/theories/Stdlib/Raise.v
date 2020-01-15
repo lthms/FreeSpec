@@ -24,11 +24,19 @@ Definition try `{Into δ α, Provide ix (RAISE α)} {β} (p : impure ix (δ + β
      end
   end.
 
-Fixpoint recover {ix α β} (p : impure (ix + RAISE α) β) (h : α -> impure ix β) : impure ix β :=
+Fixpoint with_raise {ix α β} (p : impure (ix + RAISE α) β) : impure ix (α + β) :=
   match p with
-  | local x => local x
-  | request_then (in_right (Raise e)) _ => h e
-  | request_then (in_left e) f => request_then e (fun x => recover (f x) h)
+  | local x => local (inr x)
+  | request_then (in_right (Raise x)) f => local (inl x)
+  | request_then (in_left e) f => request_then e (fun x => with_raise (f x))
+  end.
+
+Fixpoint recover {ix α β} (p : impure (ix + RAISE α) β) (h : α -> impure ix β) : impure ix β :=
+  do let* res := with_raise p in
+     match res with
+     | inl e => h e
+     | inr x => pure x
+     end
   end.
 
 Declare Scope raise_scope.
