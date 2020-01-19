@@ -2,7 +2,6 @@
   (name FreeSpec)
   (public_name freespec-exec.theories)
   (libraries freespec-exec.plugin)
-  (modules Exec
-           Exec.Debug))
+  (modules Exec Exec.Debug Exec.Eval))
 
 (include_subdirs qualified)

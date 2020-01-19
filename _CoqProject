@@ -17,12 +17,14 @@ core/theories/Core/Tactics.v
 
 exec/theories/Exec.v
 exec/theories/Exec/Debug.v
+exec/theories/Exec/Eval.v
 
 exec/src/interfaces.mli
 exec/src/interfaces.ml
 exec/src/extends.mli
 exec/src/extends.ml
 exec/src/debug.ml
+exec/src/eval.ml
 exec/src/exec.ml
 exec/src/freespec_exec.mlpack
 exec/src/g_freespec_exec.mlg
