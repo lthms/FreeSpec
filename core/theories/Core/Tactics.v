@@ -199,3 +199,5 @@ Ltac unroll_respectful_run_aux run :=
   end.
 
 Ltac unroll_respectful_run run := unroll_respectful_run_aux run; simpl_gens.
+
+Tactic Notation "prove" "impure" "with" ident(db) := prove_impure; eauto with db.
