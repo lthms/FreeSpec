@@ -7,6 +7,8 @@ _build/
 .*.d
 *.glob
 *.vo
+*.vok
+*.vos
 .lia.cache
 
 # Ocaml

@@ -8,7 +8,7 @@ type files_err_constructor = Make_files_err_constructor
 
 let coqfd_t =
   match Coqlib.lib_ref "freespec.stdlib.file_descriptor.type" with
-  | Globnames.ConstRef c -> Constr.mkConst c
+  | Names.GlobRef.ConstRef c -> Constr.mkConst c
   | _ -> raise (Utils.Anomaly "Could not construct the type int")
 
 module FilesErr =
