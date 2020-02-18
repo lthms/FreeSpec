@@ -37,7 +37,7 @@ let reduce_strategy =
     | Some true -> return reduce_all
     | _ -> return reduce_head
 
-let exec_request instr_trm func_trm =
+let exec_request env evm instr_trm func_trm =
   let rec find_primitive instr_trm =
     let (instr_trm, args) = app_full instr_trm in
     match (kind instr_trm, args) with
@@ -50,13 +50,22 @@ let exec_request instr_trm func_trm =
     | (Case _, [_; trm]) | (LetIn _, [_; trm])
       -> find_primitive trm
     | _
-      -> raise (UnsupportedTerm "Unsupported primitive shape")
+      -> raise (UnsupportedTerm
+                  ("Unsupported primitive shape `"
+                   ^ (Pp.string_of_ppcmds @@ Printer.pr_lconstr_env env evm instr_trm)
+                   ^ "'"))
   in
   let (c, args) = find_primitive instr_trm in
   (* [primitive_semantic] may raise [UnsupportedInterface] if [c] is not a
      registered request constructors.  *)
-  let res = primitive_semantic c args in
-  mkApp (func_trm, Array.of_list [res])
+  try
+    let res = primitive_semantic c args in
+    mkApp (func_trm, Array.of_list [res])
+  with UnsupportedInterface ->
+    raise (UnsupportedTerm
+             ("No semantics has been installed for primitive `"
+              ^ (Pp.string_of_ppcmds @@ Printer.pr_lconstr_env env evm instr_trm)
+              ^ "'"))
 
 let rec exec head_red env evm def =
   let def = head_red env evm def in
@@ -66,10 +75,13 @@ let rec exec head_red env evm def =
      begin match args with
      | [_instr_t; _ret_t; _instr_ret_t; instr_trm; func_trm] ->
         let instr_trm = reduce_all env evm instr_trm in
-        exec head_red env evm (exec_request instr_trm func_trm)
+        exec head_red env evm (exec_request env evm instr_trm func_trm)
      | _ -> assert false
      end
   | Some Local_impure
     -> None
   | _
-    -> raise (UnsupportedTerm "FreeSpe.Exec only handles [FreeSpec.Program] terms.")
+    -> raise (UnsupportedTerm
+                ("FreeSpec.Exec cannot handle the term `"
+                 ^ (Pp.string_of_ppcmds @@ Printer.pr_lconstr_env env evm def)
+                 ^ "'"))
