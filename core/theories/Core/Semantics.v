@@ -26,7 +26,7 @@
 
 (** An operational [semantics] for the interface [i] is coinductively defined as
     a function which can be used to interpret any primitive of [i]; it produces
-    an [interp_out] terms. *)
+    an [interp_out] term. *)
 
 From Coq Require Import Program Setoid Morphisms.
 From Prelude Require Import All.
@@ -118,7 +118,7 @@ CoInductive semantics_equiv {i} : semantics i -> semantics i -> Prop :=
         interp_out_equiv (run_effect sem e) (run_effect sem' e))
   : semantics_equiv sem sem'
 
-(** Two interpretation output are said equivalent when they carry the same
+(** Two interpretation outputs are said equivalent when they carry the same
     result, and they provide equivalent semantics to use afterwards. *)
 
 with interp_out_equiv {i} : forall {a : Type}, interp_out i a -> interp_out i a -> Prop :=
@@ -212,7 +212,7 @@ Instance interp_out_Equality (i : interface) (α : Type) : Equality (interp_out 
 #[global]
 Opaque interp_out_Equality.
 
-(** Since [interp_out_equiv] and [semantics_equiv] are two equivalence, we can
+(** Since [interp_out_equiv] and [semantics_equiv] are two equivalences, we can
     use them with the [rewrite] tactics, as long as we provide valid [Proper]
     instances.  We proceed accordingly in FreeSpec.Core, as systematically as
     possible. *)
@@ -324,9 +324,9 @@ Qed.
     operational semantics for the interfaces used by the computation.
 
     Some operational semantics may be defined in Gallina by means of the
-    [semantics] type. In such a case, we provide helpers functions to use them
-    in conjunction with [impure] terms. The terminology follows a similar logic than the
-    Haskell state monad:
+    [semantics] type. In such a case, we provide helper functions to use them in
+    conjunction with [impure] terms. The terminology follows a logic similar to
+    the Haskell state monad:
 
     - [run_impure] interprets an impure computation [p] with an operational
       semantics [sem], and returns both the result of [p] and the new

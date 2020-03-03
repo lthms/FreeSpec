@@ -122,7 +122,7 @@ Class Distinguish (ix i j : interface) `{Provide ix i, MayProvide ix j} : Prop :
     becomes verbose, especially due to the combinatorial nature of
     [Distinguish].  In an attempt to make things easier for FreeSpec users, we
     provide [ProvideN] and [StrictProvideN] (with [N] from [2] to
-    [5]). [ProvideN] can be used to define impure computation which use [N]
+    [5]). [ProvideN] can be used to define impure computations which use [N]
     interfaces, while [StrictProvideN] can be used to reason about said
     computations ([StrictProvideN] requires the [N] interfaces to be different,
     thanks to the [Distinguish] type class). *)
@@ -235,7 +235,7 @@ Infix "+" := iplus : interface_scope.
     provide the necessary instances for the [MayProvide], [Provide] and
     [Distinguish] type classes. Note that these instances always prefer the
     left operand of [iplus]. For instance, considering a situation where
-    there is an instace for [Provide ix i] and an instance for [Provide jx i],
+    there is an instance for [Provide ix i] and an instance for [Provide jx i],
     the instance of [Provide (ix + jx) i] will rely on [ix].
 
     The main use case for [iplus] is to locally provide an additional
@@ -243,8 +243,8 @@ Infix "+" := iplus : interface_scope.
     locally give access to the [STORE] interface, that is [with_state : forall
     ix s α, s -> impure (ix + STORE s) α -> impure ix α]. In such a case, the
     interface made locally available shall be the right operand of [iplus]. This
-    way, functions such as [with_state] are reentrant. If we take an example, the
-    following impure computation:
+    way, functions such as [with_state] are reentrant. If we take an example,
+    the following impure computation:
 
 <<
 with_state true (with_state false get)
@@ -299,15 +299,15 @@ Next Obligation.
   now rewrite proj_inj_p_equ.
 Qed.
 
-(** By default, Coq inference algorithm for type classe instances inference is a
-    depth-first search. This is not without consequence in our case. For
+(** By default, Coq's inference algorithm for type classe instances inference is
+    a depth-first search. This is not without consequence in our case. For
     instance, if we consider the search of an instance for [MayProvide (i + j)
     j], Coq will first try [iplus_right_MayProvide] (as explained previously),
     meaning he now search for [MayProvide i j]. It turns out such an instance
     exists: [default_MayProvide].
 
     To circumvent this issue, we write a dedicated tactic [find_may_provide]
-    which attempt to find an instance for [MayProvide (?ix + ?jx) ?i] with
+    which attempts to find an instance for [MayProvide (?ix + ?jx) ?i] with
     [refl_MayProvide], [iplus_left_MayProvide] and [iplus_right_MayProvide]. *)
 
 Ltac find_may_provide :=

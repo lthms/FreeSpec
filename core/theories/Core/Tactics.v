@@ -21,10 +21,10 @@
 From Prelude Require Import All.
 From FreeSpec.Core Require Import Contract.
 
-(** The [impure] monad is an empty shell which brings structure and only
-    that.  It is not relevant when it comes to verifying impure computations,
-    and we provide a tactic called [prove_impure] to erase it while proving a
-    given impure computation is respectful wrt. to a given contract. *)
+(** The [impure] monad is an empty shell which brings structure and only that.
+    It is not relevant when it comes to verifying impure computations, and we
+    provide a tactic called [prove_impure] to erase it while proving a given
+    impure computation is respectful wrt. to a given contract. *)
 
 Ltac destruct_if_when :=
   let equ_cond := fresh "equ_cond" in
