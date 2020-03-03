@@ -22,8 +22,8 @@ From FreeSpec.Core Require Import Interface Semantics Impure.
 
 (** * Component
 
-    In FreeSpec, a _component_ an entity which exposes an interface [i],
-    and uses primitives of an interface [j] to compute the result of primitives
+    In FreeSpec, a _component_ is an entity which exposes an interface [i],
+    and uses primitives of an interface [j] to compute the results of primitives
     of [i].  Besides, a component is likely to carry its own internal state (of
     type [s]).
 
@@ -37,7 +37,7 @@ From FreeSpec.Core Require Import Interface Semantics Impure.
 >>
 
     Thus, a component [c : component i j] is a polymorphic function which
-    maps primitive of [i] to impure computations using [j]. *)
+    maps primitives of [i] to impure computations using [j]. *)
 
 Definition component (i j : interface) : Type :=
   forall (α : Type), i α -> impure j α.
@@ -64,7 +64,7 @@ CoFixpoint derive_semantics {i j} (c : component i j) (sem : semantics j)
 (** So, [⊕] on the one hand allows for composing operational semantics
     horizontally, and [derive_semantics] allows for composing components
     vertically.  Using these two operators, we can model a complete system in a
-    hierarchical and modular manner, by defining each of its component
+    hierarchical and modular manner, by defining each of its components
     independently, then composing them together with [⊕] and
     [derive_semantics]. *)
 

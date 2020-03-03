@@ -19,10 +19,10 @@
  *)
 
 (** In this library, we provide the necessary material to reason about FreeSpec
-    component both in isolation, and in composition.  To do that, we focus our
-    reasoning principle on interfaces, by defining how their primitives shall be
-    used in the one hand, and what to expect the result computed by “correct”
-    operational semantics (according to a certain definition of “correct”). *)
+    components both in isolation, and in composition.  To do that, we focus our
+    reasoning principles on interfaces, by defining how their primitives shall
+    be used, and what to expect the result computed by “correct” operational
+    semantics (according to a certain definition of “correct”). *)
 
 
 From Prelude Require Import All.
@@ -34,15 +34,15 @@ Open Scope signature_scope.
 
 (** * Definition *)
 
-(** A contract dedicated to [i : interface] primilarly provides two
+(** A contract dedicated to [i : interface] primarily provides two
     predicates.
 
     - [caller_obligation] distinguishes between primitives that can be used (by
       an impure computation), and primitives that cannot be used.
-    - [callee_obligation] specifies which guarantee can be expected from
+    - [callee_obligation] specifies which guarantees can be expected from
       primitives results, as computed by a “good” operational semantics.
 
-    Both [caller_obligation] and [callee_obligation] models properties that may
+    Both [caller_obligation] and [callee_obligation] model properties that may
     vary in time, e.g., a primitive may be forbidden at a given time, but
     authorized later.  To take this possibility into account, contracts are
     parameterized by what we have called a “witness.”  A witness is a term which
@@ -85,7 +85,7 @@ Definition no_contract (i : interface) : contract i unit :=
    ; callee_obligation := no_callee_obligation
    |}.
 
-(** A similar —and as simple— contract is the one that forbids the use of a
+(** A similar — and as simple — contract is the one that forbids the use of a
     given interface. *)
 
 Definition do_no_use {i Ω} (ω : Ω) (α : Type) (e : i α) : Prop := False.
@@ -183,18 +183,18 @@ Definition store_specs (s : Type) : contract (STORE s) s :=
   ;  callee_obligation := o_callee_store s
   |}.
 
-(** Now, as we briefly mentionned, this contract allows for reasoning about
-    an impure computation which uses the [STORE s] interface, assuming the
-    mutable, global variable has been initialized.  We can define another
-    contract that does not rely on such assumption, and on the contrary,
-    requires an impure computation to initialize the variable prior to using it.
+(** Now, as we briefly mentionned, this contract allows for reasoning about an
+    impure computation which uses the [STORE s] interface, assuming the mutable,
+    global variable has been initialized.  We can define another contract that
+    does not rely on such assumption, and on the contrary, requires an impure
+    computation to initialize the variable prior to using it.
 
     In this context, the witness can solely be a boolean which tells if the
     variable has been initialized, and the [callee_obligation] will require the
     witness to be [true] to authorize a call of [Get].
 
-    This is one of the key benefit of the FreeSpec approach: because the
-    contracts are defined independently from impure computation and
+    This is one of the key benefits of the FreeSpec approach: because the
+    contracts are defined independently from impure computations and
     interfaces, we can actually define several contracts to consider
     different set of hypotheses. *)
 
@@ -266,7 +266,7 @@ Qed.
 Inductive respectful_run `{MayProvide ix i} {α Ω} (c : contract i Ω)
   : impure ix α -> Ω -> Ω -> α -> Prop :=
 
-(** Given a term [x], and an initial witness [ω], then a respectful run of
+(** Given a term [x], and an initial witness [ω], a respectful run of
     [local x] produced a result [x] and a witness state [ω]. *)
 
 | run_local (x : α) (ω : Ω)
