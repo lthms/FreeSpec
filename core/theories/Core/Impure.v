@@ -46,7 +46,7 @@ Open Scope signature_scope.
     interface [i] to be used, and the type [α] of the result of the computation.
     The fact that [impure] is inductive rather than co-inductive means it is not
     possible to describe infinite computations.  This also means it is possible
-    to interpret impure computation within Coq, providing an operational
+    to interpret impure computations within Coq, providing an operational
     semantics for [i]. *)
 
 Inductive impure (i : interface) (α : Type) : Type :=
@@ -344,7 +344,7 @@ Definition request `{Provide ix i} {α} (e : i α) : impure ix α :=
     [state_t]). The reason why it has not been kept into the codebase is that
     the flexibility it gives for writing code has a real impact on the
     verification process. It is simpler to reason about “pure” impure
-    computation (that is, not within a monad stack), then wrapping these
+    computations (that is, not within a monad stack), then wrapping these
     computations thanks to [lift].
 
     The <<coq-prelude>> provides notations (inspired by the do notation of
