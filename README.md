@@ -64,9 +64,9 @@ interfaces (only `Console.i`) will be made accessible in `FreeSpec.Exec.Interfac
 
 ### FreeSpec.Examples
 
-Once the framework and its extensions has been correctly installed, you can have
-a look at the example files provided in this repository. They should compile
-just fine.
+Once the framework and its extensions have been correctly installed, you can
+have a look at the example files provided in this repository. They should
+compile just fine.
 
 ```bash
 # from the root of this repository

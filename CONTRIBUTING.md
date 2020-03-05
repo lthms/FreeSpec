@@ -32,7 +32,7 @@ So, for instance, the following line of code meets our requirement.
 (*                                                                              |                   | *)
 ```
 
-It exceeds the 80th column, but only to conclute the term
+It exceeds the 80th column, but only to conclude the term
 `yet_another_function_even_longer y`. On the contrary, the following
 line does not meet our requirements, since we introduce a new term
 (here, simply `z`) after the one we were defining while exceeding the
@@ -68,7 +68,7 @@ required and several rules apply:
    introduce a set of arguments, and another to explicit constraints
    (living in `Prop`) about these arguments.
 2. A line of function arguments shall start with four spaces.
-3. The return type shall has its own line of the form `: <type> :=`
+3. The return type shall have its own line of the form `: <type> :=`
    with two leading spaces.
 
 ```coq
@@ -77,7 +77,7 @@ Definition my_very_long_function (x y z : complicated_type) (my_pred : a_predica
   (* ... *)
 ```
 
-As rule 1. is subjective, there are several acceptable way to format a
+As rule 1. is subjective, there are several acceptable ways to format a
 function declaration.
 
 ```coq
