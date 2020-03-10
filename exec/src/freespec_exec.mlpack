@@ -1,10 +1,12 @@
 Utils
 Query
-Coqsum
-Coqprod
-Coqnum
 Coqbool
+Coqbyte
+Coqlist
+Coqnum
+Coqprod
 Coqstr
+Coqsum
 Coqunit
 Interfaces
 Extends
