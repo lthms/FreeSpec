@@ -7,9 +7,9 @@ docs:
 	@mv mlihtml docs/ml
 
 install: clean
-	@cd core;   dune build; dune install; cd -
-	@cd exec;   dune build; dune install; cd -
-	@cd stdlib; dune build; dune install; cd -
+	@cd core;   dune build @install; dune install; cd -
+	@cd exec;   dune build @install; dune install; cd -
+	@cd stdlib; dune build @install; dune install; cd -
 
 mrproper: clean
 	@cd core;   dune clean; cd -

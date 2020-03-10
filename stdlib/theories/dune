@@ -1,6 +1,6 @@
 (coq.theory
   (name FreeSpec)
-  (public_name freespec-stdlib.theories)
+  (package freespec-stdlib)
   (libraries freespec-stdlib.console
              freespec-stdlib.env
              freespec-stdlib.files)

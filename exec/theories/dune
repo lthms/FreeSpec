@@ -1,6 +1,6 @@
 (coq.theory
   (name FreeSpec)
-  (public_name freespec-exec.theories)
+  (package freespec-exec)
   (libraries freespec-exec.plugin)
   (modules Exec Exec.Debug Exec.Eval))
 

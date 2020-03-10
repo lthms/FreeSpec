@@ -1,6 +1,6 @@
 (coq.theory
   (name FreeSpec)
-  (public_name freespec-core.theories)
+  (package freespec-core)
   (modules Core
            Core.Interface
            Core.Impure

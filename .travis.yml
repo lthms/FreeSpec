@@ -18,7 +18,7 @@ env:
     - COMPILER="4.08.0"
     - NATIVE_COMP="yes"
     - COQ_VER="8.11.0"
-    - DUNE_VER="2.1.3"
+    - DUNE_VER="2.4.0"
     - OPAMVERBOSE=3
     - COQ_PRELUDE_HASH="193d9550258a57f6c68e3ba098ae95df779aafa5"
 
