@@ -192,6 +192,8 @@ Definition with_component {ix j α}
      pure res
   end.
 
+(** ** By Means of Semantics *)
+
 #[local]
 Fixpoint with_semantics {ix j α} (sem : semantics j) (p : impure (ix + j) α)
   : impure ix α :=
@@ -205,3 +207,28 @@ Fixpoint with_semantics {ix j α} (sem : semantics j) (p : impure (ix + j) α)
   | request_then (in_left e) f =>
     request_then e (fun x => with_semantics sem (f x))
   end.
+
+(** We provide [with_store], a helper function to locally provide a mutable
+    variable. *)
+
+Fixpoint with_store {ix s a} (x : s) (p : impure (ix + STORE s) a)
+  : impure ix a :=
+  with_semantics (store x) p.
+
+(** Nesting [with_semantics] calls works to some extends. If each
+    [with_semantics] provides a different interface from the rest of the stack,
+    then everything behaves as expected. If, for some reason, you end up in a
+    situation where you provide the exact same interface twice (typically if you
+    use [with_store]), then the typeclass inferences will favor the deepest one
+    in the stack. For instance,
+
+<<
+Compute (with_store 0 (with_store 1 get)).
+>>
+
+    returns
+
+<<
+     = local 1
+     : impure ?ix nat
+>> *)
