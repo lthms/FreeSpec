@@ -1,12 +1,5 @@
 (coq.theory
   (name FreeSpec)
-  (package freespec-core)
-  (modules Core
-           Core.Interface
-           Core.Impure
-           Core.Semantics
-           Core.Component
-           Core.Contract
-           Core.Tactics))
+  (package freespec-core))
 
 (include_subdirs qualified)

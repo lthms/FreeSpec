@@ -11,8 +11,11 @@ core/theories/Core.v
 core/theories/Core/Interface.v
 core/theories/Core/Semantics.v
 core/theories/Core/Component.v
+core/theories/Core/Morphism.v
 core/theories/Core/Impure.v
 core/theories/Core/Contract.v
+core/theories/Core/Hoare.v
+core/theories/Core/Hoare/Monad.v
 core/theories/Core/Tactics.v
 
 exec/theories/Exec.v
