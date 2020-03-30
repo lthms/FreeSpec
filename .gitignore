@@ -19,6 +19,8 @@ _build/
 *.o
 *.cmi
 *.cmx
+*.cmo
+exec/src/g_freespec_exec.ml
 
 Makefile.coq*
 .merlin
