@@ -103,7 +103,7 @@ Definition forbid_specs (i : interface) : contract i unit :=
     [ci : contract i Ωi] and [cj : contract j Ωj], such that [cplus ci cj] in a
     contract for [i + j]. *)
 
-Definition gen_witness_update `{MayProvide ix i} {Ω α} (c : contract i Ω)
+Definition gen_witness_update `{ix :? i} {Ω α} (c : contract i Ω)
     (ω :  Ω) (e : ix α) (x : α)
   : Ω :=
   match proj_p e with
@@ -111,7 +111,7 @@ Definition gen_witness_update `{MayProvide ix i} {Ω α} (c : contract i Ω)
   | None => ω
   end.
 
-Definition gen_caller_obligation `{MayProvide ix i} {Ω α} (c : contract i Ω)
+Definition gen_caller_obligation `{ix :? i} {Ω α} (c : contract i Ω)
     (ω :  Ω) (e : ix α)
   : Prop :=
   match proj_p e with
@@ -119,7 +119,7 @@ Definition gen_caller_obligation `{MayProvide ix i} {Ω α} (c : contract i Ω)
   | None => True
   end.
 
-Definition gen_callee_obligation `{MayProvide ix i} {Ω α} (c : contract i Ω)
+Definition gen_callee_obligation `{ix :? i} {Ω α} (c : contract i Ω)
     (ω :  Ω) (e : ix α) (x : α)
   : Prop :=
   match proj_p e with
@@ -127,7 +127,7 @@ Definition gen_callee_obligation `{MayProvide ix i} {Ω α} (c : contract i Ω)
   | None => True
   end.
 
-Definition cplus `{Provide ix i, Provide ix j} {Ωi Ωj}
+Definition cplus `{ix :| i, j} {Ωi Ωj}
     (ci : contract i Ωi) (cj : contract j Ωj)
   : contract ix (Ωi * Ωj) :=
   {| witness_update := fun (ω : Ωi * Ωj) (α : Type) (e : ix α) (x : α) =>
@@ -206,7 +206,7 @@ Definition store_specs (s : Type) : contract (STORE s) s :=
     accordance to a witness [ω] when it only uses primitives of [i] which
     satisfies [c] obligations. *)
 
-Inductive respectful_impure `{MayProvide ix i} {α Ω} (c : contract i Ω) (ω : Ω) : impure ix α -> Prop :=
+Inductive respectful_impure `{ix :? i} {α Ω} (c : contract i Ω) (ω : Ω) : impure ix α -> Prop :=
 
 (** - Given a term [x], the computation [local x] is always respectful wrt. [c]
       in accordance to [ω], since it does not use any primitives. *)
@@ -263,7 +263,7 @@ Qed.
     [respectful_run] predicate, which describes the potential outcomes of a
     computation in terms of results and witnesses. *)
 
-Inductive respectful_run `{MayProvide ix i} {α Ω} (c : contract i Ω)
+Inductive respectful_run `{ix :? i} {α Ω} (c : contract i Ω)
   : impure ix α -> Ω -> Ω -> α -> Prop :=
 
 (** Given a term [x], and an initial witness [ω], a respectful run of
@@ -293,7 +293,7 @@ Inductive respectful_run `{MayProvide ix i} {α Ω} (c : contract i Ω)
 
     then [bind p f] is respectful. *)
 
-Lemma respectful_bind_respectful_run `{MayProvide ix i} {α β Ω}
+Lemma respectful_bind_respectful_run `{ix :? i} {α β Ω}
   (c : contract i Ω) (ω : Ω)
   (p : impure ix α) (f : α -> impure ix β)
   (respect : respectful_impure c ω p)
@@ -319,7 +319,7 @@ Qed.
 
 Hint Resolve respectful_bind_respectful_run : freespec.
 
-Lemma respectful_bind_exists_respectful_run `{MayProvide ix i} {α β Ω}
+Lemma respectful_bind_exists_respectful_run `{ix :? i} {α β Ω}
     (c : contract i Ω) (ω ω' : Ω)
     (p : impure ix α) (f : α -> impure ix β) (x : β)
     (respect : respectful_run c (impure_bind p f) ω ω' x)
@@ -369,7 +369,7 @@ Qed.
     complies to [c] in accordance to [ω'], where [ω'] is the new witness state
     after [e] interpretation then [sem] complies to [c] in accordance to [ω] *)
 
-CoInductive compliant_semantics `{MayProvide ix i} {Ω} (c : contract i Ω) : Ω -> semantics ix -> Prop :=
+CoInductive compliant_semantics `{ix :? i} {Ω} (c : contract i Ω) : Ω -> semantics ix -> Prop :=
 | compliant_semantics_rec
     (sem : semantics ix) (ω : Ω)
     (o_callee : forall {α} (e : ix α),
@@ -399,7 +399,7 @@ Proof.
     apply compliant_semantics_rec.
 Qed.
 
-Lemma compliant_semantics_caller_obligation_callee_obligation `{MayProvide ix i} {Ω α} (c : contract i Ω) (ω : Ω)
+Lemma compliant_semantics_caller_obligation_callee_obligation `{ix :? i} {Ω α} (c : contract i Ω) (ω : Ω)
   (e : ix α) (o_caller : gen_caller_obligation c ω e)
   (sem : semantics ix) (comp : compliant_semantics c ω sem)
   : gen_callee_obligation c ω e (eval_effect sem e).
@@ -411,7 +411,7 @@ Qed.
 
 Hint Resolve compliant_semantics_caller_obligation_callee_obligation : freespec.
 
-Lemma compliant_semantics_caller_obligation_compliant `{MayProvide ix i} {Ω α} (c : contract i Ω) (ω : Ω)
+Lemma compliant_semantics_caller_obligation_compliant `{ix :? i} {Ω α} (c : contract i Ω) (ω : Ω)
   (e : ix α) (o_caller : gen_caller_obligation c ω e)
   (sem : semantics ix) (comp : compliant_semantics c ω sem)
   : compliant_semantics c (gen_witness_update c ω e (eval_effect sem e)) (exec_effect sem e).
@@ -423,7 +423,7 @@ Qed.
 
 Hint Resolve compliant_semantics_caller_obligation_compliant : freespec.
 
-Lemma compliant_semantics_exec_effect_equ `{MayProvide ix i} {Ω α} (c : contract i Ω) (ω : Ω)
+Lemma compliant_semantics_exec_effect_equ `{ix :? i} {Ω α} (c : contract i Ω) (ω : Ω)
   (sem sem' : semantics ix) (equ : sem == sem')
   (e : ix α)
   : exec_effect sem e == exec_effect sem' e.
@@ -441,20 +441,20 @@ Instance compliant_semantics_Proper : Proper ('equal ==> Basics.impl) (@complian
 
 Next Obligation.
   add_morphism_tactic.
-  revert ω.
-  cofix compliant_semantics_Proper; intros ω.
+  revert ω H.
+  cofix compliant_semantics_Proper; intros ω H.
   intros σ σ' equ comp.
   destruct comp.
   constructor.
   + now setoid_rewrite <- equ.
   + intros a e o_caller.
-    apply (compliant_semantics_Proper (gen_witness_update c ω e (eval_effect σ' e)) (exec_effect sem e)).
+    apply (compliant_semantics_Proper (gen_witness_update c ω e (eval_effect σ' e)) H (exec_effect sem e)).
     ++ auto with freespec.
     ++ rewrite <- equ at 1.
        now apply next.
 Qed.
 
-Lemma no_contract_compliant_semantics `{MayProvide ix i} (sem : semantics ix) (u : unit)
+Lemma no_contract_compliant_semantics `{ix :? i} (sem : semantics ix) (u : unit)
   : compliant_semantics (no_contract i) u sem.
 
 Proof.
@@ -470,7 +470,7 @@ Qed.
 Hint Resolve no_contract_compliant_semantics : freespec.
 
 #[local]
-Fixpoint witness_impure_aux `{MayProvide ix i} {Ω α}
+Fixpoint witness_impure_aux `{ix :? i} {Ω α}
   (sem : semantics ix) (p : impure ix α) (c : contract i Ω) (ω : Ω) : interp_out ix α * Ω :=
   match p with
   | local x => (mk_out x sem, ω)
@@ -494,7 +494,7 @@ Next Obligation.
     apply H0.
 Qed.
 
-Lemma fst_witness_impure_aux_run_impure `{MayProvide ix i} {Ω α}
+Lemma fst_witness_impure_aux_run_impure `{ix :? i} {Ω α}
   (sem : semantics ix) (p : impure ix α) (c : contract i Ω) (ω : Ω)
   : fst (witness_impure_aux sem p c ω) = run_impure sem p.
 
@@ -507,7 +507,7 @@ Qed.
 
 Hint Rewrite @fst_witness_impure_aux_run_impure : freespec.
 
-Definition witness_impure `{MayProvide ix i} {Ω α}
+Definition witness_impure `{ix :? i} {Ω α}
   (sem : semantics ix) (p : impure ix α) (c : contract i Ω) (ω : Ω) : Ω :=
   snd (witness_impure_aux sem p c ω).
 
@@ -522,7 +522,7 @@ Next Obligation.
   now rewrite equp.
 Qed.
 
-Lemma compliant_semantics_respectful_impure_gives_respectful_run `{MayProvide ix i} {Ω α}
+Lemma compliant_semantics_respectful_impure_gives_respectful_run `{ix :? i} {Ω α}
   (c : contract i Ω) (ω : Ω) (p : impure ix α) (trust : respectful_impure c ω p)
   (sem : semantics ix) (comp : compliant_semantics c ω sem)
   : respectful_run c p ω (witness_impure sem p c ω) (eval_impure sem p).
@@ -543,7 +543,7 @@ Qed.
 
 Hint Resolve compliant_semantics_respectful_impure_gives_respectful_run : freespec.
 
-Lemma witness_impure_request_then_equ `{MayProvide ix i} {Ω α β} (c : contract i Ω) (ω : Ω)
+Lemma witness_impure_request_then_equ `{ix :? i} {Ω α β} (c : contract i Ω) (ω : Ω)
   (sem : semantics ix) (e : ix α) (f : α -> impure ix β)
   : witness_impure sem (request_then e f) c ω
     = witness_impure (exec_effect sem e)
@@ -555,7 +555,7 @@ Proof eq_refl.
 
 Hint Rewrite @witness_impure_request_then_equ : freespec.
 
-Lemma respectful_impure_compliant_specs `{MayProvide ix i} {Ω α} (c : contract i Ω) (ω : Ω)
+Lemma respectful_impure_compliant_specs `{ix :? i} {Ω α} (c : contract i Ω) (ω : Ω)
   (p : impure ix α) (trust : respectful_impure c ω p)
   (sem : semantics ix) (comp : compliant_semantics c ω sem)
   : compliant_semantics c (witness_impure sem p c ω) (exec_impure sem p).
@@ -571,7 +571,7 @@ Qed.
 
 Hint Resolve respectful_impure_compliant_specs : freespec.
 
-Lemma gen_callee_obligation_equ {α Ωi Ωj} `{Provide ix i} `{Provide ix j}
+Lemma gen_callee_obligation_equ {α Ωi Ωj} `{ix :| i, j}
     (ci : contract i Ωi) (ωi : Ωi)
     (cj : contract j Ωj) (ωj : Ωj)
     (e : ix α) (x : α)
@@ -582,7 +582,7 @@ Proof.
   split; auto.
 Qed.
 
-Lemma gen_caller_obligation_equ {α Ωi Ωj} `{Provide ix i} `{Provide ix j}
+Lemma gen_caller_obligation_equ {α Ωi Ωj} `{ix :| i, j}
     (ci : contract i Ωi) (ωi : Ωi) (cj : contract j Ωj) (ωj : Ωj) (e : ix α)
   : gen_caller_obligation ci ωi e /\ gen_caller_obligation cj ωj e
     <-> gen_caller_obligation (ci + cj) (ωi, ωj) e.
@@ -591,7 +591,7 @@ Proof.
   split; auto.
 Qed.
 
-Lemma respectful_impure_generalize `{Provide ix i} `{Provide ix j} {α Ωi Ωj}
+Lemma respectful_impure_generalize `{ix :| i, j} {α Ωi Ωj}
     (p : impure ix α)
     (ci : contract i Ωi) (ωi : Ωi) (cj : contract j Ωj) (ωj : Ωj)
   : respectful_impure ci ωi p
@@ -611,7 +611,7 @@ Proof.
        now split.
     ++ intros x o_callee.
        rewrite <- gen_callee_obligation_equ in o_callee.
-       apply H3; [ apply next | apply next0 ]; apply o_callee.
+       apply H0; [ apply next | apply next0 ]; apply o_callee.
 Qed.
 
 (** ** Component Correctness *)
@@ -646,7 +646,7 @@ Qed.
     continue to satisfy [pred]. *)
 
 Definition correct_component {i jx Ωi Ωj}
-  (c : component i jx) `{MayProvide jx j}
+  (c : component i jx) `{jx :? j}
   (ci : contract i Ωi) (cj : contract j Ωj)
   (pred : Ωi -> Ωj -> Prop) : Prop :=
   forall (ωi : Ωi) (ωj : Ωj) (init : pred ωi ωj)
@@ -662,7 +662,7 @@ Definition correct_component {i jx Ωi Ωj}
     accordance to [ωi] if we use a semantics of [j] which complies to [specj] in
     accordance to [ωj], where [pred ωi st ωj] is satisfied. *)
 
-Lemma respectful_impure_compliant_specs_respectful_run `{MayProvide ix i} {a Ω}
+Lemma respectful_impure_compliant_specs_respectful_run `{ix :? i} {a Ω}
     (spec : contract i Ω) (ω : Ω)
     (sem : semantics ix) (comp : compliant_semantics spec ω sem)
     (p : impure ix a) (trust : respectful_impure spec ω p)
@@ -685,7 +685,7 @@ Proof.
           auto with freespec.
 Qed.
 
-Lemma correct_component_derives_compliant_semantics `{MayProvide jx j} {i Ωi Ωj}
+Lemma correct_component_derives_compliant_semantics `{jx :? j} {i Ωi Ωj}
   (c : component i jx) (ci : contract i Ωi) (cj : contract j Ωj)
   (pred : Ωi -> Ωj -> Prop)
   (correct : correct_component c ci cj pred)

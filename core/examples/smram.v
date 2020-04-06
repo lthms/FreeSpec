@@ -105,7 +105,7 @@ Definition unwrap_sumbool {A B} (x : { A } + { B }) : bool :=
 
 Coercion unwrap_sumbool : sumbool >-> bool.
 
-Definition dispatch {a} `{Provide3 ix (STORE bool) DRAM VGA}
+Definition dispatch {a} `{ix :| STORE bool, DRAM, VGA}
     (addr : address) (unpriv : address -> impure ix a) (priv : address -> impure ix a)
   : impure ix a :=
   do let* reg := get in
@@ -114,7 +114,7 @@ Definition dispatch {a} `{Provide3 ix (STORE bool) DRAM VGA}
      else priv addr
   end.
 
-Definition memory_controller `{Provide3 ix (STORE bool) DRAM VGA}
+Definition memory_controller `{ix :| STORE bool, DRAM, VGA}
   : component MEMORY_CONTROLLER ix :=
   fun _ op =>
     match op with
@@ -203,7 +203,7 @@ Definition mc_specs : contract MEMORY_CONTROLLER memory_view :=
 Definition smram_pred (ωmc : memory_view) (ωmem : memory_view * bool) : Prop :=
   snd ωmem = true /\ forall (a : address), in_smram a = true -> ωmc a = (fst ωmem) a.
 
-Lemma memory_controller_respectful `{StrictProvide3 ix (STORE bool) VGA DRAM}
+Lemma memory_controller_respectful `{ix :| STORE bool, VGA, DRAM}
     (a : Type) (op : MEMORY_CONTROLLER a) (ω : memory_view)
   : respectful_impure (dram_specs + store_specs bool) (ω, true) (memory_controller a op).
 

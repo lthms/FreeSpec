@@ -336,7 +336,7 @@ Defined.
     generic interface [ix].  [ix] is constrained with the [Provide] notation, so
     that it has to provide at least [i]'s primitives.  *)
 
-Definition request `{Provide ix i} {α} (e : i α) : impure ix α :=
+Definition request `{ix :| i} {α} (e : i α) : impure ix α :=
   request_then (inj_p e) (fun* x => pure x).
 
 (** Note: there have been attempts to turn [request] into a typeclass
@@ -354,7 +354,7 @@ Definition request `{Provide ix i} {α} (e : i α) : impure ix α :=
 Declare Scope impure_scope.
 Bind Scope monad_scope with impure.
 
-Instance store_monad_state (s : Type) (ix : interface) `{Provide ix (STORE s)}
+Instance store_monad_state (s : Type) (ix : interface) `{ix :| STORE s}
   : MonadState s (impure ix) :=
   { put := fun (x : s) => request (Put x)
   ; get := request Get

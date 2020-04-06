@@ -30,6 +30,7 @@ From Coq Require Import Program.
 Definition interface := Type -> Type.
 
 Declare Scope interface_scope.
+Delimit Scope interface_scope with interface.
 Bind Scope interface_scope with interface.
 
 (** Given [i : interface], a term of type [i α] identifies a primitive of [i]
@@ -118,99 +119,110 @@ Class Distinguish (ix i j : interface) `{Provide ix i, MayProvide ix j} : Prop :
 
 (** ** Helpers *)
 
-(** Manipulating [MayProvide], [Provide] and [Distinguish] manually quickly
-    becomes verbose, especially due to the combinatorial nature of
-    [Distinguish].  In an attempt to make things easier for FreeSpec users, we
-    provide [ProvideN] and [StrictProvideN] (with [N] from [2] to
-    [5]). [ProvideN] can be used to define impure computations which use [N]
-    interfaces, while [StrictProvideN] can be used to reason about said
-    computations ([StrictProvideN] requires the [N] interfaces to be different,
-    thanks to the [Distinguish] type class). *)
+Class Head (i : interface).
 
-Class Provide2 ix i1 i2 `{Provide ix i1, Provide ix i2}.
+Class Cons (X : Type) (Rst : X -> Type)
+  : Type :=
+  { proj_x : X
+  ; proj_rst : Rst proj_x
+  }.
 
-#[program]
-Instance Make_Provide2 `(Provide ix i1, Provide ix i2)
-  : Provide2 ix i1 i2.
+Class Nil : Type.
 
-Class Provide3 ix i1 i2 i3 `{Provide ix i1, Provide ix i2, Provide ix i3}.
+Ltac make_distinguish_all ix l :=
+  match eval compute in l with
+  | ?i :: ?rst =>
+    make_distinguish ix i rst rst
+  | [] => exact Nil
+  end
+with make_distinguish ix i l t :=
+  match eval compute in l with
+  | ?i' :: ?rst =>
+    exact (Cons (Distinguish ix i i')
+                (fun _ => Cons (Distinguish ix i' i)
+                               (fun _ => ltac:(make_distinguish ix i rst t))))
+  | [] => make_distinguish_all ix t
+  end.
 
-#[program]
-Instance Make_Provide3 `(Provide ix i1, Provide ix i2, Provide ix i3)
-  : Provide3 ix i1 i2 i3.
+Notation "ix ':?' i1 ',' i2 ',' .. ',' i3" :=
+  (Cons (Head ix) (fun _ => Cons
+     (MayProvide ix i1)
+     (fun _ =>
+        (Cons
+           (MayProvide ix i2)
+           .. (fun _ =>
+                 Cons
+                   (MayProvide ix i3)
+                   (fun _ => Nil)) ..))))
+(at level 78, i1, i2, i3 at next level, no associativity, only parsing)
+  : type_scope.
 
-Class Provide4 ix i1 i2 i3 i4
-   `{Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4}.
+Notation "ix ':|' i1 ',' i2 ',' .. ',' i3" :=
+  (Cons (Head ix) (fun _ => Cons
+     (MayProvide ix i1)
+     (fun _ =>
+        Cons
+          (Provide ix i1)
+          (fun _ =>
+             (Cons
+                (MayProvide ix i2)
+                (fun _ =>
+                   (Cons
+                      (Provide ix i2)
+                      .. (fun _ =>
+                            Cons
+                              (MayProvide ix i3)
+                              (fun _ =>
+                                 Cons
+                                   (Provide ix i3)
+                                   (fun _ =>
+                                      let x := cons i1%interface (cons i2%interface .. (cons i3%interface nil) ..)
+                                      in ltac:(make_distinguish_all ix x)))) ..)))))))
+    (at level 78, i1, i2, i3 at next level, no associativity, only parsing)
+  : type_scope.
 
-#[program]
-Instance Make_Provide4 `{Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4}
-  : Provide4 ix i1 i2 i3 i4.
+Notation "ix ':|' i" :=
+  (Cons (Head ix) (fun _ => (Cons (MayProvide ix i) (fun _ => Cons (Provide ix i) (fun _ => Nil)))))
+        (at level 78, no associativity)
+  : type_scope.
 
-Class Provide5 ix i1 i2 i3 i4 i5
-   `{Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4, Provide ix i5}.
+Notation "ix ':?' i" :=
+  (Cons (Head ix) (fun _ => (Cons (MayProvide ix i) (fun _ => Nil))))
+        (at level 78, no associativity)
+  : type_scope.
 
-#[program]
-Instance Make_Provide5
-   `{Provide ix i1 , Provide ix i2, Provide ix i3, Provide ix i4, Provide ix i5}
-  : Provide5 ix i1 i2 i3 i4 i5.
+Ltac typeclasses_list_resolv :=
+  match goal with
+  | H : let _ : list interface := _ in Cons _ _ |- _ =>
+    cbn in H; typeclasses eauto
+  | |- let _ : list interface := _ in Cons _ _ =>
+    cbn; typeclasses eauto
+  | H : Cons ?x ?f |- _ =>
+    destruct H; typeclasses eauto
+  | H : ?x |- Cons ?x ?f =>
+    apply Build_Cons with (proj_x := H); typeclasses eauto
+  | H : Head _ |- Head _ =>
+    exact H
+  | |- Nil =>
+    apply Build_Nil
+  | |- _ => fail
+  end.
 
-Class StrictProvide2 ix i1 i2
-   `{Provide ix i1, Provide ix i2, ! Distinguish ix i1 i2, ! Distinguish ix i2 i1}.
+Hint Extern 1 => typeclasses_list_resolv : typeclass_instances.
 
-#[program]
-Instance Make_StrictProvide2
-   `(Provide ix i1,  Provide ix i2, ! Distinguish ix i1 i2, ! Distinguish ix i2 i1)
-  : StrictProvide2 ix i1 i2.
+#[local]
+Lemma test_1 `(ix :| i1, i2, i3) : ix :| i1, i2.
 
-Class StrictProvide3 (ix i1 i2 i3 : interface)
-  `{Provide ix i1, Provide ix i2, Provide ix i3, ! Distinguish ix i1 i2,
-    ! Distinguish ix i1 i3, ! Distinguish ix i2 i1, ! Distinguish ix i2 i3,
-    ! Distinguish ix i3 i1, ! Distinguish ix i3 i2}.
+Proof.
+  typeclasses eauto.
+Qed.
 
-#[program]
-Instance Make_StrictProvide3
-  `(Provide ix i1, Provide ix i2, Provide ix i3, ! Distinguish ix i1 i2,
-    ! Distinguish ix i1 i3, ! Distinguish ix i2 i1, ! Distinguish ix i2 i3,
-    ! Distinguish ix i3 i1, ! Distinguish ix i3 i2)
-  : StrictProvide3 ix i1 i2 i3.
+#[local]
+Lemma test_2 `(ix :| i1, i2, i3) : MayProvide ix i1.
 
-Class StrictProvide4 (ix i1 i2 i3 i4 : interface)
-  `{Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4,
-    ! Distinguish ix i1 i2, ! Distinguish ix i1 i3, ! Distinguish ix i1 i4,
-    ! Distinguish ix i2 i1, ! Distinguish ix i2 i3, ! Distinguish ix i2 i4,
-    ! Distinguish ix i3 i1, ! Distinguish ix i3 i2, ! Distinguish ix i3 i4,
-    ! Distinguish ix i4 i1, ! Distinguish ix i4 i2, ! Distinguish ix i4 i3}.
-
-#[program]
-Instance Make_StrictProvide4
-   `(Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4,
-    ! Distinguish ix i1 i2, ! Distinguish ix i1 i3, ! Distinguish ix i1 i4,
-    ! Distinguish ix i2 i1, ! Distinguish ix i2 i3, ! Distinguish ix i2 i4,
-    ! Distinguish ix i3 i1, ! Distinguish ix i3 i2, ! Distinguish ix i3 i4,
-    ! Distinguish ix i4 i1, ! Distinguish ix i4 i2, ! Distinguish ix i4 i3)
-  : StrictProvide4 ix i1 i2 i3 i4.
-
-Class StrictProvide5 (ix i1 i2 i3 i4 i5 : interface)
-   `{Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4, Provide ix i5,
-     ! Distinguish ix i1 i2, ! Distinguish ix i1 i3, ! Distinguish ix i1 i4,
-     ! Distinguish ix i1 i5, ! Distinguish ix i2 i1, ! Distinguish ix i2 i3,
-     ! Distinguish ix i2 i4, ! Distinguish ix i2 i5, ! Distinguish ix i3 i1,
-     ! Distinguish ix i3 i2, ! Distinguish ix i3 i4, ! Distinguish ix i3 i5,
-     ! Distinguish ix i4 i1, ! Distinguish ix i4 i2, ! Distinguish ix i4 i3,
-     ! Distinguish ix i4 i5, ! Distinguish ix i5 i1, ! Distinguish ix i5 i2,
-     ! Distinguish ix i5 i3, ! Distinguish ix i5 i4}.
-
-#[program]
-Instance Make_StrictProvide5 (ix i1 i2 i3 i4 i5 : interface)
-   `(Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4, Provide ix i5,
-     ! Distinguish ix i1 i2, ! Distinguish ix i1 i3, ! Distinguish ix i1 i4,
-     ! Distinguish ix i1 i5, ! Distinguish ix i2 i1, ! Distinguish ix i2 i3,
-     ! Distinguish ix i2 i4, ! Distinguish ix i2 i5, ! Distinguish ix i3 i1,
-     ! Distinguish ix i3 i2, ! Distinguish ix i3 i4, ! Distinguish ix i3 i5,
-     ! Distinguish ix i4 i1, ! Distinguish ix i4 i2, ! Distinguish ix i4 i3,
-     ! Distinguish ix i4 i5, ! Distinguish ix i5 i1, ! Distinguish ix i5 i2,
-     ! Distinguish ix i5 i3, ! Distinguish ix i5 i4)
-  : StrictProvide5 ix i1 i2 i3 i4 i5.
+Proof.
+  typeclasses eauto.
+Qed.
 
 (** ** Interfaces Sum *)
 
@@ -222,6 +234,7 @@ Inductive iplus (i j : interface) (α : Type) :=
 | in_left (e : i α) : iplus i j α
 | in_right (e : j α) : iplus i j α.
 
+Arguments iplus (i j)%interface α%type.
 Arguments in_left [i j α] (e).
 Arguments in_right [i j α] (e).
 
@@ -255,6 +268,19 @@ with_state true (with_state false get)
 Instance refl_MayProvide (i : interface) : MayProvide i i :=
   { proj_p := fun _ e => Some e
   }.
+
+#[program]
+Instance refl_MayProvide_notation : i :? i.
+
+Next Obligation.
+  constructor.
+Defined.
+
+Next Obligation.
+  constructor.
+  + apply refl_MayProvide.
+  + apply Build_Nil.
+Defined.
 
 #[program]
 Instance refl_Provide (i : interface) : @Provide i i (refl_MayProvide i) :=

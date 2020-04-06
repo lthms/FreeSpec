@@ -13,10 +13,10 @@ Inductive RAISE (α : Type) : interface :=
 
 Arguments Raise [α β] x.
 
-Definition raise `{Into δ α, Provide ix (RAISE α)} {β} (x : δ) : impure ix β :=
+Definition raise `{Into δ α, ix :| RAISE α} {β} (x : δ) : impure ix β :=
   request (Raise (into x)).
 
-Definition try `{Into δ α, Provide ix (RAISE α)} {β} (p : impure ix (δ + β)) : impure ix β :=
+Definition try `{Into δ α, ix :| RAISE α} {β} (p : impure ix (δ + β)) : impure ix β :=
   do let* res := p in
      match res with
      | inl e => raise e

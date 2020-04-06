@@ -13,33 +13,33 @@ Inductive FILES : Type -> Type :=
 | Read (fd : file_descriptor) (size : int) : FILES (files_err + (int * bytes))
 | Close (fd : file_descriptor) : FILES unit.
 
-Definition open `{Provide ix FILES} (path : bytes)
+Definition open `{ix :| FILES} (path : bytes)
   : impure ix (files_err + file_descriptor) :=
   request (Open path).
 
-Definition try_open `{Into files_err err, Provide2 ix (RAISE err) FILES} (path : bytes)
+Definition try_open `{Into files_err err, ix :| RAISE err, FILES} (path : bytes)
   : impure ix file_descriptor :=
   try (open path).
 
-Definition file_size `{Provide ix FILES} (fd : file_descriptor)
+Definition file_size `{ix :| FILES} (fd : file_descriptor)
   : impure ix (files_err + int) :=
   request (FSize fd).
 
-Definition try_file_size `{Into files_err err, Provide2 ix (RAISE err) FILES}
+Definition try_file_size `{Into files_err err, ix :| RAISE err, FILES}
     (fd : file_descriptor)
   : impure ix int :=
   try (file_size fd).
 
-Definition read `{Provide ix FILES} (fd : file_descriptor) (size : int)
+Definition read `{ix :| FILES} (fd : file_descriptor) (size : int)
   : impure ix (files_err + (int * bytes)) :=
   request (Read fd size).
 
-Definition try_read `{Into files_err err, Provide2 ix (RAISE err) FILES}
+Definition try_read `{Into files_err err, ix :| RAISE err, FILES}
     (fd : file_descriptor) (size : int)
   : impure ix (int * bytes) :=
   try (request (Read fd size)).
 
-Definition close `{Provide ix FILES} (fd : file_descriptor)
+Definition close `{ix :| FILES} (fd : file_descriptor)
   : impure ix unit :=
   request (Close fd).
 
