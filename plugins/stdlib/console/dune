@@ -1,0 +1,6 @@
+(library
+  (name freespec_stdlib_console)
+  (public_name coq-freespec-stdlib.console)
+  (synopsis "Handlers for the CONSOLE interface")
+  (flags :standard -rectypes -w -27)
+  (libraries coq-freespec-exec.plugin))

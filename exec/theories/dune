@@ -1,7 +1,0 @@
-(coq.theory
-  (name FreeSpec)
-  (package freespec-exec)
-  (libraries freespec-exec.plugin)
-  (modules Exec Exec.Debug Exec.Eval))
-
-(include_subdirs qualified)

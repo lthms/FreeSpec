@@ -1,8 +1,0 @@
-(library
-  (name freespec_exec)
-  (public_name freespec-exec.plugin)
-  (synopsis "Turn coqc into an interpreter for impure computations")
-  (flags :standard -rectypes -w -27)
-  (libraries coq.stm))
-
-(coq.pp (modules g_freespec_exec))

@@ -1,69 +1,70 @@
--R core/theories FreeSpec
--R core/examples FreeSpec.Examples
--R exec/theories FreeSpec
--I exec/src
--R stdlib/theories FreeSpec
--I stdlib/console
--I stdlib/env
--I stdlib/files
+-R theories/Core FreeSpec.Core
+-R theories/Exec FreeSpec.Exec
+-R theories/Stdlib FreeSpec.Stdlib
+-R examples FreeSpec.Examples
 
-core/theories/Core.v
-core/theories/Core/Interface.v
-core/theories/Core/Semantics.v
-core/theories/Core/Component.v
-core/theories/Core/Morphism.v
-core/theories/Core/Impure.v
-core/theories/Core/Contract.v
-core/theories/Core/Hoare.v
-core/theories/Core/Hoare/Monad.v
-core/theories/Core/Tactics.v
+-I plugins/exec
+-I plugins/stdlib/console
+-I plugins/stdlib/env
+-I plugins/stdlib/files
 
-exec/theories/Exec.v
-exec/theories/Exec/Debug.v
-exec/theories/Exec/Eval.v
+theories/Core/All.v
+theories/Core/Interface.v
+theories/Core/Semantics.v
+theories/Core/Component.v
+theories/Core/Impure.v
+theories/Core/Contract.v
+theories/Core/Hoare.v
+theories/Core/Hoare/Monad.v
+theories/Core/Morphism.v
+theories/Core/Tactics.v
 
-exec/src/interfaces.mli
-exec/src/interfaces.ml
-exec/src/extends.mli
-exec/src/extends.ml
-exec/src/debug.ml
-exec/src/eval.ml
-exec/src/exec.ml
-exec/src/freespec_exec.mlpack
-exec/src/g_freespec_exec.mlg
-exec/src/coqbyte.mli
-exec/src/coqbyte.ml
-exec/src/coqlist.mli
-exec/src/coqlist.ml
-exec/src/coqunit.mli
-exec/src/coqunit.ml
-exec/src/coqstr.mli
-exec/src/coqstr.ml
-exec/src/coqbool.mli
-exec/src/coqbool.ml
-exec/src/coqnum.mli
-exec/src/coqnum.ml
-exec/src/coqsum.mli
-exec/src/coqsum.ml
-exec/src/coqprod.mli
-exec/src/coqprod.ml
-exec/src/query.ml
-exec/src/utils.ml
+theories/Exec/All.v
+theories/Exec/Debug.v
+theories/Exec/Eval.v
 
-stdlib/theories/Stdlib/Raise.v
-stdlib/theories/Stdlib/Env.v
-stdlib/theories/Stdlib/Args.v
-stdlib/theories/Stdlib/Files.v
-stdlib/theories/Stdlib/Console.v
+plugins/exec/interfaces.mli
+plugins/exec/interfaces.ml
+plugins/exec/extends.mli
+plugins/exec/extends.ml
+plugins/exec/debug.ml
+plugins/exec/eval.ml
+plugins/exec/exec.ml
+plugins/exec/freespec_exec.mlpack
+plugins/exec/g_freespec_exec.mlg
+plugins/exec/coqbyte.mli
+plugins/exec/coqbyte.ml
+plugins/exec/coqlist.mli
+plugins/exec/coqlist.ml
+plugins/exec/coqunit.mli
+plugins/exec/coqunit.ml
+plugins/exec/coqstr.mli
+plugins/exec/coqstr.ml
+plugins/exec/coqbool.mli
+plugins/exec/coqbool.ml
+plugins/exec/coqnum.mli
+plugins/exec/coqnum.ml
+plugins/exec/coqsum.mli
+plugins/exec/coqsum.ml
+plugins/exec/coqprod.mli
+plugins/exec/coqprod.ml
+plugins/exec/query.ml
+plugins/exec/utils.ml
 
-stdlib/console/console.ml
-stdlib/console/freespec_stdlib_console.mlpack
-stdlib/env/env.ml
-stdlib/env/freespec_stdlib_env.mlpack
-stdlib/files/datatypes.ml
-stdlib/files/datatypes.mli
-stdlib/files/files.ml
-stdlib/files/freespec_stdlib_files.mlpack
+theories/Stdlib/Raise.v
+theories/Stdlib/Env.v
+theories/Stdlib/Args.v
+theories/Stdlib/Files.v
+theories/Stdlib/Console.v
 
-core/examples/airlock.v
-core/examples/smram.v
+plugins/stdlib/console/console.ml
+plugins/stdlib/console/freespec_stdlib_console.mlpack
+plugins/stdlib/env/env.ml
+plugins/stdlib/env/freespec_stdlib_env.mlpack
+plugins/stdlib/files/datatypes.ml
+plugins/stdlib/files/datatypes.mli
+plugins/stdlib/files/files.ml
+plugins/stdlib/files/freespec_stdlib_files.mlpack
+
+examples/airlock.v
+examples/smram.v

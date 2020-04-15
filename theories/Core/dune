@@ -1,0 +1,5 @@
+(coq.theory
+  (name FreeSpec.Core)
+  (package coq-freespec-core))
+
+(include_subdirs qualified)

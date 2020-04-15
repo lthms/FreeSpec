@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 bold=$(tput bold)
 normal=$(tput sgr0)
@@ -65,12 +65,8 @@ function run_test () {
     rm ${output}
 }
 
-tests="$(find . -name tests -type d)"
-
-for dir in ${tests}; do
-    for test in ${dir}/*.v; do
-        run_test ${test}
-    done
+for test in tests/*.v; do
+    run_test ${test}
 done
 
 exit ${exit_code=}

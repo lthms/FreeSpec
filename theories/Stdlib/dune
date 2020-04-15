@@ -1,0 +1,9 @@
+(coq.theory
+  (name FreeSpec.Stdlib)
+  (package coq-freespec-stdlib)
+  (theories FreeSpec.Exec)
+  (libraries coq-freespec-stdlib.console
+             coq-freespec-stdlib.env
+             coq-freespec-stdlib.files))
+
+(include_subdirs qualified)

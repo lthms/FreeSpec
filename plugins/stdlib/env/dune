@@ -1,0 +1,6 @@
+(library
+  (name freespec_stdlib_env)
+  (public_name coq-freespec-stdlib.env)
+  (synopsis "Handlers for the ENV interface")
+  (flags :standard -rectypes -w -27)
+  (libraries coq-freespec-exec.plugin))

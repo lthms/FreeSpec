@@ -20,9 +20,9 @@ _build/
 *.cmi
 *.cmx
 *.cmo
-exec/src/g_freespec_exec.ml
+plugins/exec/g_freespec_exec.ml
 
-Makefile.coq*
+Makefile*
 .merlin
 
 # generated docs
