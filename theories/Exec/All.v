@@ -19,7 +19,7 @@
  *)
 
 From FreeSpec.Core Require Export All.
-From FreeSpec.Exec Require Export Debug Eval.
+From FreeSpec.Exec Require Export Debug Eval Heap.
 
 (* TODO: this shall be in the standard library of Coq *)
 Register unit as core.unit.type.

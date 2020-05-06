@@ -7,6 +7,7 @@ _build/
 .*.d
 *.glob
 *.vo
+*.vio
 *.vok
 *.vos
 .lia.cache

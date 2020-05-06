@@ -21,6 +21,7 @@ theories/Core/Tactics.v
 
 theories/Exec/All.v
 theories/Exec/Debug.v
+theories/Exec/Heap.v
 theories/Exec/Eval.v
 
 plugins/exec/interfaces.mli
@@ -50,6 +51,8 @@ plugins/exec/coqprod.mli
 plugins/exec/coqprod.ml
 plugins/exec/query.ml
 plugins/exec/utils.ml
+plugins/exec/heap.mli
+plugins/exec/heap.ml
 
 theories/Stdlib/Raise.v
 theories/Stdlib/Env.v
