@@ -51,6 +51,8 @@ plugins/exec/coqprod.mli
 plugins/exec/coqprod.ml
 plugins/exec/query.ml
 plugins/exec/utils.ml
+plugins/exec/resources.mli
+plugins/exec/resources.ml
 plugins/exec/heap.mli
 plugins/exec/heap.ml
 

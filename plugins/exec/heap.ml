@@ -22,34 +22,20 @@ open Extends
 open Coqnum
 open Coqunit
 
-type 'a stream = Cons of ('a * (unit -> 'a stream))
-
-let rec from n = Cons (n, fun _ -> from (n + 1))
-
-let keys = ref (from 0)
-
-let fresh_key _ =
-  match !keys with
-  | Cons (n, next) -> begin
-      keys := next ();
-      n
-    end
-
-let free_key k =
-  keys := Cons (k, fun _ -> !keys)
+let count = ref 0
 
 let heap : (int, Constr.t) Hashtbl.t =
   Hashtbl.create ~random:false 100
 
 let new_ref trm = begin
-  let k = fresh_key () in
+  let k = !count in
+  count := !count + 1;
   Hashtbl.add heap k trm;
   k
 end
 
 let destruct k = begin
   Hashtbl.remove heap k;
-  free_key k
 end
 
 let assign = Hashtbl.replace heap
