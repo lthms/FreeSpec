@@ -39,15 +39,14 @@ module FilesErr =
         let names = [("make_files_err", Make_files_err_constructor)]
       end)
 
-let make_coqfd fd = int_to_coqint (Resources.insert fd)
+let make_coqfd fd = Resources.insert fd
 
 let destruct_coqfd coqfd =
-  let idx = int_of_coqint coqfd in
-  let x = Resources.find idx in
-  Resources.remove idx;
+  let x = Resources.find coqfd in
+  Resources.remove coqfd;
   x
 
-let fd_of_coqfd coqfd = Resources.find (int_of_coqint coqfd)
+let fd_of_coqfd = Resources.find
 
 let int_to_files_err x =
   Constr.mkApp (FilesErr.mkConstructor "make_files_err", of_list [int_to_coqint x])

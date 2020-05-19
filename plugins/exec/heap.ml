@@ -31,16 +31,16 @@ let new_ref trm = begin
   let k = !count in
   count := !count + 1;
   Hashtbl.add heap k trm;
-  k
+  int_to_coqint k
 end
 
 let destruct k = begin
-  Hashtbl.remove heap k;
+  Hashtbl.remove heap (int_of_coqint k);
 end
 
-let assign = Hashtbl.replace heap
+let assign k = Hashtbl.replace heap (int_of_coqint k)
 
-let deref = Hashtbl.find heap
+let deref k = Hashtbl.find heap (int_of_coqint k)
 
 (* private *)
 
@@ -49,23 +49,23 @@ let path = "freespec.exec.heap"
 let _ =
   let new_ref_primitive = function
     | [_term_type; trm]
-      -> int_to_coqint @@ new_ref trm
+      -> new_ref trm
     | _ -> assert false in
   let assign_primitive = function
     | [_term_type; ptr; trm]
       -> begin
-          assign (int_of_coqint ptr) trm;
+          assign ptr trm;
           coqtt
         end
     | _ -> assert false in
   let deref_primitive = function
     | [_term_type; ptr]
-      -> deref (int_of_coqint ptr)
+      -> deref ptr
     | _ -> assert false in
   let destruct_primitive = function
     | [_term_type; ptr]
       -> begin
-          destruct (int_of_coqint ptr);
+          destruct ptr;
           coqtt
         end
     | _ -> assert false in

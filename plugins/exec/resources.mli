@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-val insert : 'a -> int
-val replace : int -> 'a -> unit
-val find : int -> 'a
-val remove : int -> unit
+val insert : 'a -> Constr.t
+val replace : Constr.t -> 'a -> unit
+val find : Constr.t -> 'a
+val remove : Constr.t -> unit

@@ -18,6 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+open Coqnum
+
 type store = (int, Obj.t) Hashtbl.t
 
 let vault : store = Hashtbl.create ~random:false 10
@@ -27,13 +29,13 @@ let insert v = begin
   let k = !count in
   count := !count + 1;
   Hashtbl.add vault k (Obj.repr v);
-  k
+  int_to_coqint k
 end
 
 let remove k = begin
-  Hashtbl.remove vault k
+  Hashtbl.remove vault (int_of_coqint k)
 end
 
-let replace k v = Hashtbl.replace vault k (Obj.repr v)
+let replace k v = Hashtbl.replace vault (int_of_coqint k) (Obj.repr v)
 
-let find k = Obj.obj (Hashtbl.find vault k)
+let find k = Obj.obj (Hashtbl.find vault (int_of_coqint k))
