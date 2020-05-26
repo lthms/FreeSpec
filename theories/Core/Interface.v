@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Import All.
+From Base Require Export Prelude.
 From Coq Require Import Program.
 
 (** * Definition  *)

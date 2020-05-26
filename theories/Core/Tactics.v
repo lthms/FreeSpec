@@ -18,7 +18,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Import All.
 From FreeSpec.Core Require Import Contract.
 
 (** The [impure] monad is an empty shell which brings structure and only that.
@@ -86,8 +85,8 @@ Ltac prove_impure :=
     let x := fresh "x" in
     let w := fresh "w" in
     let Hrun := fresh "Hrun" in
-    apply respectful_bind_respectful_run; [| intros x w Hrun;
-                                             prove_impure ]
+    apply respectful_bind_respectful_run; [ | intros x w Hrun;
+                                              prove_impure ]
 
 
   | |- respectful_impure _ _ (local _) => constructor

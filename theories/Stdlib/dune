@@ -1,9 +1,18 @@
+(library
+  (name freespec_stdlib)
+  (public_name coq-freespec-stdlib.lib)
+  (libraries unix coq-base.lib))
+
+(rule
+  (target Env.v)
+  (action (run coqffi -p coq-base -m FreeSpec %{cmi:env} -o %{target})))
+
+(rule
+  (target Files.v)
+  (action (run coqffi -p coq-base -m FreeSpec %{cmi:files} -o %{target})))
+
 (coq.theory
   (name FreeSpec.Stdlib)
-  (package coq-freespec-stdlib)
-  (theories FreeSpec.Exec)
-  (libraries coq-freespec-stdlib.console
-             coq-freespec-stdlib.env
-             coq-freespec-stdlib.files))
-
-(include_subdirs qualified)
+  (modules Env Args Files Console Raise)
+  (theories FreeSpec.Core)
+  (package coq-freespec-stdlib))

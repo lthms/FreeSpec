@@ -18,7 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Freespec_exec.Coqstr
+open Coqbase
+open Freespec_exec.Coqbytestring
 open Freespec_exec.Extends
 open Freespec_exec.Coqunit
 
@@ -27,16 +28,16 @@ let path = "freespec.stdlib.env"
 let install_interface =
   let get = function
     | [var]
-      -> let str = try Unix.getenv (Bytes.to_string @@ bytes_of_coqbytes var)
+      -> let str = try Unix.getenv (Bytestring.to_string (bytestring_of_coqbytestring var))
                    with _ -> ""
-         in bytes_to_coqbytes @@ Bytes.of_string str
+         in bytestring_to_coqbytestring (Bytestring.of_string str)
     | _
       -> assert false in
   let set = function
     | [var; value]
       -> Unix.putenv
-           (Bytes.to_string @@ bytes_of_coqbytes var)
-           (Bytes.to_string @@ bytes_of_coqbytes value);
+           (Bytestring.to_string @@ bytestring_of_coqbytestring var)
+           (Bytestring.to_string @@ bytestring_of_coqbytestring value);
          coqtt
     | _ -> assert false
   in register_interface path [("GetEnv", get); ("SetEnv", set)]

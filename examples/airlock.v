@@ -20,7 +20,8 @@
 
 From Coq Require Import Arith.
 From FreeSpec.Core Require Import All.
-From Prelude Require Import Tactics.
+
+#[local] Open Scope nat_scope.
 
 (** * Specifying *)
 
@@ -44,14 +45,12 @@ Definition toggle `{Provide ix DOORS} (d : door) : impure ix unit :=
   request (Toggle d).
 
 Definition open_door `{Provide ix DOORS} (d : door) : impure ix unit :=
-  do let* open := is_open d in
-     when (negb open) (toggle d)
-  end.
+  let* open := is_open d in
+  when (negb open) (toggle d).
 
 Definition close_door `{Provide ix DOORS} (d : door) : impure ix unit :=
-  do let* open := is_open d in
-     when open (toggle d)
-   end.
+  let* open := is_open d in
+  when open (toggle d).
 
 (** ** Controller *)
 
@@ -71,22 +70,21 @@ Definition co (d : door) : door :=
   | right => left
   end.
 
-Definition controller `{Provide ix DOORS, Provide ix (STORE nat)} : component CONTROLLER ix :=
+Definition controller `{Provide ix DOORS, Provide ix (STORE nat)}
+  : component CONTROLLER ix :=
   fun _ op =>
     match op with
     | Tick =>
-      do let* cpt := get in
-         when (15 <? cpt) do
-           close_door left;
-           close_door right;
-           put 0
-         end
-      end
-    | RequestOpen d => do
-        close_door (co d);
-        open_door d;
+      let* cpt := get in
+      when (15 <? cpt) begin
+        close_door left;;
+        close_door right;;
         put 0
       end
+    | RequestOpen d =>
+        close_door (co d);;
+        open_door d;;
+        put 0
     end.
 
 (** * Verifying the Airlock Controller *)
@@ -285,7 +283,7 @@ Proof.
   induction p; intros ω run safe.
   + now unroll_respectful_run run.
   + unroll_respectful_run run.
-    destruct (proj_p e) as [ e' |].
+    destruct (proj_p e) as [ e' | ].
     ++ eapply H1; eauto.
        destruct e' as [d|d]; cbn in *; auto.
        (* We try to toggle a door [d]. *)
@@ -308,12 +306,7 @@ Qed.
 
 (** ** Main Theorem *)
 
-Lemma controller_correct `{ M1 : MayProvide ix DOORS
-                          , P1 : @Provide ix DOORS M1
-                          , M2 : MayProvide ix (STORE nat)
-                          , P2 : @Provide ix (STORE nat) M2
-                          , @Distinguish ix (STORE nat) DOORS M2 P2 M1
-                          }
+Lemma controller_correct `{StrictProvide2 ix DOORS (STORE nat)}
   : correct_component controller
                       (no_contract CONTROLLER)
                       doors_contract
@@ -323,7 +316,7 @@ Proof.
   intros ωc ωd pred a e req.
   split.
   + destruct e.
-    ++ prove_impure.
+    ++ repeat prove_impure.
        +++ apply close_door_respectful.
        +++ apply close_door_respectful.
     ++ prove_impure.

@@ -31,7 +31,7 @@ Register inl as core.sum.inl.
 Register inr as core.sum.inr.
 
 From Coq Require Import String Ascii Int63 Byte.
-From Prelude Require Import Bytes.
+From Base Require Import Prelude.
 
 Register string as plugins.syntax.string.type.
 Register EmptyString as plugins.syntax.string.EmptyString.
@@ -43,6 +43,7 @@ Register Ascii as plugins.syntax.ascii.Ascii.
 Register byte as coq.byte.type.
 (* end TODO *)
 
+Declare ML Module "coqbase".
 Declare ML Module "freespec_exec".
 
 (** * Extending FreeSpec.Exec *)
@@ -154,81 +155,3 @@ let _ =
     For a concrete example of the use of FreeSpec.Exec extensible feature,
     interested readers can have a look at the FreeSpec.Stdlib project in the
     <<stdlib/>> folder of this repository. *)
-
-(** ** By Means of Compoments *)
-
-(** The second way to extend FreeSpec.Exec is to write handlers in Coq, in the
-    form of FreeSpec compoments. This approach has an important advantage over
-    writing an OCaml plugin: it is possible to verify a FreeSpec
-    [component]. However, we foresee an impact over the resulting program
-    performances.
-
-    The function [with_component] allows for locally providing a novel interface
-    [j] in addition to an impure computation [p], by means of a FreeSpec
-    component [c : compoment j ix s].  Two impure computations have to be
-    provided: [initializer] to create the initial state of [c], and [finalizer]
-    to clean-up the final state of [c] after the interpretation of [p]. *)
-
-#[local]
-Fixpoint with_component_aux {ix j α} (c : component j ix) (p : impure (ix + j) α)
-  : impure ix α :=
-  match p with
-  | local x => local x
-  | request_then (in_right e) f =>
-    c _ e >>= fun res => with_component_aux c (f res)
-  | request_then (in_left e) f =>
-    request_then e (fun x => with_component_aux c (f x))
-  end.
-
-Definition with_component {ix j α}
-  (initializer : impure ix unit)
-  (c : component j ix)
-  (finalizer : impure ix unit)
-  (p : impure (ix + j) α)
-  : impure ix α :=
-  do initializer;
-     let* res := with_component_aux c p in
-     finalizer;
-     pure res
-  end.
-
-(** ** By Means of Semantics *)
-
-#[local]
-Fixpoint with_semantics {ix j α} (sem : semantics j) (p : impure (ix + j) α)
-  : impure ix α :=
-  match p with
-  | local x => local x
-  | request_then (in_right e) f =>
-    let run := run_effect sem e in
-    let res := interp_result run in
-    let next := interp_next run in
-    with_semantics next (f res)
-  | request_then (in_left e) f =>
-    request_then e (fun x => with_semantics sem (f x))
-  end.
-
-(** We provide [with_store], a helper function to locally provide a mutable
-    variable. *)
-
-Fixpoint with_store {ix s a} (x : s) (p : impure (ix + STORE s) a)
-  : impure ix a :=
-  with_semantics (store x) p.
-
-(** Nesting [with_semantics] calls works to some extends. If each
-    [with_semantics] provides a different interface from the rest of the stack,
-    then everything behaves as expected. If, for some reason, you end up in a
-    situation where you provide the exact same interface twice (typically if you
-    use [with_store]), then the typeclass inferences will favor the deepest one
-    in the stack. For instance,
-
-<<
-Compute (with_store 0 (with_store 1 get)).
->>
-
-    returns
-
-<<
-     = local 1
-     : impure ?ix nat
->> *)

@@ -18,23 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Export Bytes.
-From FreeSpec.Exec Require Export All.
+val int_of_coqi63 : Constr.constr -> int
+val int_to_coqi63 : int -> Constr.constr
 
-Generalizable All Variables.
-
-Inductive ENV : interface :=
-| GetEnv (name : bytes) : ENV bytes
-| SetEnv (name : bytes) (value : bytes) : ENV unit.
-
-Register ENV as freespec.stdlib.env.type.
-Register GetEnv as freespec.stdlib.env.GetEnv.
-Register SetEnv as freespec.stdlib.env.SetEnv.
-
-Definition get_env `{Provide ix ENV} (name : bytes) : impure ix bytes :=
-  request (GetEnv name).
-
-Definition set_env `{Provide ix ENV} (name : bytes) (value : bytes) : impure ix unit :=
-  request (SetEnv name value).
-
-Declare ML Module "freespec_stdlib_env".
+val coqi63_t : Constr.constr

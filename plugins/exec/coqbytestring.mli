@@ -1,8 +1,8 @@
 (* FreeSpec
- * Copyright (C) 2018–2019 ANSSI
+ * Copyright (C) 2018–2020 ANSSI
  *
  * Contributors:
- * 2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2020 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,20 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-val char_of_coqascii : Constr.constr -> char
-val char_to_coqascii : char -> Constr.constr
+open Coqbase
 
-val bytes_of_coqstr : Constr.constr -> bytes
-val bytes_to_coqstr : bytes -> Constr.constr
+val bytestring_to_coqbytestring : Bytestring.t -> Constr.constr
+val bytestring_of_coqbytestring : Constr.constr -> Bytestring.t
 
-val string_to_coqstr : string -> Constr.constr
-val string_of_coqstr : Constr.constr -> string
-
-val bytes_of_coqbytes : Constr.constr -> bytes
-val bytes_to_coqbytes : bytes -> Constr.constr
-
-val string_to_coqbytes : string -> Constr.constr
-val string_of_coqbytes : Constr.constr -> string
-
-val coqstr_t : Constr.constr
-val coqbytes_t : Constr.constr
+val coqbytestring_t : Constr.constr

@@ -3,14 +3,12 @@ Query
 Coqbool
 Coqbyte
 Coqlist
-Coqnum
+Coqi63
 Coqprod
-Coqstr
 Coqsum
 Coqunit
 Interfaces
 Extends
-Debug
 Exec
 Heap
 Resources

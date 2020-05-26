@@ -1,0 +1,9 @@
+(coq.extraction
+  (prelude pipe)
+  (theories FreeSpec.Stdlib FreeSpec.Core)
+  (extracted_modules pipe))
+
+(executable
+  (flags -open Coqbase)
+  (name pipe)
+  (libraries unix coq-base.lib coq-freespec-stdlib.lib))

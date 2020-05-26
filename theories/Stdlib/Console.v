@@ -18,23 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Export Bytes.
-From FreeSpec.Exec Require Export All.
+From Base Require Export Prelude.
+From FreeSpec.Core Require Import All.
+From FreeSpec.Stdlib Require Export Files Raise.
 
 Generalizable All Variables.
 
-Inductive CONSOLE : interface :=
-| Scan : CONSOLE bytes
-| Echo (str : bytes) : CONSOLE unit.
+Definition scan `{Provide2 ix FILES (RAISE file_err)} : impure ix bytestring :=
+  try (read_line stdin).
 
-Register CONSOLE as freespec.stdlib.console.type.
-Register Scan as freespec.stdlib.console.Scan.
-Register Echo as freespec.stdlib.console.Echo.
-
-Definition scan `{Provide ix CONSOLE} : impure ix bytes :=
-  request Scan.
-
-Definition echo `{Provide ix CONSOLE} (str: bytes) : impure ix unit :=
-  request (Echo str).
-
-Declare ML Module "freespec_stdlib_console".
+Definition echo `{Provide2 ix FILES (RAISE file_err)} (str: bytestring) : impure ix unit :=
+  try (write stdout str 0 (Bytestring.length str));;
+  pure tt.

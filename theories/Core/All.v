@@ -18,5 +18,5 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Export All.
+From Base Require Export Prelude.
 From FreeSpec.Core Require Export Interface Impure Semantics Contract Tactics.

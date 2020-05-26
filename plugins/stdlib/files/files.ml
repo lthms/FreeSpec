@@ -18,11 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+open Coqbase
 open Freespec_exec.Extends
-open Freespec_exec.Coqstr
+open Freespec_exec.Coqbytestring
 open Freespec_exec.Coqsum
 open Freespec_exec.Coqprod
-open Freespec_exec.Coqnum
+open Freespec_exec.Coqi63
 open Freespec_exec.Coqunit
 open Datatypes
 open Unix
@@ -34,7 +35,7 @@ let try_unix typ to_coq fop =
 
 let files_open = function
     | [coqpath] ->
-       let path = string_of_coqbytes coqpath in
+       let path = Bytestring.to_string (bytestring_of_coqbytestring coqpath) in
        try_unix coqfd_t make_coqfd (fun _ -> openfile path [O_RDONLY] 0o640)
     | _ -> assert false
 
@@ -48,22 +49,24 @@ let files_close = function
 let files_fsize = function
     | [coqfd] ->
        let fd = fd_of_coqfd coqfd in
-       try_unix coqint_t int_to_coqint (fun _ -> (fstat fd).st_size)
+       try_unix coqi63_t int_to_coqi63 (fun _ -> (fstat fd).st_size)
     | _ -> assert false
 
 let files_read = function
     | [coqfd; coqsize] ->
        let fd = fd_of_coqfd coqfd in
-       let size = int_of_coqint coqsize in
+       let size = int_of_coqi63 coqsize in
 
        try_unix
-         (coqprod_t coqint_t coqbytes_t)
-         (prod_to_coqprod coqint_t int_to_coqint coqbytes_t bytes_to_coqbytes)
+         (coqprod_t coqi63_t coqbytestring_t)
+         (prod_to_coqprod coqi63_t int_to_coqi63 coqbytestring_t bytestring_to_coqbytestring)
          (fun _ ->
            let buffer = Bytes.create size in
            let read = read fd buffer 0 size in
 
-           (read, if read < size then Bytes.sub buffer 0 read else buffer))
+           (read, Bytestring.of_string @@ Bytes.to_string (if read < size
+                                                           then Bytes.sub buffer 0 read
+                                                           else buffer)))
     | _ -> assert false
 
 let path = "freespec.stdlib.files"

@@ -18,8 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Coq Require Import Equivalence Setoid Morphisms.
-From Prelude Require Import All.
+From Base Require Export Prelude.
 
 (** * Definition *)
 
@@ -188,7 +187,9 @@ Inductive hoare_eq {Σ α} (h1 h2 : hoare Σ α) : Prop :=
 
 Lemma hoare_eq_refl {Σ α} (h : hoare Σ α) : hoare_eq h h.
 
-Proof. easy. Qed.
+Proof.
+  easy.
+Qed.
 
 Lemma hoare_eq_sym {Σ α} (h1 h2 : hoare Σ α) : hoare_eq h1 h2 -> hoare_eq h2 h1.
 
@@ -223,13 +224,14 @@ Proof.
     apply hoare_eq_trans.
 Qed.
 
-#[program]
-Instance hoare_eq_Equality : Equality (@hoare Σ α) :=
-  { equal := hoare_eq
-  }.
+Instance hoare_eq_EquProp : EquProp (@hoare Σ α) :=
+  { equal := hoare_eq }.
 
 #[program]
-Instance pre_Proper : Proper ('equal ==> eq ==> iff) (@pre Σ α).
+Instance hoare_eq_EquPropL : EquPropL (@hoare Σ α).
+
+#[program]
+Instance pre_Proper : Proper (equal ==> eq ==> iff) (@pre Σ α).
 
 Next Obligation.
   add_morphism_tactic.
@@ -238,7 +240,7 @@ Next Obligation.
 Qed.
 
 #[program]
-Instance post_Proper : Proper ('equal ==> eq ==> eq ==> eq ==> iff) (@post Σ α).
+Instance post_Proper : Proper (equal ==> eq ==> eq ==> eq ==> iff) (@post Σ α).
 
 Next Obligation.
   add_morphism_tactic.
@@ -251,13 +253,14 @@ Qed.
 Definition hoare_map {Σ α β} (f : α -> β) (h : hoare Σ α) : hoare Σ β :=
   hoare_bind h (fun x => hoare_pure (f x)).
 
-#[refine]
 Instance hoare_Functor : Functor (hoare Σ) :=
-  { map := fun _ _ => hoare_map
-  }.
+  { map := fun _ _ => hoare_map }.
+
+#[refine]
+Instance hoare_FunctorL : FunctorL (hoare Σ) := {}.
 
 Proof.
-  all: cbn; intros; (constructor; [ intros s; now cbn |]).
+  all: cbn; intros; (constructor; [ intros s; now cbn | ]).
   + intros s r s'.
     split; cbn.
     ++ now angry_rewrite.
@@ -269,7 +272,7 @@ Proof.
        angry_exists.
     ++ angry_intros; subst.
        angry_exists.
-Defined.
+Qed.
 
 (** ** [Applicative] *)
 
@@ -277,7 +280,7 @@ Definition hoare_apply {Σ α β} (hf : hoare Σ (α -> β)) (h : hoare Σ α)
   : hoare Σ β :=
   hoare_bind hf (fun f => hoare_map f h).
 
-Lemma hoare_apply_id `{Equality α} {Σ} (v : hoare Σ α)
+Lemma hoare_apply_id `{EquProp α} {Σ} (v : hoare Σ α)
    : hoare_eq (hoare_apply (hoare_pure id) v) v.
 
 Proof.
@@ -285,7 +288,7 @@ Proof.
   all: intros; cbn ; now angry_rewrite.
 Qed.
 
-Lemma hoare_apply_compose `{Equality γ} {Σ α β}
+Lemma hoare_apply_compose `{EquProp γ} {Σ α β}
     (u : hoare Σ (β -> γ)) (v : hoare Σ (α -> β)) (w : hoare Σ α)
   : hoare_eq (hoare_apply (hoare_apply (hoare_apply (hoare_pure compose) u) v) w)
              (hoare_apply u (hoare_apply v w)).
@@ -294,7 +297,7 @@ Proof.
   constructor; intros; cbn.
   + angry_rewrite.
     rewrite and_assoc.
-    rewrite <- (and_iff_compat_l (pre u s)); [ reflexivity |].
+    rewrite <- (and_iff_compat_l (pre u s)); [ reflexivity | ].
     angry_rewrite.
     split.
     ++ intros; split.
@@ -321,7 +324,7 @@ Proof.
        repeat (eexists; eauto).
 Qed.
 
-Lemma hoare_apply_pure {Σ α} `{Equality β}
+Lemma hoare_apply_pure {Σ α} `{EquProp β}
     (v : α -> β) (x : α)
   : hoare_eq (Σ := Σ) (hoare_apply (hoare_pure v) (hoare_pure x)) (hoare_pure (v x)).
 
@@ -336,7 +339,7 @@ Proof.
     angry_exists.
 Qed.
 
-Lemma hoare_pure_apply {Σ α} `{Equality β}
+Lemma hoare_pure_apply {Σ α} `{EquProp β}
     (u : hoare Σ (α -> β)) (y : α)
   : hoare_eq (hoare_apply u (hoare_pure y))
              (hoare_apply (hoare_pure (fun z => z y)) u).
@@ -351,7 +354,7 @@ Proof.
       angry_exists.
 Qed.
 
-Lemma hoare_map_hoare_apply {Σ α} `{Equality β}
+Lemma hoare_map_hoare_apply {Σ α} `{EquProp β}
     (g : α -> β) (x : hoare Σ α)
   : hoare_eq (hoare_map g x) (hoare_apply (hoare_pure g) x).
 
@@ -359,11 +362,13 @@ Proof.
   constructor; cbn; intros; now angry_rewrite.
 Qed.
 
-#[refine]
 Instance hoare_Applicative : Applicative (hoare Σ) :=
   { apply := fun _ _ => hoare_apply
   ; pure := fun _ => hoare_pure
   }.
+
+#[refine]
+Instance hoare_ApplicativeL : ApplicativeL (hoare Σ) := {}.
 
 Proof.
   all: cbn; intros.
@@ -372,21 +377,22 @@ Proof.
   + apply hoare_apply_pure.
   + apply hoare_pure_apply.
   + apply hoare_map_hoare_apply.
-Defined.
+Qed.
 
 (** ** [Monad] *)
 
-Lemma hoare_bind_pure {Σ α} `{Equality β} (x : α) (f : α -> hoare Σ β)
+Lemma hoare_bind_pure {Σ α} `{EquProp β} (x : α) (f : α -> hoare Σ β)
   : hoare_eq (hoare_bind (hoare_pure x) f) (f x).
 
 Proof.
   constructor; cbn; intros; now angry_rewrite.
 Qed.
 
-#[refine]
 Instance hoare_Monad : Monad (hoare Σ) :=
-  { bind := fun _ _ => hoare_bind
-  }.
+  { bind := fun _ _ => hoare_bind }.
+
+#[refine]
+Instance hoare_MonadL : MonadL (hoare Σ) := {}.
 
 Proof.
   all: cbn; intros.
@@ -406,14 +412,14 @@ Proof.
            intros x s' q.
            split; auto.
            intros t s'' q'.
-           apply H2.
+           apply H1.
            angry_exists.
        +++ angry_intros.
            repeat (split; auto).
            ++++ intros x s' q.
-                now apply H2.
+                now apply H1.
            ++++ repeat angry_intros.
-                eapply H2; eauto.
+                eapply H1; eauto.
     ++ intros s x s'.
        cbn.
        split.
@@ -424,11 +430,11 @@ Proof.
   + constructor.
     ++ intros s.
        cbn.
-       setoid_rewrite H0.
+       setoid_rewrite H.
        reflexivity.
     ++ intros s r s'.
        cbn.
-       setoid_rewrite H0.
+       setoid_rewrite H.
        reflexivity.
   + reflexivity.
-Defined.
+Qed.

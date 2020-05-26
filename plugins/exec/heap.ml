@@ -19,28 +19,13 @@
  *)
 
 open Extends
-open Coqnum
 open Coqunit
 
-let count = ref 0
-
-let heap : (int, Constr.t) Hashtbl.t =
-  Hashtbl.create ~random:false 100
-
-let new_ref trm = begin
-  let k = !count in
-  count := !count + 1;
-  Hashtbl.add heap k trm;
-  int_to_coqint k
-end
-
-let destruct k = begin
-  Hashtbl.remove heap (int_of_coqint k);
-end
-
-let assign k = Hashtbl.replace heap (int_of_coqint k)
-
-let deref k = Hashtbl.find heap (int_of_coqint k)
+let heap = Table.create ()
+let new_ref = Table.add heap
+let destruct = Table.remove heap
+let assign = Table.replace heap
+let deref = Table.find heap
 
 (* private *)
 

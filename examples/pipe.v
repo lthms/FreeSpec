@@ -18,11 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From FreeSpec Require Import Console.
+From Base Require Import Prelude Extraction.
+From FreeSpec.Core Require Import All Extraction.
+From FreeSpec.Stdlib Require Import Console.
 
 Generalizable All Variables.
 
-Definition pipe `{Provide ix CONSOLE}: impure ix unit :=
+Definition pipe `{Provide2 ix FILES (RAISE file_err)} : impure ix unit :=
   scan >>= echo.
 
-Exec pipe.
+Definition main : unit := eval_impure FilesExtr.files (halt_on_error pipe).
+
+Extraction "pipe.ml" main.

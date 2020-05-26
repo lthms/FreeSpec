@@ -18,8 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Import All.
-From FreeSpec Require Import Impure Contract Tactics.
+From FreeSpec Require Export Impure Contract Tactics.
 From FreeSpec Require Export Hoare.Monad.
 
 (** In _Dijkstra Monads for Free_, Ahman et al. explore the idea of “reifying”
@@ -30,6 +29,7 @@ From FreeSpec Require Export Hoare.Monad.
     into a monad [m] to another monad [w] is a morphism to project terms of [m
     a] (for any [a]) to terms of [w a]. *)
 
+#[universes(polymorphic)]
 Definition second_order_morphism (m : Type -> Type) (w : Type -> Type) :=
   forall (α : Type), m α -> w α.
 
@@ -41,7 +41,7 @@ Infix "~>" := second_order_morphism (at level 80, no associativity) : type_scope
     pure, computable value as far as Coq is concerned. *)
 
 Definition run_impure_reify {i} : impure i ~> state (semantics i) :=
-  fun _ p sem => (fun x => (interp_result x, interp_next x)) $ run_impure sem p.
+  fun _ p sem => (fun x => (interp_result x, interp_next x)) (run_impure sem p).
 
 (** Even more interesting: the definition of [impure] allows us to consider a
     more general approach to construct morphism from [impure] to a monad [w]. We
@@ -62,23 +62,23 @@ Definition morphism_lift `{Monad w} {i} (s : i ~> w) : impure i ~> w :=
 
 Definition run_impure_reify' {i} : impure i ~> state (semantics i) :=
   morphism_lift
-    (fun* _ e sem =>
+    (fun _ e sem =>
        (fun x => (interp_result x, interp_next x)) <$> run_effect sem e).
 
-Lemma run_impure_equiv `{Equality α} {i} (p : impure i α)
-  : run_impure_reify _ p == run_impure_reify' _ p.
+Lemma run_impure_equiv `{EquPropL α} {i} (p : impure i α)
+  : run_impure_reify _ p === run_impure_reify' _ p.
 
 Proof.
   induction p.
   + reflexivity.
   + intros sem.
     replace (run_impure_reify α (request_then e f) sem)
-      with (run_impure_reify α (f (interp_result $ run_effect sem e))
-                             (interp_next $ run_effect sem e)); [| reflexivity].
+      with (run_impure_reify α (f (interp_result (run_effect sem e)))
+                             (interp_next (run_effect sem e))); [ | reflexivity].
     replace (run_impure_reify' α (request_then e f) sem)
-      with (run_impure_reify' α (f (interp_result $ run_effect sem e))
-                             (interp_next $ run_effect sem e)); [| reflexivity].
-    apply H0.
+      with (run_impure_reify' α (f (interp_result (run_effect sem e)))
+                             (interp_next (run_effect sem e))); [ | reflexivity].
+    apply H1.
 Qed.
 
 (** But we can also consider other monads, more suitable for reasoning about

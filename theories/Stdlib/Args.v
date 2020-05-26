@@ -18,29 +18,29 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Coq Require Export Int63.
-From Prelude Require Import Int Text Bytes.
+From Base Require Import Prelude.
+From FreeSpec.Core Require Import All.
 From FreeSpec.Stdlib Require Import Env.
 
 Inductive ARGS : interface :=
-| ArgCount : ARGS int
-| ArgValue (nth : int) : ARGS bytes.
+| ArgCount : ARGS i63
+| ArgValue (nth : i63) : ARGS (option bytestring).
 
-Definition arg_count `{Provide ix ARGS} : impure ix int := request ArgCount.
+Definition arg_count `{Provide ix ARGS} : impure ix i63 := request ArgCount.
 
-Definition arg_value `{Provide ix ARGS} (nth : int) : impure ix bytes := request (ArgValue nth).
+Definition arg_value `{Provide ix ARGS} (nth : i63) : impure ix (option bytestring) :=
+  request (ArgValue nth).
 
 #[local]
 Definition args `{Provide ix ENV} : component ARGS ix :=
-  fun* (a : Type) (e : ARGS a) =>
-    match e with
-    | ArgCount => do let* x := get_env (bytes_of_text t#"FREESPEC_EXEC_ARGC") in
-                     match text_of_bytes x >>= int_of_text with
-                     | Some x => pure x
-                     | None => pure 0%int63
-                     end
+  fun (α : Type) (e : ARGS α) =>
+    match e in ARGS α return impure ix α with
+    | ArgCount => let* x := getenv "FREESPEC_EXEC_ARGC" in
+                  match x >>= int_of_bytestring with
+                  | Some x => pure x
+                  | None => pure 0%i63
                   end
-    | ArgValue n => get_env (bytes_of_text (t#"FREESPEC_EXEC_ARGV_" ++ (text_of_int n)))
+    | ArgValue n => getenv ("FREESPEC_EXEC_ARGV_" ++ (bytestring_of_int n))
     end.
 
 Definition with_args {a} `{Provide ix ENV} : impure (ix + ARGS) a -> impure ix a :=

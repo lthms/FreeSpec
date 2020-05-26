@@ -21,7 +21,7 @@
 open Array
 open Freespec_exec
 open Freespec_exec.Query
-open Freespec_exec.Coqnum
+open Freespec_exec.Coqi63
 open Freespec_exec.Coqsum
 
 type files_err_constructor = Make_files_err_constructor
@@ -49,7 +49,7 @@ let destruct_coqfd coqfd =
 let fd_of_coqfd = Resources.find
 
 let int_to_files_err x =
-  Constr.mkApp (FilesErr.mkConstructor "make_files_err", of_list [int_to_coqint x])
+  Constr.mkApp (FilesErr.mkConstructor "make_files_err", of_list [int_to_coqi63 x])
 
 let to_files_res typ to_coq trm =
   sum_to_coqsum FilesErr.mkInductive int_to_files_err typ to_coq trm

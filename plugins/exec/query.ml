@@ -71,14 +71,11 @@ end
 
 type impure_constructor = Local_impure | RequestThen_impure
 type iplus_constructor = InL_intcompose | InR_intcompose
-type string_constructor = EmptyString_string | String_string
-type ascii_constructor = Ascii_ascii
-type positive_constructor = XI_positive | XO_positive | XH_positive
-type z_constructor = Z0_Z | Zpos_Z | Zneg_Z
 type prod_constructor = Pair_prod
 type sum_constructor = InL_sum | InR_sum
 type list_constructor = Cons_list | Nil_list
-type bytes_constructor = Wrap_bytes
+type bytestring_constructor = Bytes_cons | Bytes_nil
+type i63_constructor = Mk_i63
 
 module Ind = struct
   module Program =
@@ -95,38 +92,6 @@ module Ind = struct
         let type_name = "iplus"
         let namespace = "freespec.core.iplus"
         let names = [("in_left", InL_intcompose); ("in_right", InR_intcompose)]
-      end)
-
-  module Positive =
-    Inductive.Make(struct
-        type constructor = positive_constructor
-        let type_name = "positive"
-        let namespace = "num.pos"
-        let names = [("xI", XI_positive); ("xO", XO_positive); ("xH", XH_positive)]
-      end)
-
-  module Z =
-    Inductive.Make(struct
-        type constructor = z_constructor
-        let type_name = "Z"
-        let namespace = "num.Z"
-        let names = [("Z0", Z0_Z); ("Zpos", Zpos_Z); ("Zneg", Zneg_Z)]
-      end)
-
-  module String =
-    Inductive.Make(struct
-        type constructor = string_constructor
-        let type_name = "string"
-        let namespace = "plugins.syntax.string"
-        let names = [("EmptyString", EmptyString_string); ("String", String_string)]
-      end)
-
-  module Ascii =
-    Inductive.Make(struct
-        type constructor = ascii_constructor
-        let type_name = "ascii"
-        let namespace = "plugins.syntax.ascii"
-        let names = [("Ascii", Ascii_ascii)]
       end)
 
   module Bool =
@@ -177,11 +142,19 @@ module Ind = struct
         let names = []
       end)
 
-  module Bytes =
+  module Bytestring =
     Inductive.Make(struct
-        type constructor = bytes_constructor
-        let type_name = "bytes"
-        let namespace = "prelude.data.bytes"
-        let names = [("wrap_bytes", Wrap_bytes)]
+        type constructor = bytestring_constructor
+        let type_name = "bytestring"
+        let namespace = "base.data.bytestring"
+        let names = [("byte_cons", Bytes_cons); ("byte_nil", Bytes_nil)]
+      end)
+
+  module I63 =
+    Inductive.Make(struct
+        type constructor = i63_constructor
+        let type_name = "i63"
+        let namespace = "base.data.i63"
+        let names = [("mk_i63", Mk_i63)]
       end)
 end

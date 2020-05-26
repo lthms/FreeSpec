@@ -21,6 +21,8 @@
 From FreeSpec.Core Require Import All.
 From Coq Require Import Lia.
 
+#[local] Open Scope nat_scope.
+
 Generalizable All Variables.
 
 (** The goal of this file is to provide a simple test case for [prove_impure]
@@ -43,16 +45,14 @@ Definition counter_dec `{Provide ix COUNTER} : impure ix unit :=
 Fixpoint repeat `{Monad m} {a} (n : nat) (c : m a) : m unit :=
   match n with
   | O => pure tt
-  | S n => (c >>= fun _ => repeat n c)%monad
+  | S n => (c >>= fun _ => repeat n c)
   end.
-
-Arguments repeat [m _ a] (n%nat c%monad).
 
 Definition update_counter (x : nat) : forall (a : Type), COUNTER a -> a -> nat :=
   fun (a : Type) (p : COUNTER a) (_ : a) =>
     match p with
     | Inc => S x
-    | Dec => pred x
+    | Dec => Nat.pred x
     | _ => x
     end.
 
@@ -77,10 +77,9 @@ Definition counter_specs : contract COUNTER nat :=
    |}.
 
 Definition dec_then_inc `{Provide ix COUNTER} (x y : nat) : impure ix nat :=
-  do repeat x counter_dec;
-     repeat y counter_inc;
-     counter_get
-   end.
+  repeat x counter_dec;;
+  repeat y counter_inc;;
+  counter_get.
 
 Theorem dec_then_inc_respectful `{Provide ix COUNTER} (cpt x y : nat)
     (init_cpt : x < cpt)
@@ -110,7 +109,7 @@ Proof.
     now rewrite PeanoNat.Nat.sub_0_r.
   + cbn in run.
     unroll_respectful_run run.
-    apply IHx in rec; [| lia ].
+    apply IHx in rec; [ | lia ].
     rewrite rec.
     lia.
 Qed.
@@ -147,7 +146,7 @@ Theorem dec_then_inc_cpt_output (cpt x y cpt' r : nat)
   : cpt' = cpt - x + y.
 Proof.
   unroll_respectful_run run.
-  destruct y0; apply repeat_dec_cpt_output in run0; [| exact init_cpt ].
+  destruct y0; apply repeat_dec_cpt_output in run0; [ | exact init_cpt ].
   destruct y1; apply repeat_inc_cpt_output in run.
   apply get_cpt_output in run2. lia.
 Qed.

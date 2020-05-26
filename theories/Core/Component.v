@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From FreeSpec.Core Require Import Interface Semantics Impure.
+From FreeSpec.Core Require Export Interface Semantics Impure.
 
 (** * Component
 
@@ -70,3 +70,32 @@ CoFixpoint derive_semantics {i j} (c : component i j) (sem : semantics j)
 
 Definition bootstrap {i} (c : component i iempty) : semantics i :=
   derive_semantics c iempty_semantics.
+
+
+(** The function [with_component] allows for locally providing a novel interface
+    [j] in addition to an impure computation [p], by means of a FreeSpec
+    component [c : compoment j ix s].  Two impure computations have to be
+    provided: [initializer] to create the initial state of [c], and [finalizer]
+    to clean-up the final state of [c] after the interpretation of [p]. *)
+
+#[local]
+Fixpoint with_component_aux {ix j α} (c : component j ix) (p : impure (ix + j) α)
+  : impure ix α :=
+  match p with
+  | local x => local x
+  | request_then (in_right e) f =>
+    c _ e >>= fun res => with_component_aux c (f res)
+  | request_then (in_left e) f =>
+    request_then e (fun x => with_component_aux c (f x))
+  end.
+
+Definition with_component {ix j α}
+  (initializer : impure ix unit)
+  (c : component j ix)
+  (finalizer : impure ix unit)
+  (p : impure (ix + j) α)
+  : impure ix α :=
+  initializer;;
+  let* res := with_component_aux c p in
+  finalizer;;
+  pure res.

@@ -24,8 +24,6 @@
     be used, and what to expect the result computed by “correct” operational
     semantics (according to a certain definition of “correct”). *)
 
-
-From Prelude Require Import All.
 From Coq Require Import Setoid Morphisms.
 From FreeSpec.Core Require Export Interface Impure Semantics Component.
 
@@ -232,7 +230,8 @@ Inductive respectful_impure `{MayProvide ix i} {α Ω} (c : contract i Ω) (ω :
   : respectful_impure c ω (request_then e f).
 
 #[program]
-Instance respectful_impure_Proper : Proper ('equal ==> Basics.impl) (@respectful_impure ix i H α Ω c ω).
+Instance respectful_impure_Proper
+  : Proper (equal ==> Basics.impl) (@respectful_impure ix i H α Ω c ω).
 
 Next Obligation.
   add_morphism_tactic.
@@ -311,7 +310,7 @@ Proof.
     constructor.
     ++ apply req.
     ++ intros y o_callee_x.
-       apply H0; [ auto |].
+       apply H0; [ auto | ].
        intros z ω' run'.
        apply run.
        econstructor; eauto.
@@ -344,7 +343,7 @@ Qed.
 
 #[program]
 Instance respectful_run_Proper
-  : Proper ('equal ==> eq ==> eq ==> eq ==> Basics.impl) (@respectful_run ix i H α Ω c).
+  : Proper (equal ==> eq ==> eq ==> eq ==> Basics.impl) (@respectful_run ix i H α Ω c).
 
 Next Obligation.
   add_morphism_tactic.
@@ -388,13 +387,13 @@ Lemma store_complies_to_store_specs {s} (st : s)
 Proof.
   revert st; cofix compliant_semantics_rec; intros st.
   constructor.
-  + intros a [|st'] _.
+  + intros a [ | st' ] _.
     ++ now constructor.
     ++ now constructor.
   + intros a e req.
     cbn.
     assert (R : exec_effect (store st) e = store (store_update s st a e (eval_effect (store st) e)))
-      by now destruct e as [|st'].
+      by now destruct e as [ | st' ].
     rewrite R.
     apply compliant_semantics_rec.
 Qed.
@@ -424,9 +423,9 @@ Qed.
 Hint Resolve compliant_semantics_caller_obligation_compliant : freespec.
 
 Lemma compliant_semantics_exec_effect_equ `{MayProvide ix i} {Ω α} (c : contract i Ω) (ω : Ω)
-  (sem sem' : semantics ix) (equ : sem == sem')
+  (sem sem' : semantics ix) (equ : sem === sem')
   (e : ix α)
-  : exec_effect sem e == exec_effect sem' e.
+  : exec_effect sem e === exec_effect sem' e.
 
 Proof.
   inversion equ; ssubst.
@@ -437,7 +436,7 @@ Qed.
 Hint Resolve compliant_semantics_exec_effect_equ : freespec.
 
 #[program]
-Instance compliant_semantics_Proper : Proper ('equal ==> Basics.impl) (@compliant_semantics ix i H Ω c ω).
+Instance compliant_semantics_Proper : Proper (equal ==> Basics.impl) (@compliant_semantics ix i H Ω c ω).
 
 Next Obligation.
   add_morphism_tactic.
@@ -482,7 +481,7 @@ Fixpoint witness_impure_aux `{MayProvide ix i} {Ω α}
 
 #[program]
 Instance witness_impure_aux_Proper_2
-  : Proper (eq ==> 'equal ==> eq ==> eq ==> eq) (@witness_impure_aux ix i H Ω a).
+  : Proper (eq ==> equal ==> eq ==> eq ==> eq) (@witness_impure_aux ix i H Ω a).
 
 Next Obligation.
   add_morphism_tactic.
@@ -513,7 +512,7 @@ Definition witness_impure `{MayProvide ix i} {Ω α}
 
 #[program]
 Instance witness_impure_Proper
-  : Proper (eq ==> 'equal ==> eq ==> eq ==> eq) (@witness_impure ix i H Ω α).
+  : Proper (eq ==> equal ==> eq ==> eq ==> eq) (@witness_impure ix i H Ω α).
 
 Next Obligation.
   add_morphism_tactic.

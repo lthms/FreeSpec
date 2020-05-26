@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Import All.
+From Base Require Export Prelude.
 From FreeSpec Require Import Impure Contract Morphism Tactics.
 
 (** If we consider the monad form by the set of sets of predicates, that is
@@ -93,7 +93,7 @@ Proof.
     split.
     ++ intros r.
        inversion r; ssubst.
-       split; [ exact req |].
+       split; [ exact req | ].
        intros x s'.
        intros [post equ].
        specialize next with x.
@@ -102,7 +102,7 @@ Proof.
        rewrite equ.
        apply post.
     ++ intros [p r1].
-       constructor; [ exact p |].
+       constructor; [ exact p | ].
        intros x q.
        rewrite H0.
        apply r1.
