@@ -18,40 +18,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From FreeSpec.Core Require Export All.
-From FreeSpec.Exec Require Export Debug Eval Heap.
+From CoqFFI Require Import Int.
+
+From FreeSpec.Exec Require Export Heap.
+
+(* Import necessary types. *)
+
+From FreeSpec Require Export Core.
+From Coq Require Import String Ascii Byte.
 
 (* TODO: this shall be in the standard library of Coq *)
-Register unit as core.unit.type.
-Register tt as core.unit.tt.
-
-Register pair as core.prod.pair.
-Register sum as core.sum.type.
-Register inl as core.sum.inl.
-Register inr as core.sum.inr.
-
-From Coq Require Import String Ascii Int63 Byte.
-From Prelude Require Import Bytes.
-
-Register string as plugins.syntax.string.type.
-Register EmptyString as plugins.syntax.string.EmptyString.
-Register String as plugins.syntax.string.String.
-
-Register ascii as plugins.syntax.ascii.type.
-Register Ascii as plugins.syntax.ascii.Ascii.
-
 Register byte as coq.byte.type.
 (* end TODO *)
-
-Declare ML Module "freespec_exec".
 
 (** * Extending FreeSpec.Exec *)
 
 (** The FreeSpec.Exec plugin has been designed to be extensible, meaning it
     shall be easy for FreeSpec users to provide handlers for their own
-    interfaces. *)
-
-(** ** By Means of OCaml plugins
+    interfaces.
 
     In FreeSpec, primitives are modeled with Coq constructors of an [interface]
     inductive type. FreeSpec.Exec allows to define so-called
@@ -155,80 +139,4 @@ let _ =
     interested readers can have a look at the FreeSpec.Stdlib project in the
     <<stdlib/>> folder of this repository. *)
 
-(** ** By Means of Compoments *)
-
-(** The second way to extend FreeSpec.Exec is to write handlers in Coq, in the
-    form of FreeSpec compoments. This approach has an important advantage over
-    writing an OCaml plugin: it is possible to verify a FreeSpec
-    [component]. However, we foresee an impact over the resulting program
-    performances.
-
-    The function [with_component] allows for locally providing a novel interface
-    [j] in addition to an impure computation [p], by means of a FreeSpec
-    component [c : compoment j ix s].  Two impure computations have to be
-    provided: [initializer] to create the initial state of [c], and [finalizer]
-    to clean-up the final state of [c] after the interpretation of [p]. *)
-
-#[local]
-Fixpoint with_component_aux {ix j α} (c : component j ix) (p : impure (ix + j) α)
-  : impure ix α :=
-  match p with
-  | local x => local x
-  | request_then (in_right e) f =>
-    c _ e >>= fun res => with_component_aux c (f res)
-  | request_then (in_left e) f =>
-    request_then e (fun x => with_component_aux c (f x))
-  end.
-
-Definition with_component {ix j α}
-  (initializer : impure ix unit)
-  (c : component j ix)
-  (finalizer : impure ix unit)
-  (p : impure (ix + j) α)
-  : impure ix α :=
-  do initializer;
-     let* res := with_component_aux c p in
-     finalizer;
-     pure res
-  end.
-
-(** ** By Means of Semantics *)
-
-#[local]
-Fixpoint with_semantics {ix j α} (sem : semantics j) (p : impure (ix + j) α)
-  : impure ix α :=
-  match p with
-  | local x => local x
-  | request_then (in_right e) f =>
-    let run := run_effect sem e in
-    let res := interp_result run in
-    let next := interp_next run in
-    with_semantics next (f res)
-  | request_then (in_left e) f =>
-    request_then e (fun x => with_semantics sem (f x))
-  end.
-
-(** We provide [with_store], a helper function to locally provide a mutable
-    variable. *)
-
-Fixpoint with_store {ix s a} (x : s) (p : impure (ix + STORE s) a)
-  : impure ix a :=
-  with_semantics (store x) p.
-
-(** Nesting [with_semantics] calls works to some extends. If each
-    [with_semantics] provides a different interface from the rest of the stack,
-    then everything behaves as expected. If, for some reason, you end up in a
-    situation where you provide the exact same interface twice (typically if you
-    use [with_store]), then the typeclass inferences will favor the deepest one
-    in the stack. For instance,
-
-<<
-Compute (with_store 0 (with_store 1 get)).
->>
-
-    returns
-
-<<
-     = local 1
-     : impure ?ix nat
->> *)
+Declare ML Module "freespec_exec".

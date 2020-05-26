@@ -18,19 +18,22 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Prelude Require Import All.
-From FreeSpec.Core Require Import All.
-From FreeSpec.Exec Require Import All Heap.
-From FreeSpec.Stdlib Require Import Console.
+From FreeSpec.Core Require Import Core Extraction.
+From FreeSpec.Exec Require Import Exec Heap.
 
-Definition play_with_heap `{Provide ix HEAP, Provide ix CONSOLE} : impure ix unit :=
-  do let* ptr := new_ref 2 in
-     assign ptr 3;
-     let* x := deref ptr in
-     if x ?= 2
-     then echo "yes!\n"
-     else echo "no!\n"
-  end.
+From Coq Require Import String.
 
-(* should print "no!" *)
-Exec play_with_heap.
+Open Scope nat_scope.
+
+Definition with_heap `{Monad m, MonadHeap m} : m string :=
+  let* ptr := make_ref 2 in
+  assign ptr 3;;
+  let* x := deref ptr in
+  if Nat.eqb x 2
+  then pure "yes!"
+  else pure "no!".
+
+(* Coq projects the [with_heap] polymorphic definition directly into [impure],
+   thanks to its typeclass inference algorithm. *)
+Definition with_heap_impure `{Provide ix HEAP} : impure ix string :=
+  with_heap.

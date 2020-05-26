@@ -1,8 +1,8 @@
 (* FreeSpec
- * Copyright (C) 2018–2019 ANSSI
+ * Copyright (C) 2018–2020 ANSSI
  *
  * Contributors:
- * 2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2020 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,19 +18,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Freespec_exec.Coqstr
-open Freespec_exec.Extends
-open Freespec_exec.Coqunit
+From FreeSpec.Core Require Export
+     Interface
+     Impure
+     Semantics
+     Component.
 
-let path = "freespec.stdlib.console"
-
-let install_interface =
-  let scan = function
-    | [] -> bytes_to_coqbytes (Bytes.of_string @@ read_line ())
-    | _ -> assert false in
-  let echo = function
-    | [str] -> print_bytes (bytes_of_coqbytes str);
-               flush stdout;
-               coqtt
-    | _ -> assert false in
-  register_interface path [("Scan", scan); ("Echo", echo)]
+#[global]
+Open Scope freespec_scope.

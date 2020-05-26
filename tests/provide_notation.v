@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From FreeSpec.Core Require Import All.
+From FreeSpec.Core Require Import Core.
 
 Axioms (i1 i2 i3 i4 : interface).
 
@@ -26,7 +26,8 @@ Axiom p1 : forall `{Provide ix}, impure ix nat.
 Axiom p2 : forall `{Provide2 ix i3 i1}, impure ix nat.
 
 Definition p `{Provide4 ix i1 i4 i3 i2} : impure ix nat :=
-  do p1; p2 end.
+  p1;;
+  p2.
 
 Definition provide_notation_test_1 {a} `{StrictProvide3 ix i1 i2 i3} (p : i2 a) : ix a :=
   inj_p p.

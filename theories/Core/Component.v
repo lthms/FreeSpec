@@ -18,22 +18,22 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From FreeSpec.Core Require Import Interface Semantics Impure.
+From ExtLib Require Import StateMonad.
+From FreeSpec.Core Require Export Interface Semantics Impure.
 
-(** * Component
+(** * Definition *)
 
-    In FreeSpec, a _component_ is an entity which exposes an interface [i],
+(** In FreeSpec, a _component_ is an entity which exposes an interface [i],
     and uses primitives of an interface [j] to compute the results of primitives
     of [i].  Besides, a component is likely to carry its own internal state (of
     type [s]).
 
 <<
-                               c : component i j s
-                           i +---------------------+      j
-                           | |                     |      |
-                   +------>| |       st : s        |----->|
-                           | |                     |      |
-                             +---------------------+
+                           i +-------------------+      j
+                           | |                   |      |
+                   +------>| | c : component i j |----->|
+                           | |                   |      |
+                             +-------------------+
 >>
 
     Thus, a component [c : component i j] is a polymorphic function which
@@ -53,20 +53,49 @@ Definition component (i j : interface) : Type :=
     Given an initial semantics for [j], we can however derive an operational
     semantics for [i] from a component [c]. *)
 
+(** * Semantics Derivation *)
+
 CoFixpoint derive_semantics {i j} (c : component i j) (sem : semantics j)
   : semantics i :=
-  mk_semantics (fun _ p =>
-                  let run := run_impure sem (c _ p) in
-                  let res := interp_result run in
-                  let next := interp_next run in
-                  mk_out res (derive_semantics c next)).
+  mk_semantics (fun a p =>
+                  let (res, next) := runState (to_state $ c a p) sem in
+                  (res, derive_semantics c next)).
 
-(** So, [⊕] on the one hand allows for composing operational semantics
+(** So, [semprod] on the one hand allows for composing operational semantics
     horizontally, and [derive_semantics] allows for composing components
     vertically.  Using these two operators, we can model a complete system in a
     hierarchical and modular manner, by defining each of its components
-    independently, then composing them together with [⊕] and
+    independently, then composing them together with [semprod] and
     [derive_semantics]. *)
 
 Definition bootstrap {i} (c : component i iempty) : semantics i :=
   derive_semantics c iempty_semantics.
+
+(** * In-place Primitives Handling *)
+
+(** The function [with_component] allows for locally providing an additional
+    interface [j] within an impure computation of type [impure ix a]. The
+    primitives of [j] will be handled by impure computations, i.e., a component.
+    of type [c : compoment j ix s]. *)
+
+#[local]
+Fixpoint with_component_aux {ix j α} (c : component j ix) (p : impure (ix + j) α)
+  : impure ix α :=
+  match p with
+  | local x => local x
+  | request_then (in_right e) f =>
+    c _ e >>= fun res => with_component_aux c (f res)
+  | request_then (in_left e) f =>
+    request_then e (fun x => with_component_aux c (f x))
+  end.
+
+Definition with_component {ix j α}
+  (initializer : impure ix unit)
+  (c : component j ix)
+  (finalizer : impure ix unit)
+  (p : impure (ix + j) α)
+  : impure ix α :=
+  initializer;;
+  let* res := with_component_aux c p in
+  finalizer;;
+  pure res.

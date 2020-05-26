@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From FreeSpec.Core Require Import All.
+From FreeSpec Require Import Core.
 
 Inductive EVAL (a : Type) : Type :=
 | Eval (x : a) : EVAL a.
@@ -28,5 +28,5 @@ Arguments Eval [a] (x).
 Definition eval `{Provide ix EVAL} {a} (x : a) : impure ix a :=
   request (Eval x).
 
-Register EVAL as minihttpserver.eval.type.
-Register Eval as minihttpserver.eval.Eval.
+Register EVAL as freespec.exec.eval.type.
+Register Eval as freespec.exec.eval.Eval.

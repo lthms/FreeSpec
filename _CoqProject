@@ -1,75 +1,61 @@
--R theories/Core FreeSpec.Core
--R theories/Exec FreeSpec.Exec
--R theories/Stdlib FreeSpec.Stdlib
--R examples FreeSpec.Examples
+-Q _build/default/theories/Core FreeSpec.Core
+-Q _build/default/theories/Exec FreeSpec.Exec
+-I _build/default/plugins/exec
 
--I plugins/exec
--I plugins/stdlib/console
--I plugins/stdlib/env
--I plugins/stdlib/files
+_build/default/theories/Core/Init.v
 
-theories/Core/All.v
-theories/Core/Interface.v
-theories/Core/Semantics.v
-theories/Core/Component.v
-theories/Core/Impure.v
-theories/Core/Contract.v
-theories/Core/Hoare.v
-theories/Core/Hoare/Monad.v
-theories/Core/Morphism.v
-theories/Core/Tactics.v
+_build/default/theories/Core/Interface.v
+_build/default/theories/Core/Impure.v
+_build/default/theories/Core/Semantics.v
+_build/default/theories/Core/Component.v
 
-theories/Exec/All.v
-theories/Exec/Debug.v
-theories/Exec/Heap.v
-theories/Exec/Eval.v
+_build/default/theories/Core/Contract.v
+_build/default/theories/Core/ImpureFacts.v
+_build/default/theories/Core/SemanticsFacts.v
+_build/default/theories/Core/Hoare.v
+_build/default/theories/Core/HoareFacts.v
+_build/default/theories/Core/Instrument.v
+_build/default/theories/Core/InstrumentFacts.v
+_build/default/theories/Core/ComponentFacts.v
+_build/default/theories/Core/Tactics.v
 
-plugins/exec/interfaces.mli
-plugins/exec/interfaces.ml
-plugins/exec/extends.mli
-plugins/exec/extends.ml
-plugins/exec/debug.ml
-plugins/exec/eval.ml
-plugins/exec/exec.ml
-plugins/exec/freespec_exec.mlpack
-plugins/exec/g_freespec_exec.mlg
-plugins/exec/coqbyte.mli
-plugins/exec/coqbyte.ml
-plugins/exec/coqlist.mli
-plugins/exec/coqlist.ml
-plugins/exec/coqunit.mli
-plugins/exec/coqunit.ml
-plugins/exec/coqstr.mli
-plugins/exec/coqstr.ml
-plugins/exec/coqbool.mli
-plugins/exec/coqbool.ml
-plugins/exec/coqnum.mli
-plugins/exec/coqnum.ml
-plugins/exec/coqsum.mli
-plugins/exec/coqsum.ml
-plugins/exec/coqprod.mli
-plugins/exec/coqprod.ml
-plugins/exec/query.ml
-plugins/exec/utils.ml
-plugins/exec/resources.mli
-plugins/exec/resources.ml
-plugins/exec/heap.mli
-plugins/exec/heap.ml
+_build/default/theories/Core/Core.v
+_build/default/theories/Core/CoreFacts.v
+_build/default/theories/Core/Extraction.v
 
-theories/Stdlib/Raise.v
-theories/Stdlib/Env.v
-theories/Stdlib/Args.v
-theories/Stdlib/Files.v
-theories/Stdlib/Console.v
+_build/default/examples/airlock.v
+_build/default/examples/smram.v
 
-plugins/stdlib/console/console.ml
-plugins/stdlib/console/freespec_stdlib_console.mlpack
-plugins/stdlib/env/env.ml
-plugins/stdlib/env/freespec_stdlib_env.mlpack
-plugins/stdlib/files/datatypes.ml
-plugins/stdlib/files/datatypes.mli
-plugins/stdlib/files/files.ml
-plugins/stdlib/files/freespec_stdlib_files.mlpack
+_build/default/theories/Exec/Eval.v
+_build/default/theories/Exec/Heap.v
+_build/default/theories/Exec/Exec.v
 
-examples/airlock.v
-examples/smram.v
+_build/default/plugins/exec/coqbool.ml
+_build/default/plugins/exec/coqbool.mli
+_build/default/plugins/exec/coqbyte.ml
+_build/default/plugins/exec/coqbyte.mli
+_build/default/plugins/exec/coqi63.ml
+_build/default/plugins/exec/coqi63.mli
+_build/default/plugins/exec/coqlist.ml
+_build/default/plugins/exec/coqlist.mli
+_build/default/plugins/exec/coqprod.ml
+_build/default/plugins/exec/coqprod.mli
+_build/default/plugins/exec/coqsum.mli
+_build/default/plugins/exec/coqunit.ml
+_build/default/plugins/exec/coqunit.mli
+_build/default/plugins/exec/eval.ml
+_build/default/plugins/exec/exec.ml
+_build/default/plugins/exec/interfaces.ml
+_build/default/plugins/exec/interfaces.mli
+_build/default/plugins/exec/extends.ml
+_build/default/plugins/exec/extends.mli
+_build/default/plugins/exec/refs.ml
+_build/default/plugins/exec/refs.mli
+_build/default/plugins/exec/query.ml
+_build/default/plugins/exec/resources.ml
+_build/default/plugins/exec/resources.mli
+_build/default/plugins/exec/store.ml
+_build/default/plugins/exec/store.mli
+_build/default/plugins/exec/utils.ml
+_build/default/plugins/exec/g_freespec.mlg
+_build/default/plugins/exec/freespec_exec.mlpack

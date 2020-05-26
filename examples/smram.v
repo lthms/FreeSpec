@@ -1,8 +1,5 @@
 From Coq Require Import ZArith.
-From Prelude Require Import All.
-From FreeSpec.Core Require Import All.
-
-Generalizable All Variables.
+From FreeSpec Require Import CoreFacts.
 
 (** This library introduces the starting point of the FreeSpec framework, that
     is the original example that has motivated everything else. *)
@@ -108,11 +105,10 @@ Coercion unwrap_sumbool : sumbool >-> bool.
 Definition dispatch {a} `{Provide3 ix (STORE bool) DRAM VGA}
     (addr : address) (unpriv : address -> impure ix a) (priv : address -> impure ix a)
   : impure ix a :=
-  do let* reg := get in
-     if (andb reg (in_smram addr))
-     then unpriv addr
-     else priv addr
-  end.
+  let* reg := get in
+  if (andb reg (in_smram addr))
+  then unpriv addr
+  else priv addr.
 
 Definition memory_controller `{Provide3 ix (STORE bool) DRAM VGA}
   : component MEMORY_CONTROLLER ix :=
@@ -182,20 +178,20 @@ Definition update_memory_controller_view (ω : memory_view)
   | _ => ω
   end.
 
-Inductive memory_controller_o_caller (ω : memory_view)
+Inductive memory_controller_o_callee (ω : memory_view)
   : forall (a : Type) (p : MEMORY_CONTROLLER a) (x : a), Prop :=
 
-| memory_controller_read_o_caller (pin : smiact) (addr : address) (content : cell)
+| memory_controller_read_o_callee (pin : smiact) (addr : address) (content : cell)
     (prom : pin = smiact_set -> in_smram addr = true -> ω addr = content)
-  : memory_controller_o_caller ω cell (Read pin addr) content
+  : memory_controller_o_callee ω cell (Read pin addr) content
 
-| memory_controller_write_o_caller (pin : smiact) (addr : address) (content : cell) (b : unit)
-  : memory_controller_o_caller ω unit (Write pin addr content) b.
+| memory_controller_write_o_callee (pin : smiact) (addr : address) (content : cell) (b : unit)
+  : memory_controller_o_callee ω unit (Write pin addr content) b.
 
 Definition mc_specs : contract MEMORY_CONTROLLER memory_view :=
   {| witness_update := update_memory_controller_view
    ; caller_obligation := no_caller_obligation
-   ; callee_obligation := memory_controller_o_caller
+   ; callee_obligation := memory_controller_o_callee
    |}.
 
 (** ** Main Theorem *)
@@ -205,12 +201,11 @@ Definition smram_pred (ωmc : memory_view) (ωmem : memory_view * bool) : Prop :
 
 Lemma memory_controller_respectful `{StrictProvide3 ix (STORE bool) VGA DRAM}
     (a : Type) (op : MEMORY_CONTROLLER a) (ω : memory_view)
-  : respectful_impure (dram_specs + store_specs bool) (ω, true) (memory_controller a op).
+  : pre (to_hoare (dram_specs * store_specs bool) (memory_controller a op)) (ω, true).
 
 Proof.
   destruct op; destruct pin;
-    prove_impure;
-    constructor.
+    prove impure.
 Qed.
 
 #[local]
@@ -219,42 +214,56 @@ Open Scope semantics_scope.
 #[local]
 Open Scope contract_scope.
 
+Ltac simpl_tuple :=
+  match goal with
+  | H: (_, _) = (_, _) |- _ => inversion H; subst; clear H
+  end.
+
 Theorem memory_controller_correct `{StrictProvide3 ix VGA (STORE bool) DRAM}
     (ω : memory_view)
-    (sem : semantics ix) (comp : compliant_semantics (dram_specs + store_specs bool) (ω, true) sem)
+    (sem : semantics ix) (comp : compliant_semantics (dram_specs * store_specs bool) (ω, true) sem)
   : compliant_semantics mc_specs ω (derive_semantics memory_controller sem).
 
 Proof.
   apply correct_component_derives_compliant_semantics with (pred := smram_pred)
-                                                           (cj := dram_specs + store_specs bool)
+                                                           (cj := dram_specs * store_specs bool)
                                                            (ωj := (ω, true)).
-  + intros ωmc [ωdram b] [b_true pred] a e req; cbn in *.
+  + intros ωmc [ωdram b] [b_true pred] a e _.
+    cbn in b_true.
+    rewrite b_true in *; clear b_true.
     split.
-    ++ rewrite b_true.
-       apply memory_controller_respectful.
+    ++ apply memory_controller_respectful.
     ++ intros x [ωdram' st'] respectful.
-       destruct e.
-       +++ split; [| now unroll_respectful_run respectful ].
-           destruct pin.
-           ++++ unroll_respectful_run respectful;
-                  constructor;
-                  intros pin_equ is_in_smram;
-                  rewrite pred; auto;
-                    now inversion H8; ssubst.
-           ++++ now constructor.
-       +++ split.
-           ++++ now constructor.
-           ++++ unroll_respectful_run respectful;
-                  (split; [ auto |]);
-                  intros addr' is_in_smram';
-                  unfold update_memory_view_address;
-                  cbn;
-                  rewrite pred; auto;
-                    destruct address_eq_dec; auto.
-                inversion H13; ssubst.
-                cbn in equ.
-                rewrite (in_smram_morphism _ _ a) in equ.
-                now rewrite equ in is_in_smram'.
-  + split; auto.
-  + auto.
+       split.
+       +++ destruct e;
+             unroll_post respectful;
+             repeat simpl_tuple;
+             constructor.
+           all: intros ?equ hin.
+           all: lazymatch goal with
+                | H: dram_o_callee _ _ (MakeDRAM (ReadFrom _)) _ |- _ =>
+                  apply pred in hin;
+                    rewrite hin;
+                    inversion H; now ssubst
+                | _ =>
+                  discriminate
+                end.
+       +++ destruct e;
+             unroll_post respectful;
+             repeat simpl_tuple;
+             split.
+           all: try reflexivity.
+           all: intros addr' hin;
+             (now apply pred) || cbn.
+           all: unfold update_memory_view_address;
+             destruct address_eq_dec.
+           all: try reflexivity.
+           all: try now apply pred.
+           rewrite <- (in_smram_morphism addr _ a) in hin.
+           inversion H8; ssubst.
+           cbn in equ.
+           rewrite equ in hin.
+           discriminate.
+  + now constructor.
+  + exact comp.
 Qed.

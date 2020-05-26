@@ -1,6 +1,0 @@
-(library
-  (name freespec_stdlib_files)
-  (public_name coq-freespec-stdlib.files)
-  (synopsis "Handlers for the FILES interface")
-  (flags :standard -rectypes -w -27)
-  (libraries coq-freespec-exec.plugin))

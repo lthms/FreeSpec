@@ -9,7 +9,7 @@ let char_of_coqbyte trm =
 
 let char_to_coqbyte c =
   match kind Ind.Byte.mkInductive with
-  | Ind (i, u) -> Constr.mkConstruct (i, 1 + Char.code c)
+  | Ind (i, _) -> Constr.mkConstruct (i, 1 + Char.code c)
   | _ -> assert false
 
 let coqbyte_t = Ind.Byte.mkInductive

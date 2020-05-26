@@ -19,8 +19,11 @@
  *)
 
 From Coq Require Import Arith.
-From FreeSpec.Core Require Import All.
-From Prelude Require Import Tactics.
+From FreeSpec Require Import CoreFacts.
+
+#[local] Open Scope nat_scope.
+
+Create HintDb airlock.
 
 (** * Specifying *)
 
@@ -44,14 +47,12 @@ Definition toggle `{Provide ix DOORS} (d : door) : impure ix unit :=
   request (Toggle d).
 
 Definition open_door `{Provide ix DOORS} (d : door) : impure ix unit :=
-  do let* open := is_open d in
-     when (negb open) (toggle d)
-  end.
+  let* open := is_open d in
+  when (negb open) (toggle d).
 
 Definition close_door `{Provide ix DOORS} (d : door) : impure ix unit :=
-  do let* open := is_open d in
-     when open (toggle d)
-   end.
+  let* open := is_open d in
+  when open (toggle d).
 
 (** ** Controller *)
 
@@ -71,22 +72,21 @@ Definition co (d : door) : door :=
   | right => left
   end.
 
-Definition controller `{Provide ix DOORS, Provide ix (STORE nat)} : component CONTROLLER ix :=
+Definition controller `{Provide ix DOORS, Provide ix (STORE nat)}
+  : component CONTROLLER ix :=
   fun _ op =>
     match op with
     | Tick =>
-      do let* cpt := get in
-         when (15 <? cpt) do
-           close_door left;
-           close_door right;
-           put 0
-         end
-      end
-    | RequestOpen d => do
-        close_door (co d);
-        open_door d;
+      let* cpt := get in
+      when (15 <? cpt) begin
+        close_door left;;
+        close_door right;;
         put 0
       end
+    | RequestOpen d =>
+        close_door (co d);;
+        open_door d;;
+        put 0
     end.
 
 (** * Verifying the Airlock Controller *)
@@ -156,6 +156,8 @@ Inductive doors_o_caller : Ω -> forall (a : Type), DOORS a -> Prop :=
 | req_toggle (d : door) (ω : Ω) (H : sel d ω = false -> sel (co d) ω = false)
   : doors_o_caller ω unit (Toggle d).
 
+Hint Constructors doors_o_caller : airlock.
+
 (** *** Promises *)
 
 Inductive doors_o_callee : Ω -> forall (a : Type), DOORS a -> a -> Prop :=
@@ -172,19 +174,22 @@ Inductive doors_o_callee : Ω -> forall (a : Type), DOORS a -> a -> Prop :=
 | doors_o_callee_toggle (d : door) (ω : Ω) (x : unit)
   : doors_o_callee ω unit (Toggle d) x.
 
-Definition doors_contract : contract DOORS Ω := make_contract step doors_o_caller doors_o_callee.
+Hint Constructors doors_o_callee : airlock.
+
+Definition doors_contract : contract DOORS Ω :=
+  make_contract step doors_o_caller doors_o_callee.
 
 (** ** Intermediary Lemmas *)
 
 (** Closing a door [d] in any system [ω] is always a respectful operation. *)
 
 Lemma close_door_respectful `{Provide ix DOORS} (ω : Ω) (d : door)
-  : respectful_impure doors_contract ω (close_door d).
+  : pre (to_hoare doors_contract (close_door d)) ω.
 
 Proof.
   (* We use the [prove_program] tactics to erase the program monad *)
 
-  prove_impure; cbn; repeat constructor; subst.
+  prove impure with airlock; subst; constructor.
 
   (* This leaves us with one goal to prove:
 
@@ -198,33 +203,39 @@ Proof.
   now rewrite H3.
 Qed.
 
+Hint Resolve close_door_respectful : airlock.
+
 Lemma open_door_respectful `{Provide ix DOORS} (ω : Ω)
     (d : door) (safe : sel (co d) ω = false)
-  : respectful_impure doors_contract ω (open_door (ix := ix) d).
+  : pre (to_hoare doors_contract (open_door (ix := ix) d)) ω.
 
 Proof.
-  prove_impure; cbn; repeat constructor; subst.
+  prove impure; repeat constructor; subst.
   inversion o_caller0; ssubst.
   now rewrite safe.
 Qed.
 
+Hint Resolve open_door_respectful : airlock.
+
 Lemma close_door_run `{Provide ix DOORS} (ω : Ω) (d : door) (ω' : Ω) (x : unit)
-  (run : respectful_run doors_contract (close_door (ix := ix) d) ω ω' x)
+  (run : post (to_hoare doors_contract (close_door d)) ω x ω')
   : sel d ω' = false.
 
 Proof.
-  unroll_respectful_run run; cbn in *.
+  unroll_post run.
   + rewrite tog_equ_1.
-    inversion o_callee; ssubst.
-    now rewrite H3.
-  + now inversion o_callee; ssubst.
+    inversion H1; ssubst.
+    now rewrite H5.
+  + now inversion H1; ssubst.
 Qed.
+
+Hint Resolve close_door_run : airlock.
 
 #[local] Opaque close_door.
 #[local] Opaque open_door.
 #[local] Opaque Nat.ltb.
 
-Fact one_door_safe_all_doors_safe (ω : Ω) (d : door)
+Remark one_door_safe_all_doors_safe (ω : Ω) (d : door)
     (safe : sel d ω = false \/ sel (co d) ω = false)
   : forall (d' : door), sel d' ω = false \/ sel (co d') ω = false.
 
@@ -245,8 +256,9 @@ Qed.
 #[local] Opaque sel.
 
 Lemma respectful_run_inv `{Provide ix DOORS} {a} (p : impure ix a)
-  (ω : Ω) (safe : sel left ω = false \/ sel right ω = false)
-  (x : a) (ω' : Ω) (run : respectful_run doors_contract p ω ω' x)
+    (ω : Ω) (safe : sel left ω = false \/ sel right ω = false)
+    (x : a) (ω' : Ω) (hpre : pre (to_hoare doors_contract p) ω)
+    (hpost : post (to_hoare doors_contract p) ω x ω')
   : sel left ω' = false \/ sel right ω' = false.
 
 (** We reason by induction on the impure computation [p]:
@@ -281,39 +293,37 @@ Lemma respectful_run_inv `{Provide ix DOORS} {a} (p : impure ix a)
 
 Proof.
   fold (co left) in *.
-  revert ω run safe.
-  induction p; intros ω run safe.
-  + now unroll_respectful_run run.
-  + unroll_respectful_run run.
-    destruct (proj_p e) as [ e' |].
-    ++ eapply H1; eauto.
-       destruct e' as [d|d]; cbn in *; auto.
-       (* We try to toggle a door [d]. *)
-       apply one_door_safe_all_doors_safe with (d := d).
-       apply one_door_safe_all_doors_safe with (d' := d) in safe.
-       inversion o_caller; ssubst.
-       destruct safe as [safe | safe].
-    (* 1. The door [d] is closed. Because we are in a respectful run, we
-          know the door [co d] is also closed, and remains closed. *)
-       +++ right.
-           rewrite tog_equ_2.
-           now apply H4.
-    (* 2. The door [co d] is closed. Once [d] is toggled, [co d] will remain
-          closed. *)
-           +++ right.
-               now rewrite tog_equ_2.
-    ++ cbn in *.
-       eapply H1; [ exact rec | exact safe ].
+  revert ω hpre hpost safe.
+  induction p; intros ω hpre run safe.
+  + now unroll_post run.
+  + unroll_post run.
+    assert (hpost : post (interface_to_hoare doors_contract β e) ω x0 ω0). {
+      split; [apply H2|now rewrite H3].
+    }
+    apply H1 with (ω:=ω0) (β:=x0); auto; [now apply hpre|].
+    cbn in *.
+    unfold gen_caller_obligation, gen_callee_obligation, gen_witness_update in *.
+    destruct (proj_p e) as [e'|].
+    ++ destruct hpost as [o_callee equω].
+       destruct e' as [d|d].
+       +++ rewrite H3.
+           apply safe.
+       +++ apply one_door_safe_all_doors_safe with (d := d);
+             apply one_door_safe_all_doors_safe with (d' := d) in safe;
+             subst.
+           destruct hpre as [hbefore hafter].
+           inversion hbefore; ssubst.
+           cbn.
+           destruct safe as [safe|safe].
+           all: right; rewrite tog_equ_2; auto.
+    ++ destruct hpost as [_ equω].
+       subst.
+       exact safe.
 Qed.
 
 (** ** Main Theorem *)
 
-Lemma controller_correct `{ M1 : MayProvide ix DOORS
-                          , P1 : @Provide ix DOORS M1
-                          , M2 : MayProvide ix (STORE nat)
-                          , P2 : @Provide ix (STORE nat) M2
-                          , @Distinguish ix (STORE nat) DOORS M2 P2 M1
-                          }
+Lemma controller_correct `{StrictProvide2 ix DOORS (STORE nat)}
   : correct_component controller
                       (no_contract CONTROLLER)
                       doors_contract
@@ -321,16 +331,12 @@ Lemma controller_correct `{ M1 : MayProvide ix DOORS
 
 Proof.
   intros ωc ωd pred a e req.
+  assert (hpre : pre (to_hoare doors_contract (controller a e)) ωd)
+    by (destruct e; prove impure with airlock).
+  split; auto.
+  intros x ωj' run.
+  cbn.
   split.
-  + destruct e.
-    ++ prove_impure.
-       +++ apply close_door_respectful.
-       +++ apply close_door_respectful.
-    ++ prove_impure.
-       +++ apply close_door_respectful.
-       +++ apply open_door_respectful.
-           now apply close_door_run in Hrun.
-  + intros x ωj' run.
-    split; auto.
-    eapply respectful_run_inv in run; auto.
+  + auto with freespec.
+  + apply respectful_run_inv in run; auto.
 Qed.

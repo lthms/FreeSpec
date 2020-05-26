@@ -20,7 +20,7 @@
 
 open Extends
 
-let path = "minihttpserver.eval"
+let path = "freespec.exec.eval"
 
 let install_interface =
   register_interface path [

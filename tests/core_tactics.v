@@ -18,8 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From FreeSpec.Core Require Import All.
+From FreeSpec.Core Require Import CoreFacts.
 From Coq Require Import Lia.
+
+#[local] Open Scope nat_scope.
+
+Create HintDb counter.
 
 Generalizable All Variables.
 
@@ -40,19 +44,17 @@ Definition counter_inc `{Provide ix COUNTER} : impure ix unit :=
 Definition counter_dec `{Provide ix COUNTER} : impure ix unit :=
   request Dec.
 
-Fixpoint repeat `{Monad m} {a} (n : nat) (c : m a) : m unit :=
+Fixpoint repeat {m : Type -> Type} `{Monad m} {a} (n : nat) (c : m a) : m unit :=
   match n with
   | O => pure tt
-  | S n => (c >>= fun _ => repeat n c)%monad
+  | S n => (c >>= fun _ => repeat n c)
   end.
-
-Arguments repeat [m _ a] (n%nat c%monad).
 
 Definition update_counter (x : nat) : forall (a : Type), COUNTER a -> a -> nat :=
   fun (a : Type) (p : COUNTER a) (_ : a) =>
     match p with
     | Inc => S x
-    | Dec => pred x
+    | Dec => Nat.pred x
     | _ => x
     end.
 
@@ -77,79 +79,83 @@ Definition counter_specs : contract COUNTER nat :=
    |}.
 
 Definition dec_then_inc `{Provide ix COUNTER} (x y : nat) : impure ix nat :=
-  do repeat x counter_dec;
-     repeat y counter_inc;
-     counter_get
-   end.
+  repeat x counter_dec;;
+  repeat y counter_inc;;
+  counter_get.
 
 Theorem dec_then_inc_respectful `{Provide ix COUNTER} (cpt x y : nat)
     (init_cpt : x < cpt)
-  : respectful_impure counter_specs cpt (dec_then_inc x y).
+  : pre (to_hoare counter_specs $ dec_then_inc x y) cpt.
 
 Proof.
-  prove_impure.
+  prove impure.
   + revert x cpt init_cpt.
-    induction x; intros cpt init_cpt; prove_impure.
+    induction x; intros cpt init_cpt; prove impure.
     ++ cbn.
        transitivity (S x); auto.
        apply PeanoNat.Nat.lt_0_succ.
     ++ apply IHx.
        now apply Lt.lt_pred.
-  + clear init_cpt Hrun cpt.
-    revert w; induction y; intros cpt; prove_impure.
-    apply IHy.
+  + clear init_cpt hpost cpt.
+    revert ω; induction y; intros cpt; prove impure.
 Qed.
 
-Lemma repeat_dec_cpt_output (cpt x cpt' : nat) (init_cpt : x < cpt)
-    (run : respectful_run counter_specs (repeat x counter_dec) cpt cpt' tt)
+Lemma repeat_dec_cpt_output
+   `(run : post (to_hoare counter_specs $ repeat x counter_dec) cpt r cpt')
+    (init_cpt : x < cpt)
   : cpt' = cpt - x.
 
 Proof.
   revert init_cpt run; revert cpt; induction x; intros cpt init_cpt run.
-  + unroll_respectful_run run.
+  + unroll_post_hoare run.
     now rewrite PeanoNat.Nat.sub_0_r.
-  + cbn in run.
-    unroll_respectful_run run.
-    apply IHx in rec; [| lia ].
-    rewrite rec.
+  + unroll_post_hoare run.
+    apply IHx in run; [| lia].
+    subst.
     lia.
 Qed.
 
-Lemma repeat_inc_cpt_output (cpt x cpt' : nat)
-    (run : respectful_run counter_specs (repeat x counter_inc) cpt cpt' tt)
+Hint Resolve repeat_dec_cpt_output : counter.
+
+Lemma repeat_inc_cpt_output
+   `(run : post (to_hoare counter_specs $ repeat x counter_inc) cpt r cpt')
   : cpt' = cpt + x.
 
 Proof.
   revert run; revert cpt; induction x; intros cpt run.
-  + unroll_respectful_run run.
+  + unroll_post_hoare run.
     now rewrite PeanoNat.Nat.add_0_r.
-  + unroll_respectful_run run.
-    apply IHx in rec.
-    rewrite rec.
+  + unroll_post_hoare run.
+    apply IHx in run.
     lia.
 Qed.
 
+Hint Resolve repeat_inc_cpt_output : counter.
+
 Lemma get_cpt_output (cpt x cpt' : nat)
-    (run : respectful_run counter_specs counter_get cpt cpt' x)
+    (run : post (to_hoare counter_specs $ counter_get) cpt x cpt')
   : cpt' = cpt.
 
 Proof.
-  unfold counter_get, request in run.
-  now unroll_respectful_run run.
+  now unroll_post_hoare run.
 Qed.
+
+Hint Resolve get_cpt_output : counter.
 
 #[local]
 Opaque counter_get.
 
 Theorem dec_then_inc_cpt_output (cpt x y cpt' r : nat)
     (init_cpt : x < cpt)
-    (run : respectful_run counter_specs (dec_then_inc x y) cpt cpt' r)
+    (run : post (to_hoare counter_specs $ dec_then_inc x y) cpt r cpt')
   : cpt' = cpt - x + y.
+
 Proof.
-  unroll_respectful_run run.
-  destruct y0; apply repeat_dec_cpt_output in run0; [| exact init_cpt ].
-  destruct y1; apply repeat_inc_cpt_output in run.
-  apply get_cpt_output in run2. lia.
+  unroll_post_hoare run.
+  apply repeat_dec_cpt_output in run0; [| exact init_cpt ].
+  apply repeat_inc_cpt_output in run.
+  apply get_cpt_output in run2.
+  lia.
 Qed.
 
 #[local]
@@ -157,8 +163,9 @@ Transparent counter_get.
 
 Theorem dec_then_inc_output (cpt x y cpt' r : nat)
     (init_cpt : x < cpt)
-    (run : respectful_run counter_specs (dec_then_inc x y) cpt cpt' r)
+    (run : post (to_hoare counter_specs $ dec_then_inc x y) cpt r cpt')
   : cpt' = r.
+
 Proof.
-  now unroll_respectful_run run.
+  now unroll_post_hoare run.
 Qed.

@@ -28,4 +28,4 @@ let bool_of_coqbool cbool =
 
 let bool_to_coqbool = function
   | true -> Ind.Bool.mkConstructor "true"
-  | otherwise -> Ind.Bool.mkConstructor "false"
+  | false -> Ind.Bool.mkConstructor "false"

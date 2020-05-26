@@ -19,7 +19,8 @@
  *)
 
 (** Extend FreeSpec.Exec by associating primitives constructor names to
-    effectfull semantics. *)
+    effectful semantics. *)
+
 val register_interface: string -> (string * Interfaces.effectful_semantic) list -> unit
 (** After [register_interface modpath [(cname1, sem1); ...; (cnamen, semn)]] has
     been executed, primitives constructed with constructors [cname1] to [cnamen]
