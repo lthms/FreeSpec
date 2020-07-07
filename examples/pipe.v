@@ -27,6 +27,6 @@ Generalizable All Variables.
 Definition pipe `{Provide2 ix FILES (RAISE file_err)} : impure ix unit :=
   scan >>= echo.
 
-Definition main : unit := eval_impure FilesExtr.files (halt_on_error pipe).
+Definition main := gen_main (halt_on_error pipe).
 
 Extraction "pipe.ml" main.
