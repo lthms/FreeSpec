@@ -31,7 +31,7 @@ Register inl as core.sum.inl.
 Register inr as core.sum.inr.
 
 From Coq Require Import String Ascii Int63 Byte.
-From Base Require Import Prelude.
+From Base Require Import Prelude ML.
 
 Register string as plugins.syntax.string.type.
 Register EmptyString as plugins.syntax.string.EmptyString.
@@ -43,7 +43,6 @@ Register Ascii as plugins.syntax.ascii.Ascii.
 Register byte as coq.byte.type.
 (* end TODO *)
 
-Declare ML Module "coqbase".
 Declare ML Module "freespec_exec".
 
 (** * Extending FreeSpec.Exec *)
