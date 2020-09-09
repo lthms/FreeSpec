@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Base Require Export Prelude.
+From FreeSpec.Core Require Export Init.
 From Coq Require Import Program.
 
 (** * Definition  *)
@@ -70,7 +70,7 @@ Arguments Put [s] (x).
     parameterized by [i ⊕ j] can therefore leverage the primitives of both [i]
     and [j]. *)
 
-(** * Interface Composites *)
+(** * Polymorphic Interface Composites *)
 
 (** When defining general-purpose impure computations that we expect to reuse in
     different context, we want to leave the interface as a parameter, and rather
@@ -81,11 +81,9 @@ Arguments Put [s] (x).
       when there exists a function [inj_p : forall α, i α -> ix α].
     - Conversely, we can determine if a primitive of an interface composite [ix]
       is forwarded to a concrete interface [i] when there exists a function
-      [proj_p : forall α, ix α -> option (i a)]. *)
+      [proj_p : forall α, ix α -> option (i a)].
 
-(** ** Type Classes Hierarchy *)
-
-(** We encode this mechanics using two type classes: [MayProvide], and
+    We encode this mechanics using two type classes: [MayProvide], and
     [Provide]. *)
 
 Class MayProvide (ix i : interface) : Type :=
@@ -115,8 +113,6 @@ Instance default_MayProvide (i j : interface) : MayProvide i j|1000 :=
 Class Distinguish (ix i j : interface) `{Provide ix i, MayProvide ix j} : Prop :=
   { distinguish : forall {α} (e : i α), proj_p (i := j) (inj_p (ix := ix) e) = None
   }.
-
-(** ** Helpers *)
 
 (** Manipulating [MayProvide], [Provide] and [Distinguish] manually quickly
     becomes verbose, especially due to the combinatorial nature of
@@ -212,7 +208,7 @@ Instance Make_StrictProvide5 (ix i1 i2 i3 i4 i5 : interface)
      ! Distinguish ix i5 i3, ! Distinguish ix i5 i4)
   : StrictProvide5 ix i1 i2 i3 i4 i5.
 
-(** ** Interfaces Sum *)
+(** * Composing Interfaces *)
 
 (** We provide the [iplus] operator to compose interface together. That is,
     [iplus] can be used to build _concrete_ (as opposed to polymorphic)

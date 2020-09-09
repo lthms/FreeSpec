@@ -29,18 +29,13 @@
     <<https://github.com/whitequark/unfork#introduction>>). *)
 
 From Coq Require Import Program Setoid Morphisms.
-From Base Require Export State.
-From FreeSpec.Core Require Export Interface.
-
-#[local]
-Open Scope signature_scope.
-
-(** * Impure Computations *)
+From ExtLib Require Export MonadState.
+From FreeSpec.Core Require Export Interface Lifter.
 
 (** We introduce the [impure] monad to describe impure computations, that is
     computations which uses primitives from certain interfaces. *)
 
-(** ** Definition *)
+(** * Definition *)
 
 (** The [impure] monad is an inductive datatype with two parameters: the
     interface [i] to be used, and the type [α] of the result of the computation.
@@ -60,92 +55,11 @@ Register impure as freespec.core.impure.type.
 Register local as freespec.core.impure.local.
 Register request_then as freespec.core.impure.request_then.
 
-(** ** Equivalence *)
+Declare Scope impure_scope.
+Bind Scope impure_scope with impure.
+Delimit Scope impure_scope with impure.
 
-(** Due to the definition of [impure] and [impure_bind], we could decide to rely
-    on Coq built-in [eq] to reason about impure computations equivalence, but we
-    would have to use the functional extensionality axiom to handle the
-    continuation of the [request_then] constructor. In order to keep FreeSpec
-    axiom-free, we rather provide a custom equivalence for [impure] terms.
-
-    The definition of [impure_equiv] is two-fold. *)
-
-Inductive impure_equiv {i α} : impure i α -> impure i α -> Prop  :=
-
-(** - Two impure computations are equivalent if and only if they compute the
-      exact same term (wrt. Coq [eq] function). *)
-
-| local_equiv (x : α) : impure_equiv (local x) (local x)
-
-(** - Two computations which consist in requesting the interpretation of an
-      primitive and passing the result to a monadic continuation are equivalent
-      if and only if they use the exact same primitive in the first place, and
-      given any result the interpretation of this primitive may produce, their
-      continuation returns equivalent impure computations. *)
-
-| request_equiv {β} (e : i β) (f g : β -> impure i α)
-    (equ : forall (x : β), impure_equiv (f x) (g x))
-  : impure_equiv (request_then e f) (request_then e g).
-
-(** The definition of [impure_equiv] is very similar to [eq], with the exception
-    of the treatment of the continuation. There is no much effort to put into
-    proving this is indeed a proper equivalence. *)
-
-#[program]
-Instance impure_equiv_Equivalence : Equivalence (@impure_equiv i α).
-
-Next Obligation.
-  intros p.
-  induction p; constructor.
-  intros x.
-  apply H.
-Qed.
-
-Next Obligation.
-  intros p q equ.
-  induction equ; constructor.
-  intros x.
-  apply H.
-Qed.
-
-Next Obligation.
-  intros p q r pq qr.
-  revert p r pq qr.
-  induction q; intros p r pq qr.
-  + inversion pq; ssubst; inversion qr; ssubst.
-    constructor.
-  + inversion pq; ssubst; inversion qr; ssubst.
-    constructor.
-    intros x.
-    now apply H with (β := x).
-Qed.
-
-Instance impure_EquProp : EquProp (impure i α) :=
-  { equal := impure_equiv }.
-
-Instance impure_EquPropL : EquPropL (impure i α) := {}.
-
-#[global]
-Opaque impure_EquProp.
-
-#[program]
-Instance request_then_Proper {i α β} (e : i β)
-  : EquMorphism (@request_then i α β e).
-
-Next Obligation.
-  add_morphism_tactic.
-  intros f g equ.
-  constructor.
-  intros y.
-  specialize (equ y).
-  inversion equ; subst.
-  + reflexivity.
-  + constructor.
-    intros z.
-    apply equ0.
-Qed.
-
-(** ** Monad Instances *)
+(** * Monad Instances *)
 
 (** We then provide the necessary instances of the <<coq-prelude>> Monad
     typeclasses hierarchy. *)
@@ -156,165 +70,29 @@ Fixpoint impure_bind {i α β} (p : impure i α) (f : α -> impure i β) : impur
   | request_then e g => request_then e (fun x => impure_bind (g x) f)
   end.
 
-#[program]
-Instance impure_bind_Proper {i α β} : EquMorphism (@impure_bind i α β).
-
-Next Obligation.
-  add_morphism_tactic.
-  intros x y equ1 f g equ2.
-  induction equ1.
-  + apply equ2.
-  + cbn.
-    constructor.
-    intros x.
-    apply H.
-Qed.
-
-Ltac change_request_then :=
-  match goal with
-  | |- request_then ?e ?f === request_then ?e ?g =>
-    let R := fresh "R" in
-    assert (R: f === g); [ intros ?x | rewrite R; clear R ]
-  end.
-
-Ltac change_impure_bind :=
-  match goal with
-  | |- impure_bind ?e ?f === impure_bind ?e ?g =>
-    let R := fresh "R" in
-    assert (R: f === g); [ intros ?x | now rewrite R ]
-  end.
-
-Lemma impure_bind_local {i α} (p : impure i α)
-  : impure_bind p (fun x => local x) === p.
-
-Proof.
-  induction p.
-  + reflexivity.
-  + cbn.
-    change_request_then; [ | reflexivity ].
-    now rewrite H.
-Qed.
-
-Lemma impure_bind_assoc {i α β δ}
-  (p : impure i α) (f : α -> impure i β) (g : β -> impure i δ)
-  : impure_bind (impure_bind p f) g === impure_bind p (fun x => impure_bind (f x) g).
-
-Proof.
-  induction p; [reflexivity | ].
-  cbn.
-  change_request_then; [ | reflexivity ].
-  now rewrite H.
-Qed.
-
 Definition impure_map {i α β} (f : α -> β) (p : impure i α) : impure i β :=
   impure_bind p (fun x => local (f x)).
 
-Instance impure_map_Proper {i α β}
-  : EquMorphism (@impure_map i α β).
-
-Proof.
-  add_morphism_tactic.
-  intros f g equf p q equp.
-  unfold impure_map.
-  rewrite equp.
-  change_impure_bind.
-  now rewrite equf.
-Qed.
-
 Instance impure_Functor : Functor (impure i) :=
-  { map := @impure_map i
+  { fmap := @impure_map i
   }.
-
-#[program]
-Instance impure_FunctorL : FunctorL (impure i) := {}.
-
-Next Obligation.
-  unfold impure_map.
-  now rewrite impure_bind_local.
-Defined.
-
-Next Obligation.
-  unfold compose.
-  unfold impure_map.
-  now rewrite impure_bind_assoc.
-Defined.
 
 Definition impure_pure {i α} (x : α) : impure i α := local x.
 
 Definition impure_apply {i α β} (p : impure i (α -> β)) (q : impure i α) : impure i β :=
-  impure_bind p (fun f => map f q).
-
-#[program]
-Instance impure_apply_Proper {i α β} : EquMorphism (@impure_apply i α β).
-
-Next Obligation.
-  add_morphism_tactic.
-  intros p q equ1 r s equ2.
-  unfold impure_apply.
-  rewrite equ1.
-  change_impure_bind.
-  cbn.
-  now rewrite equ2.
-Qed.
+  impure_bind p (fun f => fmap f q).
 
 Instance impure_Applicative : Applicative (impure i) :=
   { pure := @impure_pure i
-  ; apply := @impure_apply i
+  ; ap := @impure_apply i
   }.
 
-#[refine]
-Instance impure_ApplicativeL : ApplicativeL (impure i) := {}.
-
-Proof.
-  + intros a Ha Ha' v.
-    induction v; [ reflexivity | ].
-    cbn.
-    constructor.
-    intros x.
-    apply H.
-  + intros a b c Hc Hc' u v w.
-    cbn.
-    unfold impure_apply, impure_pure; cbn.
-    unfold impure_map.
-    repeat rewrite impure_bind_assoc.
-    cbn.
-    change_impure_bind; cbn.
-    repeat rewrite impure_bind_assoc.
-    change_impure_bind; cbn.
-    repeat rewrite impure_bind_assoc.
-    now change_impure_bind.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-Qed.
-
 Instance impure_Monad (i : interface) : Monad (impure i) :=
-  { bind := @impure_bind i }.
+  { ret := @impure_pure i
+  ; bind := @impure_bind i
+  }.
 
-#[program]
-Instance impure_MonadL (i : interface) : MonadL (impure i).
-
-Next Obligation.
-  reflexivity.
-Qed.
-
-Next Obligation.
-  now rewrite impure_bind_local.
-Qed.
-
-Next Obligation.
-  now rewrite impure_bind_assoc.
-Qed.
-
-Next Obligation.
-  now change_impure_bind.
-Qed.
-
-Next Obligation.
-  reflexivity.
-Qed.
-
-(** ** Defining Impure Computations *)
+(** * Defining Impure Computations *)
 
 (** FreeSpec users shall not use the [impure] monad constructors directly.  The
     [pure] function from the [Applicative] typeclass allows for defining pure
@@ -349,3 +127,12 @@ Instance store_monad_state (s : Type) (ix : interface) `{Provide ix (STORE s)}
   { put := fun (x : s) => request (Put x)
   ; get := request Get
   }.
+
+(** * Lift *)
+
+Definition impure_lift `{Monad m} `(l : i ~> m) : impure i ~> m :=
+  fix aux a (p : impure i a) :=
+    match p with
+    | local x => ret x
+    | request_then e f => let* x := l _ e in aux a (f x)
+    end.

@@ -1,8 +1,8 @@
 (* FreeSpec
- * Copyright (C) 2018–2019 ANSSI
+ * Copyright (C) 2018–2020 ANSSI
  *
  * Contributors:
- * 2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
+ * 2018–2020 Thomas Letan <thomas.letan@ssi.gouv.fr>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,15 +18,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
-From Base Require Export Prelude.
-From FreeSpec.Core Require Import All.
-From FreeSpec.Stdlib Require Export Files Raise.
+From FreeSpec.Core Require Export
+     Core
+     Contract
+     ImpureFacts
+     SemanticsFacts
+     Instrument
+     InstrumentFacts
+     Hoare
+     HoareFacts
+     ComponentFacts
+     Tactics.
 
-Generalizable All Variables.
-
-Definition scan `{Provide2 ix FILES (RAISE file_err)} : impure ix bytestring :=
-  try (read_line stdin).
-
-Definition echo `{Provide2 ix FILES (RAISE file_err)} (str: bytestring) : impure ix unit :=
-  try (write stdout str 0 (Bytestring.length str));;
-  pure tt.
+#[global]
+Open Scope freespec_scope.

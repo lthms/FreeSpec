@@ -18,11 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+From ExtLib Require Import StateMonad.
 From FreeSpec.Core Require Export Interface Semantics Impure.
 
-(** * Component
-
-    In FreeSpec, a _component_ is an entity which exposes an interface [i],
+(** In FreeSpec, a _component_ is an entity which exposes an interface [i],
     and uses primitives of an interface [j] to compute the results of primitives
     of [i].  Besides, a component is likely to carry its own internal state (of
     type [s]).
@@ -55,11 +54,9 @@ Definition component (i j : interface) : Type :=
 
 CoFixpoint derive_semantics {i j} (c : component i j) (sem : semantics j)
   : semantics i :=
-  mk_semantics (fun _ p =>
-                  let run := run_impure sem (c _ p) in
-                  let res := interp_result run in
-                  let next := interp_next run in
-                  mk_out res (derive_semantics c next)).
+  mk_semantics (fun a p =>
+                  let (res, next) := runState (to_state $ c a p) sem in
+                  (res, derive_semantics c next)).
 
 (** So, [⊕] on the one hand allows for composing operational semantics
     horizontally, and [derive_semantics] allows for composing components
@@ -70,7 +67,6 @@ CoFixpoint derive_semantics {i j} (c : component i j) (sem : semantics j)
 
 Definition bootstrap {i} (c : component i iempty) : semantics i :=
   derive_semantics c iempty_semantics.
-
 
 (** The function [with_component] allows for locally providing a novel interface
     [j] in addition to an impure computation [p], by means of a FreeSpec

@@ -1,5 +1,5 @@
 (* FreeSpec
- * Copyright (C) 2018–2019 ANSSI
+ * Copyright (C) 2018–2020 ANSSI
  *
  * Contributors:
  * 2018–2019 Thomas Letan <thomas.letan@ssi.gouv.fr>
@@ -22,37 +22,29 @@
     primitives. Once an interface has been defined, we can provide one (or
     more) operational semantics to interpret its primitives. *)
 
-(** ** Definition *)
+(** * Definition *)
 
 (** An operational [semantics] for the interface [i] is coinductively defined as
     a function which can be used to interpret any primitive of [i]; it produces
     an [interp_out] term. *)
 
 From Coq Require Import Program Setoid Morphisms.
-From FreeSpec.Core Require Export Interface Impure.
+From ExtLib Require Import Monad StateMonad.
+From FreeSpec.Core Require Export Interface ImpureFacts.
 
 #[local] Open Scope signature_scope.
 
 CoInductive semantics (i : interface) : Type :=
-| mk_semantics (f : forall (α : Type), i α -> interp_out i α) : semantics i
-
-(** A term of type [interp_out i a] is therefore the result of the
-    interpretation of a given primitive [i a]. It provides a result for this
-    primitive (of type [a]), and the new semantics to use to interpret the next
-    primitive of [i]. *)
-
-with interp_out (i : interface) : Type -> Type :=
-| mk_out {α} (x : α) (sem : semantics i) : interp_out i α.
+| mk_semantics (f : forall (α : Type), i α -> α * semantics i) : semantics i.
 
 Arguments mk_semantics [i] (f).
-Arguments mk_out [i α] (x sem).
 
 (** Thus, a [semantics] does not only compute a result for a primitive, but also
     provides a new semantics.  This is necessary to model impurity: the same
     primitive may or may not return the same result when called several
-    times. *)
+    times.
 
-(** As for interfaces, the simpler [semantics] is the operational semantics for
+    As for interfaces, the simpler [semantics] is the operational semantics for
     [iempty], the empty interface. *)
 
 Definition iempty_semantics : semantics iempty :=
@@ -63,27 +55,32 @@ Definition iempty_semantics : semantics iempty :=
 CoFixpoint store {s} (init : s) : semantics (STORE s) :=
   mk_semantics (fun α (e : STORE s α) =>
                   match e with
-                  | Get => mk_out init (store init)
-                  | Put next => mk_out tt (store next)
+                  | Get => (init, store init)
+                  | Put next => (tt, store next)
                   end).
 
 (** We provide several helper functions to interpret primitives with
     semantics. *)
 
-Definition run_effect {i α} (sem : semantics i) (e : i α) : interp_out i α :=
-  match sem with mk_semantics f => f _ e end.
-
-Definition interp_result {i α} (step : interp_out i α) : α :=
-  match step with mk_out x _ => x end.
-
-Definition interp_next {i α} (step : interp_out i α) : semantics i :=
-  match step with mk_out _ sem => sem end.
+Definition run_effect {i α} (sem : semantics i) (e : i α) : α * semantics i :=
+  match sem with mk_semantics f => f α e end.
 
 Definition eval_effect {i α} (sem : semantics i) (e : i α) : α :=
-  interp_result (run_effect sem e).
+  fst (run_effect sem e).
 
 Definition exec_effect {i α} (sem : semantics i) (e : i α) : semantics i :=
-  interp_next (run_effect sem e).
+  snd (run_effect sem e).
+
+Lemma run_effect_equation {i α} (sem : semantics i) (e : i α)
+  : run_effect sem e = (eval_effect sem e, exec_effect sem e).
+
+Proof.
+  unfold eval_effect, exec_effect.
+  destruct run_effect; reflexivity.
+Qed.
+
+Definition interface_to_state {i} : i ~> state (semantics i) :=
+  fun a e => mkState (fun sem => run_effect sem e).
 
 (** Besides, and similarly to interfaces, operational semantics can and should
     be composed together.  To that end, we provide the [semplus] operator. *)
@@ -93,174 +90,134 @@ CoFixpoint semplus {i j} (sem_i : semantics i) (sem_j : semantics j)
   mk_semantics (fun _ e =>
                   match e with
                   | in_left e =>
-                    let out := run_effect sem_i e in
-                    mk_out (interp_result out) (semplus (interp_next out) sem_j)
+                    let (x, out) := run_effect sem_i e in
+                    (x, semplus out sem_j)
                   | in_right e =>
-                    let out := run_effect sem_j e in
-                    mk_out (interp_result out) (semplus sem_i (interp_next out))
+                    let (x, out) := run_effect sem_j e in
+                    (x, semplus sem_i out)
                   end).
 
 Declare Scope semantics_scope.
 Bind Scope semantics_scope with semantics.
+Delimit Scope semantics_scope with semantics.
 
 Infix "*" := semplus : semantics_scope.
 
-(** ** Equivalence *)
+(** * Equivalence *)
 
 (** We say two semantics are equivalent when they produce equivalent outputs
     given the same primitive. *)
 
-CoInductive semantics_equiv {i} : semantics i -> semantics i -> Prop :=
-| semantics_equiv_rec
+CoInductive semantics_eq {i} : semantics i -> semantics i -> Prop :=
+| semantics_eq_rec
     (sem sem' : semantics i)
-    (step_equiv : forall {a} (e : i a),
-        interp_out_equiv (run_effect sem e) (run_effect sem' e))
-  : semantics_equiv sem sem'
+    (res_eq : forall {a} (e : i a), eval_effect sem e = eval_effect sem' e)
+    (next_eqv : forall {a} (e : i a),
+        semantics_eq (exec_effect sem e) (exec_effect sem' e))
+  : semantics_eq sem sem'.
 
-(** Two interpretation outputs are said equivalent when they carry the same
-    result, and they provide equivalent semantics to use afterwards. *)
+Infix "===" := semantics_eq : semantics_scope.
 
-with interp_out_equiv {i} : forall {a : Type}, interp_out i a -> interp_out i a -> Prop :=
-| step_equiv {a}
-    (o o' : interp_out i a)
-    (res_eq : interp_result o = interp_result o')
-    (next_equiv : semantics_equiv (interp_next o) (interp_next o'))
-  : interp_out_equiv o o'.
-
-(** We prove [semantics_equiv] is an equivalence, that is the relation is (1)
+(** We prove [semantics_eq] is an equivalence, that is the relation is (1)
     reflexive, (2) symmetric, and (3) transitive. *)
 
 #[program]
-Instance semantics_equiv_Equivalence (i : interface) : Equivalence (@semantics_equiv i).
+Instance semantics_Equivalence (i : interface) : Equivalence (@semantics_eq i).
 
-Obligation 1.
-  cofix semantics_equiv_refl.
+Next Obligation.
+  cofix semantics_eqv_refl.
   intros sem.
-  constructor.
-  intros a e.
-  constructor; [ reflexivity | ].
-  apply semantics_equiv_refl.
+  constructor; intros α e.
+  + reflexivity.
+  + apply semantics_eqv_refl.
 Qed.
 
-Obligation 2.
-  cofix semantics_equiv_sym.
+Next Obligation.
+  cofix semantics_eqv_sym.
   intros sem sem' equiv.
   destruct equiv as [sem sem' step].
-  constructor.
-  intros a e.
-  specialize step with a e.
-  destruct step.
-  constructor.
+  constructor; intros α e.
   + now symmetry.
-  + now apply semantics_equiv_sym.
+  + now apply semantics_eqv_sym.
 Qed.
 
-Obligation 3.
-  cofix semantics_equiv_trans.
+Next Obligation.
+  cofix semantics_eqv_trans.
   intros sem sem' sem'' equiv equiv'.
   destruct equiv as [sem sem' equ].
   destruct equiv' as [sem' sem'' equ'].
-  constructor; intros a e.
-  specialize equ with a e.
-  specialize equ' with a e.
-  inversion equ; ssubst.
-  inversion equ'; ssubst.
-  constructor.
+  constructor; intros α e;
+    specialize equ with α e;
+    specialize equ' with α e;
+    inversion equ; ssubst;
+      inversion equ'; ssubst.
   + now transitivity (eval_effect sem' e).
-  + eapply semantics_equiv_trans; [ apply next_equiv | apply next_equiv0 ].
+  + eapply semantics_eqv_trans; [ apply next_eqv | apply next_eqv0 ].
 Qed.
 
-(** We use [semantics_equiv] as the [Equality] relation for [semantics]. *)
-
-Instance semantics_EquProp (i : interface) : EquProp (semantics i) :=
-  { equal := semantics_equiv }.
+Definition run_effect_eq `(x : α * semantics i) (y : α * semantics i) : Prop :=
+  fst x = fst y /\ (snd x === snd y)%semantics.
 
 #[program]
-Instance semantics_EquPropL (i : interface) : EquPropL (semantics i).
+Instance run_effect_Equivalence : @Equivalence (a * semantics i) run_effect_eq.
 
-#[global]
-Opaque semantics_EquProp.
-
-(** We proceed similarly with [interp_out_equiv]: we first prove it is an
-    equivalence, then we use this relation as the [Equality] relation for
-    [interp_out]. *)
-
-#[program]
-Instance interp_out_Equivalence : Equivalence (@interp_out_equiv i α).
-
-Obligation 1.
-  intros [x sem].
-  constructor; reflexivity.
+Next Obligation.
+  intros [x next]; now split.
 Qed.
 
-Obligation 2.
-  intros o o' equ.
-  inversion equ; ssubst.
-  now constructor.
+Next Obligation.
+  intros [x next] [y next'] [H1 H2]; now split.
 Qed.
 
-Obligation 3.
-  intros o o' o'' equ equ'.
-  inversion equ; ssubst.
-  inversion equ'; ssubst.
-  constructor.
-  + now transitivity (interp_result o').
-  + now transitivity (interp_next o').
+Next Obligation.
+  intros [x next] [y next'] [z next_] [H1 H2] [H3 H4].
+  split; etransitivity; eauto.
 Qed.
 
 #[program]
-Instance interp_out_EquProp (i : interface) (α : Type) : EquProp (interp_out i α) :=
-  { equal := interp_out_equiv }.
-
-#[global]
-Opaque interp_out_EquProp.
-
-(** Since [interp_out_equiv] and [semantics_equiv] are two equivalences, we can
-    use them with the [rewrite] tactics, as long as we provide valid [Proper]
-    instances.  We proceed accordingly in FreeSpec.Core, as systematically as
-    possible. *)
-
-#[program]
-Instance mk_out_Proper {i α} (x : α) : EquMorphism (@mk_out i α x).
+Instance fst_Proper : Proper (run_effect_eq ==> eq) (@fst α (semantics i)).
 
 Next Obligation.
   add_morphism_tactic.
-  intros sem sem' equ.
-  constructor.
+  intros [x next] [y next'] [equ1 equ2].
+  apply equ1.
+Qed.
+
+#[program]
+Instance snd_Proper : Proper (run_effect_eq ==> semantics_eq) (@snd α (semantics i)).
+
+Next Obligation.
+  add_morphism_tactic.
+  intros [x next] [y next'] [equ1 equ2].
+  apply equ2.
+Qed.
+
+#[program]
+Instance prod_Proper : Proper (eq ==> semantics_eq ==> run_effect_eq) (@pair a (semantics i)).
+
+Next Obligation.
+  add_morphism_tactic.
+  intros x sem sem' equ.
+  split.
   + reflexivity.
   + apply equ.
 Qed.
 
-#[program]
-Instance run_effect_Proper : Proper (equal ==> eq ==> equal) (@run_effect i α).
+Instance run_effect_Proper
+  : Proper (semantics_eq ==> eq ==> run_effect_eq) (@run_effect i α).
 
-Next Obligation.
+Proof.
   add_morphism_tactic.
-  intros sem sem' equ p.
-  inversion equ; ssubst.
-  apply step_equiv0.
+  intros sem sem' equ e.
+  rewrite run_effect_equation.
+  inversion equ; subst.
+  split.
+  + apply res_eq.
+  + apply next_eqv.
 Qed.
 
 #[program]
-Instance interp_result_Proper : Proper (equal ==> eq) (@interp_result i α).
-
-Next Obligation.
-  add_morphism_tactic.
-  intros o o' equ.
-  now inversion equ; ssubst.
-Qed.
-
-#[program]
-Instance interp_next_Proper {i α} : EquMorphism (@interp_next i α).
-
-Next Obligation.
-  add_morphism_tactic.
-  intros o o' equ.
-  now inversion equ; ssubst.
-Qed.
-
-#[program]
-Instance eval_effect_Proper : Proper (equal ==> eq ==> eq) (@eval_effect i α).
+Instance eval_effect_Proper : Proper (semantics_eq ==> eq ==> eq) (@eval_effect i α).
 
 Next Obligation.
   add_morphism_tactic.
@@ -270,7 +227,7 @@ Next Obligation.
 Qed.
 
 #[program]
-Instance exec_effect_Proper : Proper (equal ==> eq ==> equal) (@exec_effect i α).
+Instance exec_effect_Proper : Proper (semantics_eq ==> eq ==> semantics_eq) (@exec_effect i α).
 
 Next Obligation.
   add_morphism_tactic.
@@ -279,47 +236,70 @@ Next Obligation.
   now rewrite equ.
 Qed.
 
-Lemma semantics_equiv_interp_next_effect {i α}
-  (sem sem' : semantics i) (equ : sem === sem') (e : i α)
-  : interp_next (run_effect sem e) === interp_next (run_effect sem' e).
+Lemma eval_semplus_in_left_eq `(semi : semantics i) `(semj : semantics j) `(e : i α)
+  : eval_effect (semi * semj) (in_left e) = eval_effect semi e.
 
 Proof.
-  inversion equ; ssubst.
-  specialize step_equiv0 with α e.
-  inversion step_equiv0; ssubst.
-  apply next_equiv.
+  unfold eval_effect; cbn.
+  destruct semi as [semi].
+  cbn.
+  now destruct (semi α e).
 Qed.
 
-Hint Resolve semantics_equiv_interp_next_effect : freespec.
-
-Lemma semantics_equiv_exec_effect {i α}
-  (sem sem' : semantics i) (equ : sem === sem') (e : i α)
-  : exec_effect sem e === exec_effect sem' e.
+Lemma eval_semplus_in_right_eq `(semi : semantics i) `(semj : semantics j) `(e : j α)
+  : eval_effect (semi * semj) (in_right e) = eval_effect semj e.
 
 Proof.
-  unfold exec_effect.
-  auto with freespec.
+  unfold eval_effect; cbn.
+  destruct semj as [semj].
+  cbn.
+  now destruct (semj α e).
 Qed.
 
-Hint Resolve semantics_equiv_exec_effect : freespec.
+Lemma exec_semplus_in_left_eqv `(semi : semantics i) `(semj : semantics j) `(e : i α)
+  : exec_effect (semi * semj) (in_left e) = (semplus (exec_effect semi e) semj).
+
+Proof.
+  unfold exec_effect; cbn.
+  destruct semi as [semi].
+  cbn.
+  now destruct (semi _ e).
+Qed.
+
+Lemma exec_semplus_in_right_eqv `(semi : semantics i) `(semj : semantics j) `(e : j α)
+  : exec_effect (semi * semj) (in_right e) = (semplus semi (exec_effect semj e)).
+
+Proof.
+  unfold exec_effect; cbn.
+  destruct semj as [semj].
+  cbn.
+  now destruct (semj _ e).
+Qed.
 
 #[program]
-Instance semplus_Proper i j : EquMorphism (@semplus i j).
+Instance semplus_Proper i j
+  : Proper (semantics_eq ==> semantics_eq ==> semantics_eq) (@semplus i j).
 
 Next Obligation.
   add_morphism_tactic.
   cofix semplus_Proper.
   intros semi semi' equi semj semj' equj.
-  constructor.
-  intros a e.
-  destruct e; constructor; cbn.
-  + now rewrite equi.
-  + apply semplus_Proper; auto with freespec.
-  + now rewrite equj.
-  + apply semplus_Proper; auto with freespec.
+  constructor; intros α e; destruct e.
+  + repeat rewrite eval_semplus_in_left_eq.
+    now inversion equi.
+  + repeat rewrite eval_semplus_in_right_eq.
+    now inversion equj.
+  + repeat rewrite exec_semplus_in_left_eqv.
+    apply semplus_Proper; auto.
+    inversion equi.
+    apply next_eqv.
+  + repeat rewrite exec_semplus_in_right_eqv.
+    apply semplus_Proper; auto.
+    inversion equj.
+    apply next_eqv.
 Qed.
 
-(** ** Interpreting Impure Computations *)
+(** * Interpreting Impure Computations *)
 
 (** A term of type [impure a] describes an impure computation expected to return
     a term of type [a].  Interpreting this term means actually realizing the
@@ -337,66 +317,100 @@ Qed.
     - [eval_impure] only returns the result of [p].
     - [exec_impure] only returns the new operational semantics. *)
 
-Fixpoint run_impure {i a} (sem : semantics i) (p : impure i a) : interp_out i a :=
-  match p with
-  | local x =>
-    mk_out x sem
-  | request_then e f =>
-    let s := run_effect sem e in
-    run_impure (interp_next s) (f (interp_result s))
-  end.
+Definition to_state {i} : impure i ~> state (semantics i) :=
+  impure_lift interface_to_state.
+
+Arguments to_state {i α} _.
+
+Definition run_impure {i a} (sem : semantics i) (p : impure i a) : a * semantics i :=
+  runState (to_state p) sem.
 
 Definition eval_impure {i a} (sem : semantics i) (p : impure i a) : a :=
-  interp_result (run_impure sem p).
+  fst (run_impure sem p).
 
 Definition exec_impure {i a} (sem : semantics i) (p : impure i a) : semantics i :=
-  interp_next (run_impure sem p).
+  snd (run_impure sem p).
 
 (** We provide several lemmas and the necessary [Proper] instances to use these
     functions in conjunction with [semantics_equiv] and [impure_equiv]. *)
 
-Lemma run_impure_request_then_equ {i a b} (sem : semantics i)
-  (e : i a) (f : a -> impure i b)
-  : run_impure sem (request_then e f) = run_impure (exec_effect sem e) (f (eval_effect sem e)).
+Lemma run_impure_equation {i a} (sem : semantics i) (p : impure i a)
+  : run_impure sem p = (eval_impure sem p, exec_impure sem p).
 
 Proof.
-  reflexivity.
+  unfold eval_impure, exec_impure.
+  destruct run_impure; reflexivity.
 Qed.
 
-Hint Rewrite @run_impure_request_then_equ : freespec.
-
-Lemma semantics_equiv_interp_next_impure {i a}
-  (sem sem' : semantics i) (equ : sem === sem') (p : impure i a)
-  : interp_next (run_impure sem p) === interp_next (run_impure sem' p).
+Lemma run_impure_request_then_assoc {i a b}
+    (sem : semantics i) (e : i a) (f : a -> impure i b)
+  : run_impure sem (request_then e f)
+    = run_impure (exec_effect sem e) (f (eval_effect sem e)).
 
 Proof.
-  revert sem sem' equ.
-  induction p; intros sem sem' equ.
-  + apply equ.
-  + cbn.
-    unfold exec_impure.
-    cbn.
-    rewrite equ at 2.
-    apply H.
-    auto with freespec.
+  cbn; now rewrite run_effect_equation.
 Qed.
 
-Hint Resolve semantics_equiv_interp_next_impure : freespec.
+Lemma eval_impure_request_then_assoc {i a b}
+    (sem : semantics i) (e : i a) (f : a -> impure i b)
+  : eval_impure sem (request_then e f)
+    = eval_impure (exec_effect sem e) (f (eval_effect sem e)).
 
-Lemma semantics_equiv_exec_impure {i a}
-  (sem sem' : semantics i) (equ : sem === sem') (p : impure i a)
-  : exec_impure sem p === exec_impure sem' p.
+Proof.
+  unfold eval_impure.
+  now rewrite run_impure_request_then_assoc.
+Qed.
+
+Lemma exec_impure_request_then_assoc {i a b}
+    (sem : semantics i) (e : i a) (f : a -> impure i b)
+  : exec_impure sem (request_then e f)
+    = exec_impure (exec_effect sem e) (f (eval_effect sem e)).
 
 Proof.
   unfold exec_impure.
-  auto with freespec.
+  now rewrite run_impure_request_then_assoc.
 Qed.
 
-Hint Resolve semantics_equiv_exec_impure : freespec.
+Lemma run_impure_bind_assoc {i a b}
+    (sem : semantics i) (p : impure i a) (f : a -> impure i b)
+  : run_impure sem (p >>= f)
+    = run_impure (exec_impure sem p) (f (eval_impure sem p)).
+
+Proof.
+  revert sem f.
+  induction p; intros sem g.
+  + reflexivity.
+  + rewrite bind_request_then_assoc.
+    rewrite run_impure_request_then_assoc.
+    rewrite H.
+    rewrite exec_impure_request_then_assoc.
+    rewrite eval_impure_request_then_assoc.
+    reflexivity.
+Qed.
+
+Lemma eval_impure_bind_assoc {i a b}
+    (sem : semantics i) (p : impure i a) (f : a -> impure i b)
+  : eval_impure sem (p >>= f)
+    = eval_impure (exec_impure sem p) (f (eval_impure sem p)).
+
+Proof.
+  unfold eval_impure.
+  now rewrite run_impure_bind_assoc.
+Qed.
+
+Lemma exec_impure_bind_assoc {i a b}
+    (sem : semantics i) (p : impure i a) (f : a -> impure i b)
+  : exec_impure sem (p >>= f)
+    = exec_impure (exec_impure sem p) (f (eval_impure sem p)).
+
+Proof.
+  unfold exec_impure.
+  now rewrite run_impure_bind_assoc.
+Qed.
 
 #[program]
 Instance run_impure_Proper_1 (i : interface) (a : Type)
-  : Proper (equal ==> eq ==> equal) (@run_impure i a).
+  : Proper (semantics_eq ==> eq ==> run_effect_eq) (@run_impure i a).
 
 Next Obligation.
   add_morphism_tactic.
@@ -405,14 +419,20 @@ Next Obligation.
   induction p; intros sem sem' equ.
   + cbn.
     now rewrite equ.
-  + cbn.
-    rewrite equ at 2.
-    auto with freespec.
+  + repeat rewrite eval_impure_request_then_assoc.
+    repeat rewrite run_impure_request_then_assoc.
+    specialize H
+      with (eval_effect sem e) (exec_effect sem e) (exec_effect sem' e).
+    inversion equ; subst.
+    specialize next_eqv with _ e.
+    apply H in next_eqv.
+    rewrite <- res_eq.
+    exact next_eqv.
 Qed.
 
 #[program]
 Instance run_impure_Proper_2 (i : interface) (a : Type)
-  : Proper (eq ==> equal ==> equal) (@run_impure i a).
+  : Proper (eq ==> impure_eq ==> run_effect_eq) (@run_impure i a).
 
 Next Obligation.
   add_morphism_tactic.
@@ -420,12 +440,13 @@ Next Obligation.
   revert sem.
   induction equ; intros sem.
   + reflexivity.
-  + apply H.
+  + repeat rewrite run_impure_request_then_assoc.
+    apply H.
 Qed.
 
 #[program]
 Instance eval_impure_Proper (i : interface) (a : Type)
-  : EquMorphism (@eval_impure i a).
+  : Proper (semantics_eq ==> impure_eq ==> eq) (@eval_impure i a).
 
 Next Obligation.
   add_morphism_tactic.
@@ -436,7 +457,7 @@ Qed.
 
 #[program]
 Instance exec_impure_Proper (i : interface) (a : Type)
-  : EquMorphism (@exec_impure i a).
+  : Proper (semantics_eq ==> impure_eq ==> semantics_eq) (@exec_impure i a).
 
 Next Obligation.
   add_morphism_tactic.
@@ -445,70 +466,13 @@ Next Obligation.
   now rewrite equ1, equ2.
 Qed.
 
-Lemma run_impure_equiv {i a} (p q : impure i a) (equ : p === q)
-    (sem : semantics i)
-  : run_impure sem p === run_impure sem q.
-
-Proof.
-  now rewrite equ.
-Qed.
-
-Hint Resolve run_impure_equiv : freespec.
-
-Lemma run_impure_exec_impure_equiv {i a}
-  (sem sem' : semantics i) (p q : impure i a)
-  (equ : run_impure sem p === run_impure sem' q)
-  : exec_impure sem p === exec_impure sem' q.
-
-Proof.
-  now inversion equ; ssubst.
-Qed.
-
-Hint Resolve run_impure_exec_impure_equiv : freespec.
-
-Lemma run_impure_eval_impure_equiv {i a}
-  (sem sem' : semantics i) (p q : impure i a)
-  (equ : run_impure sem p === run_impure sem' q)
-  : eval_impure sem p = eval_impure sem' q.
-
-Proof.
-  now inversion equ; ssubst.
-Qed.
-
-Hint Resolve run_impure_eval_impure_equiv : freespec.
-
-Lemma exec_impure_equiv {i a} (p q : impure i a) (equ : p === q)
-    (sem : semantics i)
-  : exec_impure sem p === exec_impure sem q.
-
-Proof.
-  now rewrite equ.
-Qed.
-
-Hint Resolve run_impure_equiv : freespec.
-
-Lemma impure_bind_equation {i a b}
-  (p : impure i a) (f : a -> impure i b) (sem : semantics i)
-  : run_impure sem (impure_bind p f)
-    === run_impure (exec_impure sem p) (f (eval_impure sem p)).
-
-Proof.
-  revert sem.
-  induction p; intros sem.
-  + reflexivity.
-  + cbn.
-    apply H.
-Qed.
-
 #[local]
 Fixpoint with_semantics {ix j α} (sem : semantics j) (p : impure (ix + j) α)
   : impure ix α :=
   match p with
   | local x => local x
   | request_then (in_right e) f =>
-    let run := run_effect sem e in
-    let res := interp_result run in
-    let next := interp_next run in
+    let (res, next) := run_effect sem e in
     with_semantics next (f res)
   | request_then (in_left e) f =>
     request_then e (fun x => with_semantics sem (f x))
@@ -517,7 +481,7 @@ Fixpoint with_semantics {ix j α} (sem : semantics j) (p : impure (ix + j) α)
 (** We provide [with_store], a helper function to locally provide a mutable
     variable. *)
 
-Fixpoint with_store {ix s a} (x : s) (p : impure (ix + STORE s) a)
+Definition with_store {ix s a} (x : s) (p : impure (ix + STORE s) a)
   : impure ix a :=
   with_semantics (store x) p.
 
