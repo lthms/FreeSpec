@@ -1,13 +1,5 @@
-(library
-  (name freespec_exec_ffi)
-  (public_name coq-freespec-exec.ffi))
-
-(rule
-  (target Heap.v)
-  (action (run coqffi -finterface %{cmi:heap} -o %{target})))
-
 (coq.theory
   (name FreeSpec.Exec)
   (package coq-freespec-exec)
-  (theories FreeSpec.Core)
+  (theories FreeSpec.Core FreeSpec.FFI)
   (libraries coq-freespec-exec.plugin))

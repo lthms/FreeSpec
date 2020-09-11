@@ -12,6 +12,6 @@ Extends
 Exec
 Eval
 Store
-Refs
+Heap
 Resources
 G_freespec_exec

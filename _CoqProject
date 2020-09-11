@@ -1,6 +1,8 @@
 -Q _build/default/theories/Core FreeSpec.Core
 -Q _build/default/theories/Exec FreeSpec.Exec
+-Q _build/default/theories/FFI FreeSpec.FFI
 -I _build/default/plugins/exec
+-I _build/default/theories/FFI/
 
 _build/default/theories/Core/Init.v
 
@@ -23,12 +25,13 @@ _build/default/theories/Core/Core.v
 _build/default/theories/Core/CoreFacts.v
 _build/default/theories/Core/Extraction.v
 
-_build/default/examples/airlock.v
-_build/default/examples/smram.v
+_build/default/theories/FFI/heap.ml
+_build/default/theories/FFI/heap.mli
+_build/default/theories/FFI/FreeSpecFFI.mlpack
 
-_build/default/theories/Exec/Eval.v
-_build/default/theories/Exec/Heap.v
-_build/default/theories/Exec/Exec.v
+_build/default/theories/FFI/Heap.v
+_build/default/theories/FFI/FFI.v
+_build/default/theories/FFI/ML.v
 
 _build/default/plugins/exec/coqbool.ml
 _build/default/plugins/exec/coqbool.mli
@@ -49,8 +52,8 @@ _build/default/plugins/exec/interfaces.ml
 _build/default/plugins/exec/interfaces.mli
 _build/default/plugins/exec/extends.ml
 _build/default/plugins/exec/extends.mli
-_build/default/plugins/exec/refs.ml
-_build/default/plugins/exec/refs.mli
+_build/default/plugins/exec/heap.ml
+_build/default/plugins/exec/heap.mli
 _build/default/plugins/exec/query.ml
 _build/default/plugins/exec/resources.ml
 _build/default/plugins/exec/resources.mli
@@ -59,3 +62,10 @@ _build/default/plugins/exec/store.mli
 _build/default/plugins/exec/utils.ml
 _build/default/plugins/exec/g_freespec.mlg
 _build/default/plugins/exec/freespec_exec.mlpack
+
+_build/default/theories/Exec/Eval.v
+_build/default/theories/Exec/Exec.v
+
+_build/default/examples/airlock.v
+_build/default/examples/smram.v
+_build/default/examples/heap.v

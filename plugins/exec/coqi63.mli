@@ -18,6 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+val int_of_coqint : Constr.constr -> int
+val int_to_coqint : int -> Constr.constr
+
 val int_of_coqi63 : Constr.constr -> int
 val int_to_coqi63 : int -> Constr.constr
 

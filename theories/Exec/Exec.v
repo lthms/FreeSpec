@@ -20,16 +20,22 @@
 
 From CoqFFI Require Import Int.
 
-From FreeSpec.Exec Require Export Heap.
-
 (* Import necessary types. *)
 
-From FreeSpec Require Export Core.
+From FreeSpec.Core Require Export Core.
+From FreeSpec.Exec Require Import Eval.
+From FreeSpec.FFI Require Import FFI Heap ML.
+
 From Coq Require Import String Ascii Byte.
 
 (* TODO: this shall be in the standard library of Coq *)
 Register byte as coq.byte.type.
 (* end TODO *)
+
+Register HEAP as freespec.ffi.HEAP.type.
+Register Make_ref as freespec.ffi.HEAP.Make_ref.
+Register Assign as freespec.ffi.HEAP.Assign.
+Register Deref as freespec.ffi.HEAP.Deref.
 
 (** * Extending FreeSpec.Exec *)
 

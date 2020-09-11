@@ -19,7 +19,8 @@
  *)
 
 From FreeSpec.Core Require Import Core Extraction.
-From FreeSpec.Exec Require Import Exec Heap.
+From FreeSpec.FFI Require Import FFI Heap.
+From FreeSpec.Exec Require Import Exec.
 
 From Coq Require Import String.
 
@@ -37,3 +38,5 @@ Definition with_heap `{Monad m, MonadHeap m} : m string :=
    thanks to its typeclass inference algorithm. *)
 Definition with_heap_impure `{Provide ix HEAP} : impure ix string :=
   with_heap.
+
+Exec with_heap_impure.

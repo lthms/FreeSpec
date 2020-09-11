@@ -22,7 +22,7 @@
     the [HEAP] interface for more information about how to use it in a Coq
     program. *)
 
-val new_ref : Constr.t -> Constr.t
+val make_ref : Constr.t -> Constr.t
 (** Store a Coq term inside the so-called heap, and return a reference to
     manipulate it. *)
 

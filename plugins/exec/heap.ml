@@ -20,21 +20,36 @@
 
 open Extends
 open Coqunit
+open Coqi63
 
-let heap = Store.create ()
-let new_ref = Store.add heap
-let destruct = Store.remove heap
-let assign = Store.replace heap
-let deref = Store.find heap
+let count = ref 0
+
+let heap : (int, Constr.t) Hashtbl.t =
+  Hashtbl.create ~random:false 100
+
+let make_ref trm = begin
+  let k = !count in
+  count := !count + 1;
+  Hashtbl.add heap k trm;
+  int_to_coqint k
+end
+
+let destruct k = begin
+  Hashtbl.remove heap (int_of_coqint k);
+end
+
+let assign k = Hashtbl.replace heap (int_of_coqint k)
+
+let deref k = Hashtbl.find heap (int_of_coqint k)
 
 (* private *)
 
-let path = "freespec.exec.heap"
+let path = "freespec.ffi.HEAP"
 
 let _ =
   let new_ref_primitive = function
     | [_term_type; trm]
-      -> new_ref trm
+      -> make_ref trm
     | _ -> assert false in
   let assign_primitive = function
     | [_term_type; ptr; trm]
@@ -47,16 +62,8 @@ let _ =
     | [_term_type; ptr]
       -> deref ptr
     | _ -> assert false in
-  let destruct_primitive = function
-    | [_term_type; ptr]
-      -> begin
-          destruct ptr;
-          coqtt
-        end
-    | _ -> assert false in
   register_interface path [
-    ("NewRef", new_ref_primitive);
+    ("Make_ref", new_ref_primitive);
     ("Assign", assign_primitive);
     ("Deref", deref_primitive);
-    ("Destruct", destruct_primitive);
   ]

@@ -1,0 +1,13 @@
+(library
+  (name FreeSpecFFI)
+  (public_name coq-freespec-ffi.lib))
+
+(rule
+  (target Heap.v)
+  (action (run coqffi -finterface %{cmi:heap} -o %{target})))
+
+(coq.theory
+  (name FreeSpec.FFI)
+  (package coq-freespec-ffi)
+  (theories FreeSpec.Core)
+  (libraries coq-freespec-ffi.lib))
