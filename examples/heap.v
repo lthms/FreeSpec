@@ -19,14 +19,14 @@
  *)
 
 From FreeSpec.Core Require Import Core Extraction.
-From FreeSpec.FFI Require Import FFI Heap.
+From FreeSpec.FFI Require Import FFI Refs.
 From FreeSpec.Exec Require Import Exec.
 
 From Coq Require Import String.
 
 Open Scope nat_scope.
 
-Definition with_heap `{Monad m, MonadHeap m} : m string :=
+Definition with_heap `{Monad m, MonadRefs m} : m string :=
   let* ptr := make_ref 2 in
   assign ptr 3;;
   let* x := deref ptr in
@@ -36,7 +36,7 @@ Definition with_heap `{Monad m, MonadHeap m} : m string :=
 
 (* Coq projects the [with_heap] polymorphic definition directly into [impure],
    thanks to its typeclass inference algorithm. *)
-Definition with_heap_impure `{Provide ix HEAP} : impure ix string :=
+Definition with_heap_impure `{Provide ix REFS} : impure ix string :=
   with_heap.
 
 Exec with_heap_impure.

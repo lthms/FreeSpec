@@ -44,7 +44,7 @@ let deref k = Hashtbl.find heap (int_of_coqint k)
 
 (* private *)
 
-let path = "freespec.ffi.HEAP"
+let path = "freespec.ffi.REFS"
 
 let _ =
   let new_ref_primitive = function

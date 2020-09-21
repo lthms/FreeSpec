@@ -107,9 +107,9 @@ Lemma repeat_dec_cpt_output
 
 Proof.
   revert init_cpt run; revert cpt; induction x; intros cpt init_cpt run.
-  + unroll_post_hoare run.
+  + unroll_post run.
     now rewrite PeanoNat.Nat.sub_0_r.
-  + unroll_post_hoare run.
+  + unroll_post run.
     apply IHx in run; [| lia].
     subst.
     lia.
@@ -123,9 +123,9 @@ Lemma repeat_inc_cpt_output
 
 Proof.
   revert run; revert cpt; induction x; intros cpt run.
-  + unroll_post_hoare run.
+  + unroll_post run.
     now rewrite PeanoNat.Nat.add_0_r.
-  + unroll_post_hoare run.
+  + unroll_post run.
     apply IHx in run.
     lia.
 Qed.
@@ -137,7 +137,7 @@ Lemma get_cpt_output (cpt x cpt' : nat)
   : cpt' = cpt.
 
 Proof.
-  now unroll_post_hoare run.
+  now unroll_post run.
 Qed.
 
 Hint Resolve get_cpt_output : counter.
@@ -151,7 +151,7 @@ Theorem dec_then_inc_cpt_output (cpt x y cpt' r : nat)
   : cpt' = cpt - x + y.
 
 Proof.
-  unroll_post_hoare run.
+  unroll_post run.
   apply repeat_dec_cpt_output in run0; [| exact init_cpt ].
   apply repeat_inc_cpt_output in run.
   apply get_cpt_output in run2.
@@ -167,5 +167,5 @@ Theorem dec_then_inc_output (cpt x y cpt' r : nat)
   : cpt' = r.
 
 Proof.
-  now unroll_post_hoare run.
+  now unroll_post run.
 Qed.

@@ -1,37 +1,11 @@
+-I _build/default/plugins/exec
+-I _build/default/theories/FFI/
 -Q _build/default/theories/Core FreeSpec.Core
 -Q _build/default/theories/Exec FreeSpec.Exec
 -Q _build/default/theories/FFI FreeSpec.FFI
--I _build/default/plugins/exec
--I _build/default/theories/FFI/
 
-_build/default/theories/Core/Init.v
-
-_build/default/theories/Core/Interface.v
-_build/default/theories/Core/Impure.v
-_build/default/theories/Core/Semantics.v
-_build/default/theories/Core/Component.v
-
-_build/default/theories/Core/Contract.v
-_build/default/theories/Core/ImpureFacts.v
-_build/default/theories/Core/SemanticsFacts.v
-_build/default/theories/Core/Hoare.v
-_build/default/theories/Core/HoareFacts.v
-_build/default/theories/Core/Instrument.v
-_build/default/theories/Core/InstrumentFacts.v
-_build/default/theories/Core/ComponentFacts.v
-_build/default/theories/Core/Tactics.v
-
-_build/default/theories/Core/Core.v
-_build/default/theories/Core/CoreFacts.v
-_build/default/theories/Core/Extraction.v
-
-_build/default/theories/FFI/heap.ml
-_build/default/theories/FFI/heap.mli
-_build/default/theories/FFI/FreeSpecFFI.mlpack
-
-_build/default/theories/FFI/Heap.v
-_build/default/theories/FFI/FFI.v
-_build/default/theories/FFI/ML.v
+_build/default/theories/FFI/refs.ml
+_build/default/theories/FFI/refs.mli
 
 _build/default/plugins/exec/coqbool.ml
 _build/default/plugins/exec/coqbool.mli
@@ -60,8 +34,32 @@ _build/default/plugins/exec/resources.mli
 _build/default/plugins/exec/store.ml
 _build/default/plugins/exec/store.mli
 _build/default/plugins/exec/utils.ml
-_build/default/plugins/exec/g_freespec.mlg
-_build/default/plugins/exec/freespec_exec.mlpack
+_build/default/plugins/exec/g_freespec_exec.mlg
+
+_build/default/theories/Core/Init.v
+
+_build/default/theories/Core/Interface.v
+_build/default/theories/Core/Impure.v
+_build/default/theories/Core/Semantics.v
+_build/default/theories/Core/Component.v
+
+_build/default/theories/Core/Contract.v
+_build/default/theories/Core/ImpureFacts.v
+_build/default/theories/Core/SemanticsFacts.v
+_build/default/theories/Core/Hoare.v
+_build/default/theories/Core/HoareFacts.v
+_build/default/theories/Core/Instrument.v
+_build/default/theories/Core/InstrumentFacts.v
+_build/default/theories/Core/ComponentFacts.v
+_build/default/theories/Core/Tactics.v
+
+_build/default/theories/Core/Core.v
+_build/default/theories/Core/CoreFacts.v
+_build/default/theories/Core/Extraction.v
+
+_build/default/theories/FFI/Refs.v
+_build/default/theories/FFI/FFI.v
+_build/default/theories/FFI/ML.v
 
 _build/default/theories/Exec/Eval.v
 _build/default/theories/Exec/Exec.v

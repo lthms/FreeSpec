@@ -3,8 +3,8 @@
   (public_name coq-freespec-ffi.lib))
 
 (rule
-  (target Heap.v)
-  (action (run coqffi -finterface %{cmi:heap} -o %{target})))
+  (target Refs.v)
+  (action (run coqffi -finterface %{cmi:refs} -o %{target})))
 
 (coq.theory
   (name FreeSpec.FFI)
