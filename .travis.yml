@@ -18,7 +18,7 @@ env:
     - COMPILER="4.10.0"
     - NATIVE_COMP="yes"
     - COQ_VER="8.12.0"
-    - DUNE_VER="2.5.1"
+    - DUNE_VER="2.7.1"
     - CMDLINER_VER="1.0.4"
     - SIMPLE_IO_VER="1.3.0"
     - OPAMVERBOSE=3
@@ -45,7 +45,6 @@ install:
 
 script:
   - git clone https://git.sr.ht/~lthms/coqbook.css ${HOME}/coqbook.css
-  - ./configure.sh
   - dune build
   - dune install
   - ./run-tests.sh

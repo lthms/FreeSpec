@@ -23,9 +23,9 @@ function run_test () {
     echo -ne "  ${test}..."
 
     if [ -f "${input}" ]; then
-        cat ${input} | coqc ${test} 2>&1 > ${output}
+        cat ${input} | coqc -init-file build.v ${test} 2>&1 > ${output}
     else
-        coqc ${test} 2>&1 > ${output}
+        coqc -init-file build.v ${test} 2>&1 > ${output}
     fi
 
     # we first check whether or not `coqc' was happy with our test

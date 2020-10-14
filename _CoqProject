@@ -3,6 +3,8 @@
 -Q _build/default/theories/Core FreeSpec.Core
 -Q _build/default/theories/Exec FreeSpec.Exec
 -Q _build/default/theories/FFI FreeSpec.FFI
+-arg -init-file
+-arg build.v
 
 _build/default/theories/FFI/refs.ml
 _build/default/theories/FFI/refs.mli

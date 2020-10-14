@@ -1,28 +1,4 @@
-(** * Coq Set-up *)
-
-#[global] Generalizable All Variables.
-
-(** * Coq Stdlib Notations *)
-
-From Coq Require Export List RelationClasses Setoid Morphisms.
-Export ListNotations.
-
-#[global] Open Scope signature_scope.
-#[global] Close Scope nat_scope.
-#[global] Open Scope bool_scope.
-
-
-(** * ExtLib Notations *)
-
-From ExtLib Require Export Functor Applicative Monad.
-Export FunctorNotation.
-Export ApplicativeNotation.
-Export MonadLetNotation.
-
-#[global] Open Scope monad_scope.
-
-From ExtLib Require Export Extras.
-Export FunNotation.
+(** * Utils Functions *)
 
 Definition when {m : Type -> Type} `{Monad m} (cond : bool) `(p : m a) : m unit :=
   if cond then (p;; pure tt) else pure tt.

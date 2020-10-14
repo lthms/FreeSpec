@@ -2,4 +2,5 @@
   (name FreeSpec.Exec)
   (package coq-freespec-exec)
   (theories FreeSpec.Core FreeSpec.FFI)
-  (libraries coq-freespec-exec.plugin))
+  (libraries coq-freespec-exec.plugin)
+  (flags -init-file build.v))
