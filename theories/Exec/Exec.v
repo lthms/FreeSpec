@@ -18,11 +18,31 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *)
 
+From FreeSpec.Core Require Export Core.
+
+(** This module loads a Coq plugin which provides the [Exec]
+    vernacular command. [Exec] is analogous to [Compute], but works
+    with [impure] terms. [Exec] uses the Coq reduction engine to make
+    the head constructor of the term provided as argument for [Exec]
+    appears. Then, in presence of the [request_then] constructor, it
+    uses handler functions provided by FreeSpec users to perform the
+    impure tasks and compute a result. This result is passed to the
+    continuation, and the [Exec] interpreter is recursively
+    called. When the constructor is [local], the computation is
+    completed.
+
+    By default, [Exec] uses a reduction strategy analogous to
+    [cbn]. It also accepts the <<nf>> attribute to change this
+    behavior, and prefers an approach analogous to
+    <<compute>>. Changing the reduction strategy can be handy in
+    presence of a term which takes a very long time to reduce with
+    <<cbn>>. This is typically the case with terms that relies on
+    well-founded recursion rather than structural recursion. *)
+
 From CoqFFI Require Import Int.
 
 (* Import necessary types. *)
 
-From FreeSpec.Core Require Export Core.
 From FreeSpec.Exec Require Import Eval.
 From FreeSpec.FFI Require Import FFI Heap ML.
 
@@ -139,10 +159,6 @@ let _ =
   register_interface
     "freespec.exec.console"
     [("WriteLine", writeline); ("ReadLine", readline)]
->>
-
-    For a concrete example of the use of FreeSpec.Exec extensible feature,
-    interested readers can have a look at the FreeSpec.Stdlib project in the
-    <<stdlib/>> folder of this repository. *)
+>> *)
 
 Declare ML Module "freespec_exec".

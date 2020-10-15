@@ -19,9 +19,10 @@ Fixpoint enum {a b ix} (p : a -> impure ix b) (l : list a) {measure (length l)} 
 Fail Timeout 1 Exec (enum eval [true; true; false]).
 
 (** We have provided an attribute for [Exec] which slightly changes the behavior
-    of the command. Note that this is not a silver bullet, as some computations
-    may behave just fine with the default behavior, but on the contrary take
-    forever to compute with this option enabled. *)
+    of the command (see the documentation of [FreeSpec.Exec.Exec]). Note that
+    this is not a silver bullet, as some computations may behave just fine with
+    the default behavior, but on the contrary take forever to compute with this
+    option enabled. *)
 
 #[nf]
 Exec (enum eval [true; true; false]).
