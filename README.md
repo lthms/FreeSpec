@@ -10,8 +10,7 @@ This repository contains three Coq packages:
 - `coq-freespec-core` provides the foundation of the FreeSpec formalism.
 - `coq-freespec-exec` provides the means to execute impure
   computations implemented with the help of `coq-freespec-core`.
-- `coq-freespec-stdlib` provides a small “impure effects” library to
-  write impure computations more easily.
+- `coq-freespec-ffi` provides the means to use FreeSpec with `coqffi`.
 
 The codebase is organized as follows:
 
@@ -22,13 +21,14 @@ The codebase is organized as follows:
 
 ## Getting Started
 
-The only external dependency of FreeSpec is
-[`coq-prelude`](https://github.com/ANSSI-FR/coq-prelude). Once this
-package has been built and installed, building the FreeSpec packages
-is as simple as
+`coq-freespec-core` depends on
+[coq-ext-lib](https://github.com/coq-community/coq-ext-lib). Besides,
+`coq-freespec-ffi` depends on
+[`coqffi`](https://github.com/coq-community/coqffi).
 
 ```bash
 dune build
+dune install
 ```
 
 Besides, we provide two helper scripts:
