@@ -22,13 +22,11 @@ The codebase is organized as follows:
 
 ## Getting Started
 
-The only external dependency of FreeSpec is
-[`coq-prelude`](https://github.com/ANSSI-FR/coq-prelude). Once this
-package has been built and installed, building the FreeSpec packages
-is as simple as
+FreeSpec depends on [`coqffi`](https://github.com/coq-community/coqffi).
 
 ```bash
 dune build
+dune install
 ```
 
 Besides, we provide two helper scripts:
