@@ -11,4 +11,4 @@
   (package coq-freespec-ffi)
   (theories FreeSpec.Core)
   (libraries coq-freespec-ffi.lib)
-  (flags -init-file build.v))
+  (flags -init-file ../../build.v))

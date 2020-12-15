@@ -1,6 +1,6 @@
 (coq.theory
   (name FreeSpec.Core)
   (package coq-freespec-core)
-  (flags -init-file build.v))
+  (flags -init-file ../../build.v))
 
 (include_subdirs qualified)

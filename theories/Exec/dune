@@ -3,4 +3,4 @@
   (package coq-freespec-exec)
   (theories FreeSpec.Core FreeSpec.FFI)
   (libraries coq-freespec-exec.plugin)
-  (flags -init-file build.v))
+  (flags -init-file ../../build.v))
