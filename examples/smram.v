@@ -1,5 +1,5 @@
 From Coq Require Import ZArith.
-From FreeSpec Require Import CoreFacts.
+From FreeSpec Require Import Core CoreFacts.
 
 (** This library introduces the starting point of the FreeSpec framework, that
     is the original example that has motivated everything else. *)

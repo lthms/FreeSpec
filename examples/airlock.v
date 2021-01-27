@@ -19,7 +19,7 @@
  *)
 
 From Coq Require Import Arith.
-From FreeSpec Require Import CoreFacts.
+From FreeSpec.Core Require Import Core CoreFacts.
 
 #[local] Open Scope nat_scope.
 
