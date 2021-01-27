@@ -47,3 +47,9 @@ publications.
   in Coq**](https://hal.inria.fr/hal-02422273) (CPP'20)
 - [**Modular Verification of Programs with Effects and Effect Handlers in
   Coq**](https://hal.inria.fr/hal-01799712) (FM'18)
+
+## Credit
+
+FreeSpec is a Free Software, distributed under the terms of the MPLv2.
+It was initially developed within the the [French Cybersecurity Agency
+(ANSSI)](https://ssi.gouv.fr/en).

@@ -1,3 +1,9 @@
+(* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. *)
+
+(* Copyright (C) 2018–2020 ANSSI *)
+
 type 'a t = { next_key : Uint63.t ref; table : (Uint63.t, 'a) Hashtbl.t }
 
 let unwrap : Constr.t -> Uint63.t = fun x ->

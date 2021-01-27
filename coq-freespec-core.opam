@@ -1,12 +1,12 @@
 opam-version: "2.0"
-maintainer: "Thomas Letan <thomas.letan@ssi.gouv.fr"
+maintainer: "Thomas Letan <lthms@soap.coffee>"
 version: "dev"
 
-homepage: "https://github.com/ANSSI-FR/FreeSpec"
-dev-repo: "git+https://github.com/ANSSI-FR/FreeSpec.git"
-bug-reports: "https://github.com/ANSSI-FR/FreeSpec.git/issues"
-doc: "https://ANSSI-FR.github.io/FreeSpec"
-license: "GPL-3.0-or-later"
+homepage: "https://github.com/lthms/FreeSpec"
+dev-repo: "git+https://github.com/lthms/FreeSpec.git"
+bug-reports: "https://github.com/lthms/FreeSpec.git/issues"
+doc: "https://lthms.github.io/FreeSpec"
+license: "MPL-2.0"
 
 synopsis: "A framework for implementing and certifying impure computations in Coq"
 description: """
