@@ -32,7 +32,7 @@ depends: [
 tags: [
   "keyword:foreign function interface"
   "category:Miscellaneous/Coq Extensions"
-  "logpath:FreeSpec.Exec"
+  "logpath:FreeSpec.FFI"
 ]
 
 authors: [
