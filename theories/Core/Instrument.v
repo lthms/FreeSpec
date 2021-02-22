@@ -5,7 +5,7 @@
 (* Copyright (C) 2018–2020 ANSSI *)
 
 From ExtLib Require Import StateMonad MonadTrans.
-Existing Instance Monad_stateT.
+#[local] Existing Instance Monad_stateT.
 From FreeSpec.Core Require Import Interface Semantics Contract.
 
 Notation instrument Ω i := (stateT Ω (state (semantics i))).
