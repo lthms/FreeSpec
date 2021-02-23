@@ -1,0 +1,5 @@
+(coq.theory
+  (package coq-freespec-contribs)
+  (name FreeSpec.Contribs)
+  (theories FreeSpec.Core FreeSpec.FFI)
+  (flags -init-file ../../build.v))

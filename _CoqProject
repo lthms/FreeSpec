@@ -3,6 +3,7 @@
 -Q _build/default/theories/Core FreeSpec.Core
 -Q _build/default/theories/Exec FreeSpec.Exec
 -Q _build/default/theories/FFI FreeSpec.FFI
+-Q _build/default/theories/Contribs FreeSpec.Contribs
 -arg -init-file
 -arg build.v
 
@@ -65,6 +66,10 @@ _build/default/theories/FFI/ML.v
 
 _build/default/theories/Exec/Eval.v
 _build/default/theories/Exec/Exec.v
+
+_build/default/theories/Contribs/Raise.v
+_build/default/theories/Contribs/MFix.v
+_build/default/theories/Contribs/MFixFacts.v
 
 _build/default/examples/airlock.v
 _build/default/examples/smram.v
