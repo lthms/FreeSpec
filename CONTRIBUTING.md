@@ -13,6 +13,20 @@ want to see added to FreeSpec (and even implement it yourself), feel
 free to open an issue. It is always recommended to discuss a change
 before sending patches that implement it.
 
+## Building from Source
+
+To build FreeSpec, the recommended approach is to create a dedicated
+Opam switch.  Thus, starting hacking FreeSpec becomes as simple as.
+
+```
+opam switch create . ocaml-base-compiler.4.11.1 --repositories "default,coq-released,coq-extra-dev"
+```
+
+You need to have told Opam what `coq-released` and `coq-extra-dev`
+are.  If you have not done it before, you can [read
+here](https://github.com/coq/opam-coq-archive) how to setup it
+correctly.
+
 ## Coding Style
 
 We provide several guidelines in order that contributors are expected
