@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>FreeSpec.Core.ComponentFacts</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FreeSpec.Core.ComponentFacts</h1>
+
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ExtLib</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">StateMonad</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.Core</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="FreeSpec.Core.Contract.html#"><span class="id" title="library">Contract</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#"><span class="id" title="library">HoareFacts</span></a> <a class="idref" href="FreeSpec.Core.SemanticsFacts.html#"><span class="id" title="library">SemanticsFacts</span></a> <a class="idref" href="FreeSpec.Core.InstrumentFacts.html#"><span class="id" title="library">InstrumentFacts</span></a>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="FreeSpec.Core.Component.html#"><span class="id" title="library">Component</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We use an alternative definition of <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Component.html#derive_semantics"><span class="id" title="definition">derive_semantics</span></a></span>, which has
+    the virtue of being easier to reason with. More precisely, it
+    behaves better with evaluation tactics such as <span class="inlinecode"><span class="id" title="var">cbn</span></span> (according to
+    our experience, <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Component.html#derive_semantics"><span class="id" title="definition">derive_semantics</span></a></span> requires explicit <span class="inlinecode"><span class="id" title="tactic">destruct</span></span>
+    call to deal with the <span class="inlinecode"><span class="id" title="keyword">let</span></span> <span class="inlinecode">...</span> <span class="inlinecode"><span class="id" title="tactic">in</span></span> <span class="inlinecode">...</span>  construction).
+
+<div class="paragraph"> </div>
+
+    This is a detail of implementation of our proof, henceforth the
+    definition is local and should not be used anywhere else. 
+</div>
+<div class="code">
+
+<br/>
+#[<span class="id" title="var">local</span>]<br/>
+<span class="id" title="keyword">CoFixpoint</span> <a id="derive_semantics'" class="idref" href="#derive_semantics'"><span class="id" title="definition">derive_semantics'</span></a> {<a id="i:1" class="idref" href="#i:1"><span class="id" title="binder">i</span></a> <a id="j:2" class="idref" href="#j:2"><span class="id" title="binder">j</span></a>} (<a id="c:3" class="idref" href="#c:3"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Component.html#component"><span class="id" title="definition">component</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#i:1"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#j:2"><span class="id" title="variable">j</span></a>) (<a id="sem:4" class="idref" href="#sem:4"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#j:2"><span class="id" title="variable">j</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#i:1"><span class="id" title="variable">i</span></a> :=<br/>
+&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Semantics.html#mk_semantics"><span class="id" title="constructor">mk_semantics</span></a> (<span class="id" title="keyword">fun</span> <a id="a:6" class="idref" href="#a:6"><span class="id" title="binder">a</span></a> <a id="p:7" class="idref" href="#p:7"><span class="id" title="binder">p</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><span class="id" title="definition">evalState</span> (<a class="idref" href="FreeSpec.Core.Semantics.html#to_state"><span class="id" title="definition">to_state</span></a> <span class="id" title="notation">$</span> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#c:3"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#a:6"><span class="id" title="variable">a</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#p:7"><span class="id" title="variable">p</span></a>) <a class="idref" href="FreeSpec.Core.ComponentFacts.html#sem:4"><span class="id" title="variable">sem</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.ComponentFacts.html#derive_semantics':5"><span class="id" title="definition">derive_semantics'</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#c:3"><span class="id" title="variable">c</span></a> (<span class="id" title="definition">execState</span> (<a class="idref" href="FreeSpec.Core.Semantics.html#to_state"><span class="id" title="definition">to_state</span></a> <span class="id" title="notation">$</span> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#c:3"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#a:6"><span class="id" title="variable">a</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#p:7"><span class="id" title="variable">p</span></a>) <a class="idref" href="FreeSpec.Core.ComponentFacts.html#sem:4"><span class="id" title="variable">sem</span></a>)<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We prove these two definitions (<span class="inlinecode"><a class="idref" href="FreeSpec.Core.Component.html#derive_semantics"><span class="id" title="definition">derive_semantics</span></a></span> and
+    <span class="inlinecode"><a class="idref" href="FreeSpec.Core.ComponentFacts.html#derive_semantics'"><span class="id" title="definition">derive_semantics'</span></a></span>) are equivalent wrt. <span class="inlinecode"><a class="idref" href="FreeSpec.Core.SemanticsFacts.html#semantics_eq"><span class="id" title="inductive">semantics_eq</span></a></span>. 
+</div>
+<div class="code">
+
+<br/>
+#[<span class="id" title="var">local</span>]<br/>
+<span class="id" title="keyword">Remark</span> <a id="derive_semantics_equ" class="idref" href="#derive_semantics_equ"><span class="id" title="lemma">derive_semantics_equ</span></a> `(<a id="c:10" class="idref" href="#c:10"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Component.html#component"><span class="id" title="definition">component</span></a> <a id="i:8" class="idref" href="#i:8"><span class="id" title="binder">i</span></a> <a id="j:9" class="idref" href="#j:9"><span class="id" title="binder">j</span></a>) (<a id="sem:11" class="idref" href="#sem:11"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#j:9"><span class="id" title="variable">j</span></a>)<br/>
+&nbsp;&nbsp;: (<a class="idref" href="FreeSpec.Core.Component.html#derive_semantics"><span class="id" title="definition">derive_semantics</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#c:10"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#sem:11"><span class="id" title="variable">sem</span></a> <a class="idref" href="FreeSpec.Core.SemanticsFacts.html#b41064feeabe5d8117229a04643e5301"><span class="id" title="notation">===</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#derive_semantics'"><span class="id" title="definition">derive_semantics'</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#c:10"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#sem:11"><span class="id" title="variable">sem</span></a>)%<span class="id" title="var">semantics</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">revert</span> <span class="id" title="var">sem</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">cofix</span> <span class="id" title="var">aux</span>; <span class="id" title="tactic">intros</span> <span class="id" title="var">sem</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">constructor</span>; <span class="id" title="tactic">intros</span> <span class="id" title="var">a</span> <span class="id" title="var">e</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="FreeSpec.Core.Component.html#derive_semantics"><span class="id" title="definition">derive_semantics</span></a>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="FreeSpec.Core.Semantics.html#eval_effect"><span class="id" title="definition">eval_effect</span></a>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="FreeSpec.Core.Semantics.html#exec_effect"><span class="id" title="definition">exec_effect</span></a>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="FreeSpec.Core.Semantics.html#run_effect"><span class="id" title="definition">run_effect</span></a>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <span class="id" title="definition">evalState</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <span class="id" title="definition">execState</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="projection">runState</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">apply</span> <span class="id" title="var">aux</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab40"></a><h2 class="section">Component Correctness</h2>
+
+<div class="paragraph"> </div>
+
+ We consider a component <span class="inlinecode"><span class="id" title="var">c</span></span> <span class="inlinecode">:</span> <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Component.html#component"><span class="id" title="definition">component</span></a></span> <span class="inlinecode"><span class="id" title="var">i</span></span> <span class="inlinecode"><span class="id" title="var">j</span></span> <span class="inlinecode"><span class="id" title="var">s</span></span>, meaning <span class="inlinecode"><span class="id" title="var">c</span></span> exposes an
+    interface <span class="inlinecode"><span class="id" title="var">i</span></span>, uses an interface <span class="inlinecode"><span class="id" title="var">j</span></span>, and carries an internal state of type
+    <span class="inlinecode"><span class="id" title="var">s</span></span>.
+
+<div class="paragraph"> </div>
+
+<pre>
+                            c : component i j s
+                        i +---------------------+      j
+                        | |                     |      |
+                +------&gt;| |       st : s        |-----&gt;|
+                        | |                     |      |
+                          +---------------------+
+</pre>
+
+<div class="paragraph"> </div>
+
+    We say <span class="inlinecode"><span class="id" title="var">c</span></span> is correct wrt. <span class="inlinecode"><span class="id" title="var">ci</span></span> (a contract for <span class="inlinecode"><span class="id" title="var">i</span></span>) and <span class="inlinecode"><span class="id" title="var">cj</span></span> (a contract
+    for <span class="inlinecode"><span class="id" title="var">i</span></span>) iff given primitives which satisfies the caller obligation of <span class="inlinecode"><span class="id" title="var">ci</span></span>,
+    <span class="inlinecode"><span class="id" title="var">c</span></span> will
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> use respectful impure computations wrt. <span class="inlinecode"><span class="id" title="var">cj</span></span>
+
+</li>
+<li> compute results which satisfy <span class="inlinecode"><span class="id" title="var">ci</span></span> callee obligations, assuming it can
+      rely on a semantics of <span class="inlinecode"><span class="id" title="var">j</span></span> which complies with <span class="inlinecode"><span class="id" title="var">cj</span></span>
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+    The two witness states <span class="inlinecode">ω<span class="id" title="var">i</span></span> <span class="inlinecode">:</span> <span class="inlinecode"><span class="id" title="var">Ωi</span></span> (for <span class="inlinecode"><span class="id" title="var">speci</span></span>) and <span class="inlinecode">ω<span class="id" title="var">j</span></span> <span class="inlinecode">:</span> <span class="inlinecode"><span class="id" title="var">Ωj</span></span> (for <span class="inlinecode"><span class="id" title="var">specj</span></span>),
+    and <span class="inlinecode"><span class="id" title="var">st</span></span> <span class="inlinecode">:</span> <span class="inlinecode"><span class="id" title="var">s</span></span> the internal state of <span class="inlinecode"><span class="id" title="var">c</span></span> remained implicit in the previous
+    sentence.  In practice, we associate them together by means of a dedicated
+    predicate <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Peano.html#pred"><span class="id" title="abbreviation">pred</span></a></span>.  It is expected that <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Peano.html#pred"><span class="id" title="abbreviation">pred</span></a></span> is an invariant throughout
+    <span class="inlinecode"><span class="id" title="var">c</span></span>'s life, meaning that as long as <span class="inlinecode"><span class="id" title="var">c</span></span> computes result for legitimate
+    effects (wrt.  <span class="inlinecode"><span class="id" title="var">speci</span></span> effects, the updated values of <span class="inlinecode">ω<span class="id" title="var">i</span></span>, <span class="inlinecode">ω<span class="id" title="var">j</span></span> and <span class="inlinecode"><span class="id" title="var">st</span></span>
+    continue to satisfy <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Peano.html#pred"><span class="id" title="abbreviation">pred</span></a></span>. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="correct_component" class="idref" href="#correct_component"><span class="id" title="definition">correct_component</span></a> `{<a id="H:14" class="idref" href="#H:14"><span class="id" title="binder">MayProvide</span></a> <a id="H:14" class="idref" href="#H:14"><span class="id" title="binder">jx</span></a> <a id="H:14" class="idref" href="#H:14"><span class="id" title="binder">j</span></a>}<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="c:16" class="idref" href="#c:16"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Component.html#component"><span class="id" title="definition">component</span></a> <a id="i:15" class="idref" href="#i:15"><span class="id" title="binder">i</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#jx:12"><span class="id" title="variable">jx</span></a>) `(<a id="ci:18" class="idref" href="#ci:18"><span class="id" title="binder">ci</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#i:15"><span class="id" title="variable">i</span></a> <a id="53cf1e67162a6f8d0b1a6ba1b41e4311" class="idref" href="#53cf1e67162a6f8d0b1a6ba1b41e4311"><span class="id" title="binder">Ωi</span></a>) `(<a id="cj:20" class="idref" href="#cj:20"><span class="id" title="binder">cj</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#j:13"><span class="id" title="variable">j</span></a> <a id="366468c08f6298345ce1cebae05e830e" class="idref" href="#366468c08f6298345ce1cebae05e830e"><span class="id" title="binder">Ωj</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="pred:21" class="idref" href="#pred:21"><span class="id" title="binder">pred</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#53cf1e67162a6f8d0b1a6ba1b41e4311"><span class="id" title="variable">Ωi</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#366468c08f6298345ce1cebae05e830e"><span class="id" title="variable">Ωj</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="keyword">Prop</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="keyword">Prop</span> :=<br/>
+&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">∀</span> (<a id="8b44deaa0c56c74363013546a7ac71dd" class="idref" href="#8b44deaa0c56c74363013546a7ac71dd"><span class="id" title="binder">ω</span></a><a id="8b44deaa0c56c74363013546a7ac71dd" class="idref" href="#8b44deaa0c56c74363013546a7ac71dd"><span class="id" title="binder">i</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#53cf1e67162a6f8d0b1a6ba1b41e4311"><span class="id" title="variable">Ωi</span></a>) (<a id="b927da2a782142c1a89e4fc3c081b57e" class="idref" href="#b927da2a782142c1a89e4fc3c081b57e"><span class="id" title="binder">ω</span></a><a id="b927da2a782142c1a89e4fc3c081b57e" class="idref" href="#b927da2a782142c1a89e4fc3c081b57e"><span class="id" title="binder">j</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#366468c08f6298345ce1cebae05e830e"><span class="id" title="variable">Ωj</span></a>) (<a id="init:24" class="idref" href="#init:24"><span class="id" title="binder">init</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#pred:21"><span class="id" title="variable">pred</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#8b44deaa0c56c74363013546a7ac71dd"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#8b44deaa0c56c74363013546a7ac71dd"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#b927da2a782142c1a89e4fc3c081b57e"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#b927da2a782142c1a89e4fc3c081b57e"><span class="id" title="variable">j</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`(<a id="e:26" class="idref" href="#e:26"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#i:15"><span class="id" title="variable">i</span></a> <a id="6fb522096358674dd209e6ac77f89539" class="idref" href="#6fb522096358674dd209e6ac77f89539"><span class="id" title="binder">α</span></a>) (<a id="o_caller:27" class="idref" href="#o_caller:27"><span class="id" title="binder">o_caller</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#caller_obligation"><span class="id" title="projection">caller_obligation</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#ci:18"><span class="id" title="variable">ci</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#8b44deaa0c56c74363013546a7ac71dd"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#8b44deaa0c56c74363013546a7ac71dd"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#e:26"><span class="id" title="variable">e</span></a>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#cj:20"><span class="id" title="variable">cj</span></a> <span class="id" title="notation">$</span> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#c:16"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#6fb522096358674dd209e6ac77f89539"><span class="id" title="variable">α</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#e:26"><span class="id" title="variable">e</span></a>) <a class="idref" href="FreeSpec.Core.ComponentFacts.html#b927da2a782142c1a89e4fc3c081b57e"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#b927da2a782142c1a89e4fc3c081b57e"><span class="id" title="variable">j</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#ba2b0e492d2b4675a0acf3ea92aabadd"><span class="id" title="notation">∧</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">∀</span> (<a id="x:28" class="idref" href="#x:28"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#6fb522096358674dd209e6ac77f89539"><span class="id" title="variable">α</span></a>) (<a id="d4d4ec2538dd25cc40196371b6bfebd5" class="idref" href="#d4d4ec2538dd25cc40196371b6bfebd5"><span class="id" title="binder">ω</span></a><a id="d4d4ec2538dd25cc40196371b6bfebd5" class="idref" href="#d4d4ec2538dd25cc40196371b6bfebd5"><span class="id" title="binder">j'</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#366468c08f6298345ce1cebae05e830e"><span class="id" title="variable">Ωj</span></a>) (<a id="run:30" class="idref" href="#run:30"><span class="id" title="binder">run</span></a> : <a class="idref" href="FreeSpec.Core.Hoare.html#post"><span class="id" title="projection">post</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#cj:20"><span class="id" title="variable">cj</span></a> <span class="id" title="notation">$</span> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#c:16"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#6fb522096358674dd209e6ac77f89539"><span class="id" title="variable">α</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#e:26"><span class="id" title="variable">e</span></a>) <a class="idref" href="FreeSpec.Core.ComponentFacts.html#b927da2a782142c1a89e4fc3c081b57e"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#b927da2a782142c1a89e4fc3c081b57e"><span class="id" title="variable">j</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#x:28"><span class="id" title="variable">x</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#d4d4ec2538dd25cc40196371b6bfebd5"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#d4d4ec2538dd25cc40196371b6bfebd5"><span class="id" title="variable">j'</span></a>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Contract.html#callee_obligation"><span class="id" title="projection">callee_obligation</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#ci:18"><span class="id" title="variable">ci</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#8b44deaa0c56c74363013546a7ac71dd"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#8b44deaa0c56c74363013546a7ac71dd"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#e:26"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#x:28"><span class="id" title="variable">x</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#ba2b0e492d2b4675a0acf3ea92aabadd"><span class="id" title="notation">∧</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#pred:21"><span class="id" title="variable">pred</span></a> (<a class="idref" href="FreeSpec.Core.Contract.html#witness_update"><span class="id" title="projection">witness_update</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#ci:18"><span class="id" title="variable">ci</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#8b44deaa0c56c74363013546a7ac71dd"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#8b44deaa0c56c74363013546a7ac71dd"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#e:26"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#x:28"><span class="id" title="variable">x</span></a>) <a class="idref" href="FreeSpec.Core.ComponentFacts.html#d4d4ec2538dd25cc40196371b6bfebd5"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#d4d4ec2538dd25cc40196371b6bfebd5"><span class="id" title="variable">j'</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Once we have proven <span class="inlinecode"><span class="id" title="var">c</span></span> is correct wrt. to <span class="inlinecode"><span class="id" title="var">speci</span></span> and <span class="inlinecode"><span class="id" title="var">specj</span></span> with <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Peano.html#pred"><span class="id" title="abbreviation">pred</span></a></span>
+    acting as an invariant throughout <span class="inlinecode"><span class="id" title="var">c</span></span> life, we show we can derive a
+    semantics from <span class="inlinecode"><span class="id" title="var">c</span></span> with an initial state <span class="inlinecode"><span class="id" title="var">st</span></span> which complies to <span class="inlinecode"><span class="id" title="var">speci</span></span> in
+    accordance to <span class="inlinecode">ω<span class="id" title="var">i</span></span> if we use a semantics of <span class="inlinecode"><span class="id" title="var">j</span></span> which complies to <span class="inlinecode"><span class="id" title="var">specj</span></span> in
+    accordance to <span class="inlinecode">ω<span class="id" title="var">j</span></span>, where <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Peano.html#pred"><span class="id" title="abbreviation">pred</span></a></span> <span class="inlinecode">ω<span class="id" title="var">i</span></span> <span class="inlinecode"><span class="id" title="var">st</span></span> <span class="inlinecode">ω<span class="id" title="var">j</span></span> is satisfied. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="correct_component_derives_compliant_semantics" class="idref" href="#correct_component_derives_compliant_semantics"><span class="id" title="lemma">correct_component_derives_compliant_semantics</span></a> `{<a id="H:33" class="idref" href="#H:33"><span class="id" title="binder">MayProvide</span></a> <a id="H:33" class="idref" href="#H:33"><span class="id" title="binder">jx</span></a> <a id="H:33" class="idref" href="#H:33"><span class="id" title="binder">j</span></a>}<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="c:35" class="idref" href="#c:35"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Component.html#component"><span class="id" title="definition">component</span></a> <a id="i:34" class="idref" href="#i:34"><span class="id" title="binder">i</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#jx:31"><span class="id" title="variable">jx</span></a>) `(<a id="ci:37" class="idref" href="#ci:37"><span class="id" title="binder">ci</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#i:34"><span class="id" title="variable">i</span></a> <a id="a3f6db6fc00de246ebbd07c5b1197a0a" class="idref" href="#a3f6db6fc00de246ebbd07c5b1197a0a"><span class="id" title="binder">Ωi</span></a>) `(<a id="cj:39" class="idref" href="#cj:39"><span class="id" title="binder">cj</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#j:32"><span class="id" title="variable">j</span></a> <a id="3c1c0be922bf511654088c144a5036a5" class="idref" href="#3c1c0be922bf511654088c144a5036a5"><span class="id" title="binder">Ωj</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="pred:40" class="idref" href="#pred:40"><span class="id" title="binder">pred</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#a3f6db6fc00de246ebbd07c5b1197a0a"><span class="id" title="variable">Ωi</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#3c1c0be922bf511654088c144a5036a5"><span class="id" title="variable">Ωj</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="keyword">Prop</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="correct:41" class="idref" href="#correct:41"><span class="id" title="binder">correct</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#correct_component"><span class="id" title="definition">correct_component</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#c:35"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#ci:37"><span class="id" title="variable">ci</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#cj:39"><span class="id" title="variable">cj</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#pred:40"><span class="id" title="variable">pred</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="73ca452834e3abe8a53b401416177c22" class="idref" href="#73ca452834e3abe8a53b401416177c22"><span class="id" title="binder">ω</span></a><a id="73ca452834e3abe8a53b401416177c22" class="idref" href="#73ca452834e3abe8a53b401416177c22"><span class="id" title="binder">i</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#a3f6db6fc00de246ebbd07c5b1197a0a"><span class="id" title="variable">Ωi</span></a>) (<a id="40579e4674901d59d10ea8f87ab392bf" class="idref" href="#40579e4674901d59d10ea8f87ab392bf"><span class="id" title="binder">ω</span></a><a id="40579e4674901d59d10ea8f87ab392bf" class="idref" href="#40579e4674901d59d10ea8f87ab392bf"><span class="id" title="binder">j</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#3c1c0be922bf511654088c144a5036a5"><span class="id" title="variable">Ωj</span></a>) (<a id="inv:44" class="idref" href="#inv:44"><span class="id" title="binder">inv</span></a> : <a class="idref" href="FreeSpec.Core.ComponentFacts.html#pred:40"><span class="id" title="variable">pred</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#73ca452834e3abe8a53b401416177c22"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#73ca452834e3abe8a53b401416177c22"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#40579e4674901d59d10ea8f87ab392bf"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#40579e4674901d59d10ea8f87ab392bf"><span class="id" title="variable">j</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="sem:45" class="idref" href="#sem:45"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#jx:31"><span class="id" title="variable">jx</span></a>) (<a id="comp:46" class="idref" href="#comp:46"><span class="id" title="binder">comp</span></a> : <a class="idref" href="FreeSpec.Core.SemanticsFacts.html#compliant_semantics"><span class="id" title="inductive">compliant_semantics</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#cj:39"><span class="id" title="variable">cj</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#40579e4674901d59d10ea8f87ab392bf"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#40579e4674901d59d10ea8f87ab392bf"><span class="id" title="variable">j</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#sem:45"><span class="id" title="variable">sem</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.SemanticsFacts.html#compliant_semantics"><span class="id" title="inductive">compliant_semantics</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#ci:37"><span class="id" title="variable">ci</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#73ca452834e3abe8a53b401416177c22"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.ComponentFacts.html#73ca452834e3abe8a53b401416177c22"><span class="id" title="variable">i</span></a> (<a class="idref" href="FreeSpec.Core.Component.html#derive_semantics"><span class="id" title="definition">derive_semantics</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#c:35"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#sem:45"><span class="id" title="variable">sem</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">rewrite</span> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#derive_semantics_equ"><span class="id" title="lemma">derive_semantics_equ</span></a>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">revert</span> ω<span class="id" title="var">i</span> ω<span class="id" title="var">j</span> <span class="id" title="var">inv</span> <span class="id" title="var">sem</span> <span class="id" title="var">comp</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">cofix</span> <span class="id" title="var">correct_component_derives_compliant_semantics</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> ω<span class="id" title="var">i</span> ω<span class="id" title="var">j</span> <span class="id" title="var">inv</span> <span class="id" title="var">sem</span> <span class="id" title="var">comp</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="FreeSpec.Core.ComponentFacts.html#correct_component"><span class="id" title="definition">correct_component</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">correct</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">specialize</span> (<span class="id" title="var">correct</span> ω<span class="id" title="var">i</span> ω<span class="id" title="var">j</span> <span class="id" title="var">inv</span>).<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">constructor</span>; <span class="id" title="tactic">intros</span> <span class="id" title="var">a</span> <span class="id" title="var">e</span> <span class="id" title="var">req</span>; <span class="id" title="tactic">specialize</span> (<span class="id" title="var">correct</span> <span class="id" title="var">a</span> <span class="id" title="var">e</span> <span class="id" title="var">req</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">correct</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">trust</span> <span class="id" title="var">run</span>].<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">eapply</span> <span class="id" title="var">run</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">rewrite</span> <a class="idref" href="FreeSpec.Core.InstrumentFacts.html#instrument_to_state_eval_morphism"><span class="id" title="lemma">instrument_to_state_eval_morphism</span></a> <span class="id" title="keyword">with</span> (<span class="id" title="var">c0</span> := <span class="id" title="var">cj</span>) (ω := ω<span class="id" title="var">j</span>).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <a class="idref" href="FreeSpec.Core.InstrumentFacts.html#instrument_satisfies_hoare"><span class="id" title="lemma">instrument_satisfies_hoare</span></a>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">eapply</span> <span class="id" title="var">correct_component_derives_compliant_semantics</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">apply</span> <span class="id" title="var">run</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">erewrite</span> <a class="idref" href="FreeSpec.Core.InstrumentFacts.html#instrument_to_state_eval_morphism"><span class="id" title="lemma">instrument_to_state_eval_morphism</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <a class="idref" href="FreeSpec.Core.InstrumentFacts.html#instrument_satisfies_hoare"><span class="id" title="lemma">instrument_satisfies_hoare</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">exact</span> <span class="id" title="var">comp</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">exact</span> <span class="id" title="var">trust</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="var">erewrite</span> <a class="idref" href="FreeSpec.Core.InstrumentFacts.html#instrument_to_state_exec_morphism"><span class="id" title="lemma">instrument_to_state_exec_morphism</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <a class="idref" href="FreeSpec.Core.InstrumentFacts.html#instrument_preserves_compliance"><span class="id" title="lemma">instrument_preserves_compliance</span></a>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">exact</span> <span class="id" title="var">comp</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">apply</span> <span class="id" title="var">trust</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

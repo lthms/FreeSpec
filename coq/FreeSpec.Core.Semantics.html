@@ -1,0 +1,295 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>FreeSpec.Core.Semantics</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FreeSpec.Core.Semantics</h1>
+
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+In FreeSpec, there is no particular semantics attach to interface's
+    primitives. Once an interface has been defined, we can provide one (or
+    more) operational semantics to interpret its primitives. 
+<div class="paragraph"> </div>
+
+<a id="lab13"></a><h1 class="section">Definition</h1>
+
+<div class="paragraph"> </div>
+
+ An operational <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a></span> for the interface <span class="inlinecode"><span class="id" title="var">i</span></span> is coinductively defined as
+    a function which can be used to interpret any primitive of <span class="inlinecode"><span class="id" title="var">i</span></span>; it produces
+    an <span class="inlinecode"><span class="id" title="var">interp_out</span></span> term. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Program.Program.html#"><span class="id" title="library">Program</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Setoids.Setoid.html#"><span class="id" title="library">Setoid</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#"><span class="id" title="library">Morphisms</span></a>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ExtLib</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">Monad</span> <span class="id" title="library">StateMonad</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.Core</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="FreeSpec.Core.Interface.html#"><span class="id" title="library">Interface</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#"><span class="id" title="library">Impure</span></a>.<br/>
+
+<br/>
+#[<span class="id" title="var">local</span>] <span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">signature_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">CoInductive</span> <a id="semantics" class="idref" href="#semantics"><span class="id" title="inductive">semantics</span></a> (<a id="i:1" class="idref" href="#i:1"><span class="id" title="binder">i</span></a> : <a class="idref" href="FreeSpec.Core.Interface.html#interface"><span class="id" title="definition">interface</span></a>) : <span class="id" title="keyword">Type</span> :=<br/>
+| <a id="mk_semantics" class="idref" href="#mk_semantics"><span class="id" title="constructor">mk_semantics</span></a> (<a id="f:5" class="idref" href="#f:5"><span class="id" title="binder">f</span></a> : <span class="id" title="keyword">∀</span> (<a id="29b7e245491c61285b1fb561776b6302" class="idref" href="#29b7e245491c61285b1fb561776b6302"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>), <a class="idref" href="FreeSpec.Core.Semantics.html#i:1"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#29b7e245491c61285b1fb561776b6302"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#29b7e245491c61285b1fb561776b6302"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">×</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#semantics:2"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:1"><span class="id" title="variable">i</span></a>) : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics:2"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:1"><span class="id" title="variable">i</span></a>.<br/>
+
+<br/>
+<span class="id" title="var">Arguments</span> <a class="idref" href="FreeSpec.Core.Semantics.html#mk_semantics"><span class="id" title="constructor">mk_semantics</span></a> [<span class="id" title="var">i</span>] (<span class="id" title="var">f</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Thus, a <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a></span> does not only compute a result for a primitive, but also
+    provides a new semantics.  This is necessary to model impurity: the same
+    primitive may or may not return the same result when called several
+    times.
+
+<div class="paragraph"> </div>
+
+    As for interfaces, the simpler <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a></span> is the operational semantics for
+    <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#iempty"><span class="id" title="inductive">iempty</span></a></span>, the empty interface. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="iempty_semantics" class="idref" href="#iempty_semantics"><span class="id" title="definition">iempty_semantics</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Interface.html#iempty"><span class="id" title="inductive">iempty</span></a> :=<br/>
+&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Semantics.html#mk_semantics"><span class="id" title="constructor">mk_semantics</span></a> (<span class="id" title="keyword">fun</span> <a id="3f6f70edefebe2321c2c56ab52ea1406" class="idref" href="#3f6f70edefebe2321c2c56ab52ea1406"><span class="id" title="binder">α</span></a> (<a id="e:7" class="idref" href="#e:7"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Interface.html#iempty"><span class="id" title="inductive">iempty</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#3f6f70edefebe2321c2c56ab52ea1406"><span class="id" title="variable">α</span></a>) ⇒ <span class="id" title="keyword">match</span> <a class="idref" href="FreeSpec.Core.Semantics.html#e:7"><span class="id" title="variable">e</span></a> <span class="id" title="keyword">with</span> <span class="id" title="keyword">end</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We also provide a semantics for the <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a></span> <span class="inlinecode"><span class="id" title="var">s</span></span> interface: 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">CoFixpoint</span> <a id="store" class="idref" href="#store"><span class="id" title="definition">store</span></a> {<a id="s:9" class="idref" href="#s:9"><span class="id" title="binder">s</span></a>} (<a id="init:10" class="idref" href="#init:10"><span class="id" title="binder">init</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#s:9"><span class="id" title="variable">s</span></a>) : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> (<a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#s:9"><span class="id" title="variable">s</span></a>) :=<br/>
+&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Semantics.html#mk_semantics"><span class="id" title="constructor">mk_semantics</span></a> (<span class="id" title="keyword">fun</span> <a id="c74b4511cd93028dde18b77ea9abdd6b" class="idref" href="#c74b4511cd93028dde18b77ea9abdd6b"><span class="id" title="binder">α</span></a> (<a id="e:13" class="idref" href="#e:13"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#s:9"><span class="id" title="variable">s</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#c74b4511cd93028dde18b77ea9abdd6b"><span class="id" title="variable">α</span></a>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="FreeSpec.Core.Semantics.html#e:13"><span class="id" title="variable">e</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="FreeSpec.Core.Interface.html#Get"><span class="id" title="constructor">Get</span></a> ⇒ <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="FreeSpec.Core.Semantics.html#init:10"><span class="id" title="variable">init</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#store:11"><span class="id" title="definition">store</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#init:10"><span class="id" title="variable">init</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="FreeSpec.Core.Interface.html#Put"><span class="id" title="constructor">Put</span></a> <span class="id" title="var">next</span> ⇒ <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#tt"><span class="id" title="constructor">tt</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#store:11"><span class="id" title="definition">store</span></a> <span class="id" title="var">next</span><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We provide several helper functions to interpret primitives with
+    semantics. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="run_effect" class="idref" href="#run_effect"><span class="id" title="definition">run_effect</span></a> {<a id="i:15" class="idref" href="#i:15"><span class="id" title="binder">i</span></a> <a id="429c913c5ee0b58e185e1ff164023c17" class="idref" href="#429c913c5ee0b58e185e1ff164023c17"><span class="id" title="binder">α</span></a>} (<a id="sem:17" class="idref" href="#sem:17"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:15"><span class="id" title="variable">i</span></a>) (<a id="e:18" class="idref" href="#e:18"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#i:15"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#429c913c5ee0b58e185e1ff164023c17"><span class="id" title="variable">α</span></a>) : <a class="idref" href="FreeSpec.Core.Semantics.html#429c913c5ee0b58e185e1ff164023c17"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">×</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:15"><span class="id" title="variable">i</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:17"><span class="id" title="variable">sem</span></a> <span class="id" title="keyword">with</span> <a class="idref" href="FreeSpec.Core.Semantics.html#mk_semantics"><span class="id" title="constructor">mk_semantics</span></a> <span class="id" title="var">f</span> ⇒ <span class="id" title="var">f</span> <a class="idref" href="FreeSpec.Core.Semantics.html#429c913c5ee0b58e185e1ff164023c17"><span class="id" title="variable">α</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#e:18"><span class="id" title="variable">e</span></a> <span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="eval_effect" class="idref" href="#eval_effect"><span class="id" title="definition">eval_effect</span></a> {<a id="i:20" class="idref" href="#i:20"><span class="id" title="binder">i</span></a> <a id="3e54f05cff61f00248ebd6ea8d337c37" class="idref" href="#3e54f05cff61f00248ebd6ea8d337c37"><span class="id" title="binder">α</span></a>} (<a id="sem:22" class="idref" href="#sem:22"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:20"><span class="id" title="variable">i</span></a>) (<a id="e:23" class="idref" href="#e:23"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#i:20"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#3e54f05cff61f00248ebd6ea8d337c37"><span class="id" title="variable">α</span></a>) : <a class="idref" href="FreeSpec.Core.Semantics.html#3e54f05cff61f00248ebd6ea8d337c37"><span class="id" title="variable">α</span></a> :=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#fst"><span class="id" title="definition">fst</span></a> (<a class="idref" href="FreeSpec.Core.Semantics.html#run_effect"><span class="id" title="definition">run_effect</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:22"><span class="id" title="variable">sem</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#e:23"><span class="id" title="variable">e</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="exec_effect" class="idref" href="#exec_effect"><span class="id" title="definition">exec_effect</span></a> {<a id="i:24" class="idref" href="#i:24"><span class="id" title="binder">i</span></a> <a id="6fb522096358674dd209e6ac77f89539" class="idref" href="#6fb522096358674dd209e6ac77f89539"><span class="id" title="binder">α</span></a>} (<a id="sem:26" class="idref" href="#sem:26"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:24"><span class="id" title="variable">i</span></a>) (<a id="e:27" class="idref" href="#e:27"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#i:24"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#6fb522096358674dd209e6ac77f89539"><span class="id" title="variable">α</span></a>) : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:24"><span class="id" title="variable">i</span></a> :=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#snd"><span class="id" title="definition">snd</span></a> (<a class="idref" href="FreeSpec.Core.Semantics.html#run_effect"><span class="id" title="definition">run_effect</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:26"><span class="id" title="variable">sem</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#e:27"><span class="id" title="variable">e</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="run_effect_equation" class="idref" href="#run_effect_equation"><span class="id" title="lemma">run_effect_equation</span></a> {<a id="i:28" class="idref" href="#i:28"><span class="id" title="binder">i</span></a> <a id="00696232554cdd8c3e25a06b019e394d" class="idref" href="#00696232554cdd8c3e25a06b019e394d"><span class="id" title="binder">α</span></a>} (<a id="sem:30" class="idref" href="#sem:30"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:28"><span class="id" title="variable">i</span></a>) (<a id="e:31" class="idref" href="#e:31"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#i:28"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#00696232554cdd8c3e25a06b019e394d"><span class="id" title="variable">α</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Semantics.html#run_effect"><span class="id" title="definition">run_effect</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:30"><span class="id" title="variable">sem</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#e:31"><span class="id" title="variable">e</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="FreeSpec.Core.Semantics.html#eval_effect"><span class="id" title="definition">eval_effect</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:30"><span class="id" title="variable">sem</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#e:31"><span class="id" title="variable">e</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#exec_effect"><span class="id" title="definition">exec_effect</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:30"><span class="id" title="variable">sem</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#e:31"><span class="id" title="variable">e</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="FreeSpec.Core.Semantics.html#eval_effect"><span class="id" title="definition">eval_effect</span></a>, <a class="idref" href="FreeSpec.Core.Semantics.html#exec_effect"><span class="id" title="definition">exec_effect</span></a>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <a class="idref" href="FreeSpec.Core.Semantics.html#run_effect"><span class="id" title="definition">run_effect</span></a>; <span class="id" title="tactic">reflexivity</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Besides, and similarly to interfaces, operational semantics can and should
+    be composed together.  To that end, we provide the <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#semprod"><span class="id" title="definition">semprod</span></a></span> operator. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">CoFixpoint</span> <a id="semprod" class="idref" href="#semprod"><span class="id" title="definition">semprod</span></a> {<a id="i:32" class="idref" href="#i:32"><span class="id" title="binder">i</span></a> <a id="j:33" class="idref" href="#j:33"><span class="id" title="binder">j</span></a>} (<a id="sem_i:34" class="idref" href="#sem_i:34"><span class="id" title="binder">sem_i</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:32"><span class="id" title="variable">i</span></a>) (<a id="sem_j:35" class="idref" href="#sem_j:35"><span class="id" title="binder">sem_j</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#j:33"><span class="id" title="variable">j</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> (<a class="idref" href="FreeSpec.Core.Semantics.html#i:32"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Interface.html#faf6e8c7f8d05e98d2c9dbdd57814bbf"><span class="id" title="notation">+</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#j:33"><span class="id" title="variable">j</span></a>) :=<br/>
+&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Semantics.html#mk_semantics"><span class="id" title="constructor">mk_semantics</span></a> (<span class="id" title="keyword">fun</span> <span class="id" title="var">_</span> <a id="e:37" class="idref" href="#e:37"><span class="id" title="binder">e</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="FreeSpec.Core.Semantics.html#e:37"><span class="id" title="variable">e</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="FreeSpec.Core.Interface.html#in_left"><span class="id" title="constructor">in_left</span></a> <span class="id" title="var">e</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> (<a id="x:39" class="idref" href="#x:39"><span class="id" title="binder">x</span></a>, <a id="out:40" class="idref" href="#out:40"><span class="id" title="binder">out</span></a>) := <a class="idref" href="FreeSpec.Core.Semantics.html#run_effect"><span class="id" title="definition">run_effect</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem_i:34"><span class="id" title="variable">sem_i</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#e:37"><span class="id" title="variable">e</span></a> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="FreeSpec.Core.Semantics.html#x:39"><span class="id" title="variable">x</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#semprod:36"><span class="id" title="definition">semprod</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#out:40"><span class="id" title="variable">out</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem_j:35"><span class="id" title="variable">sem_j</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="FreeSpec.Core.Interface.html#in_right"><span class="id" title="constructor">in_right</span></a> <span class="id" title="var">e</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> (<a id="x:41" class="idref" href="#x:41"><span class="id" title="binder">x</span></a>, <a id="out:42" class="idref" href="#out:42"><span class="id" title="binder">out</span></a>) := <a class="idref" href="FreeSpec.Core.Semantics.html#run_effect"><span class="id" title="definition">run_effect</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem_j:35"><span class="id" title="variable">sem_j</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#e:37"><span class="id" title="variable">e</span></a> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="FreeSpec.Core.Semantics.html#x:41"><span class="id" title="variable">x</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#semprod:36"><span class="id" title="definition">semprod</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem_i:34"><span class="id" title="variable">sem_i</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#out:42"><span class="id" title="variable">out</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>).<br/>
+
+<br/>
+<span class="id" title="var">Declare</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">semantics_scope</span>.<br/>
+<span class="id" title="keyword">Bind</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">semantics_scope</span> <span class="id" title="keyword">with</span> <span class="id" title="var">semantics</span>.<br/>
+<span class="id" title="keyword">Delimit</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">semantics_scope</span> <span class="id" title="keyword">with</span> <span class="id" title="var">semantics</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Infix</span> <a id="3b9461100b009f960cb7e7d18a94f57b" class="idref" href="#3b9461100b009f960cb7e7d18a94f57b"><span class="id" title="notation">&quot;</span></a>×" := <a class="idref" href="FreeSpec.Core.Semantics.html#semprod"><span class="id" title="definition">semprod</span></a> : <span class="id" title="var">semantics_scope</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab14"></a><h1 class="section">Interpreting Impure Computations</h1>
+
+<div class="paragraph"> </div>
+
+ A term of type <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a></span> <span class="inlinecode"><span class="id" title="var">a</span></span> describes an impure computation expected to return
+    a term of type <span class="inlinecode"><span class="id" title="var">a</span></span>.  Interpreting this term means actually realizing the
+    computation and producing the result.  This requires to provide an
+    operational semantics for the interfaces used by the computation.
+
+<div class="paragraph"> </div>
+
+    Some operational semantics may be defined in Gallina by means of the
+    <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a></span> type. In such a case, we provide helper functions to use them in
+    conjunction with <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a></span> terms. The terminology follows a logic similar to
+    the Haskell state monad:
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#run_impure"><span class="id" title="definition">run_impure</span></a></span> interprets an impure computation <span class="inlinecode"><span class="id" title="var">p</span></span> with an operational
+      semantics <span class="inlinecode"><span class="id" title="var">sem</span></span>, and returns both the result of <span class="inlinecode"><span class="id" title="var">p</span></span> and the new
+      operational semantics to use afterwards.
+
+</li>
+<li> <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#eval_impure"><span class="id" title="definition">eval_impure</span></a></span> only returns the result of <span class="inlinecode"><span class="id" title="var">p</span></span>.
+
+</li>
+<li> <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#exec_impure"><span class="id" title="definition">exec_impure</span></a></span> only returns the new operational semantics. 
+</li>
+</ul>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Notation</span> <a id="interp" class="idref" href="#interp"><span class="id" title="abbreviation">interp</span></a> <span class="id" title="var">i</span> := (<span class="id" title="record">state</span> (<a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <span class="id" title="var">i</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="interface_to_state" class="idref" href="#interface_to_state"><span class="id" title="definition">interface_to_state</span></a> {<a id="i:43" class="idref" href="#i:43"><span class="id" title="binder">i</span></a>} : <a class="idref" href="FreeSpec.Core.Semantics.html#i:43"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Init.html#f7397da22bdab7f77b06c5d98764e7b9"><span class="id" title="notation">~&gt;</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#interp"><span class="id" title="abbreviation">interp</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:43"><span class="id" title="variable">i</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">fun</span> <a id="a:44" class="idref" href="#a:44"><span class="id" title="binder">a</span></a> <a id="e:45" class="idref" href="#e:45"><span class="id" title="binder">e</span></a> ⇒ <span class="id" title="constructor">mkState</span> (<span class="id" title="keyword">fun</span> <a id="sem:46" class="idref" href="#sem:46"><span class="id" title="binder">sem</span></a> ⇒ <a class="idref" href="FreeSpec.Core.Semantics.html#run_effect"><span class="id" title="definition">run_effect</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:46"><span class="id" title="variable">sem</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#e:45"><span class="id" title="variable">e</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="to_state" class="idref" href="#to_state"><span class="id" title="definition">to_state</span></a> {<a id="i:47" class="idref" href="#i:47"><span class="id" title="binder">i</span></a>} : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:47"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Init.html#f7397da22bdab7f77b06c5d98764e7b9"><span class="id" title="notation">~&gt;</span></a> <span class="id" title="record">state</span> (<a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:47"><span class="id" title="variable">i</span></a>) :=<br/>
+&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Impure.html#impure_lift"><span class="id" title="definition">impure_lift</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#interface_to_state"><span class="id" title="definition">interface_to_state</span></a>.<br/>
+
+<br/>
+<span class="id" title="var">Arguments</span> <a class="idref" href="FreeSpec.Core.Semantics.html#to_state"><span class="id" title="definition">to_state</span></a> {<span class="id" title="var">i</span> <span class="id" title="var">α</span>} <span class="id" title="var">_</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="run_impure" class="idref" href="#run_impure"><span class="id" title="definition">run_impure</span></a> {<a id="i:48" class="idref" href="#i:48"><span class="id" title="binder">i</span></a> <a id="a:49" class="idref" href="#a:49"><span class="id" title="binder">a</span></a>} (<a id="sem:50" class="idref" href="#sem:50"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:48"><span class="id" title="variable">i</span></a>) (<a id="p:51" class="idref" href="#p:51"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:48"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#a:49"><span class="id" title="variable">a</span></a>) : <a class="idref" href="FreeSpec.Core.Semantics.html#a:49"><span class="id" title="variable">a</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">×</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:48"><span class="id" title="variable">i</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="projection">runState</span> (<a class="idref" href="FreeSpec.Core.Semantics.html#to_state"><span class="id" title="definition">to_state</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#p:51"><span class="id" title="variable">p</span></a>) <a class="idref" href="FreeSpec.Core.Semantics.html#sem:50"><span class="id" title="variable">sem</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="eval_impure" class="idref" href="#eval_impure"><span class="id" title="definition">eval_impure</span></a> {<a id="i:52" class="idref" href="#i:52"><span class="id" title="binder">i</span></a> <a id="a:53" class="idref" href="#a:53"><span class="id" title="binder">a</span></a>} (<a id="sem:54" class="idref" href="#sem:54"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:52"><span class="id" title="variable">i</span></a>) (<a id="p:55" class="idref" href="#p:55"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:52"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#a:53"><span class="id" title="variable">a</span></a>) : <a class="idref" href="FreeSpec.Core.Semantics.html#a:53"><span class="id" title="variable">a</span></a> :=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#fst"><span class="id" title="definition">fst</span></a> (<a class="idref" href="FreeSpec.Core.Semantics.html#run_impure"><span class="id" title="definition">run_impure</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:54"><span class="id" title="variable">sem</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#p:55"><span class="id" title="variable">p</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="exec_impure" class="idref" href="#exec_impure"><span class="id" title="definition">exec_impure</span></a> {<a id="i:56" class="idref" href="#i:56"><span class="id" title="binder">i</span></a> <a id="a:57" class="idref" href="#a:57"><span class="id" title="binder">a</span></a>} (<a id="sem:58" class="idref" href="#sem:58"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:56"><span class="id" title="variable">i</span></a>) (<a id="p:59" class="idref" href="#p:59"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:56"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#a:57"><span class="id" title="variable">a</span></a>) : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#i:56"><span class="id" title="variable">i</span></a> :=<br/>
+&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#snd"><span class="id" title="definition">snd</span></a> (<a class="idref" href="FreeSpec.Core.Semantics.html#run_impure"><span class="id" title="definition">run_impure</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:58"><span class="id" title="variable">sem</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#p:59"><span class="id" title="variable">p</span></a>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab15"></a><h1 class="section">In-place Primitives Handling</h1>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <a id="with_semantics" class="idref" href="#with_semantics"><span class="id" title="definition">with_semantics</span></a> {<a id="ix:60" class="idref" href="#ix:60"><span class="id" title="binder">ix</span></a> <a id="j:61" class="idref" href="#j:61"><span class="id" title="binder">j</span></a> <a id="8e541805ccf942975951e9ddc38f58e2" class="idref" href="#8e541805ccf942975951e9ddc38f58e2"><span class="id" title="binder">α</span></a>} (<a id="sem:63" class="idref" href="#sem:63"><span class="id" title="binder">sem</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#j:61"><span class="id" title="variable">j</span></a>) (<a id="p:64" class="idref" href="#p:64"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> (<a class="idref" href="FreeSpec.Core.Semantics.html#ix:60"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Interface.html#faf6e8c7f8d05e98d2c9dbdd57814bbf"><span class="id" title="notation">+</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#j:61"><span class="id" title="variable">j</span></a>) <a class="idref" href="FreeSpec.Core.Semantics.html#8e541805ccf942975951e9ddc38f58e2"><span class="id" title="variable">α</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#ix:60"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#8e541805ccf942975951e9ddc38f58e2"><span class="id" title="variable">α</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="FreeSpec.Core.Semantics.html#p:64"><span class="id" title="variable">p</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="FreeSpec.Core.Impure.html#local"><span class="id" title="constructor">local</span></a> <span class="id" title="var">x</span> ⇒ <a class="idref" href="FreeSpec.Core.Impure.html#local"><span class="id" title="constructor">local</span></a> <span class="id" title="var">x</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> (<a class="idref" href="FreeSpec.Core.Interface.html#in_right"><span class="id" title="constructor">in_right</span></a> <span class="id" title="var">e</span>) <span class="id" title="var">f</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> (<a id="res:67" class="idref" href="#res:67"><span class="id" title="binder">res</span></a>, <a id="next:68" class="idref" href="#next:68"><span class="id" title="binder">next</span></a>) := <a class="idref" href="FreeSpec.Core.Semantics.html#run_effect"><span class="id" title="definition">run_effect</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:63"><span class="id" title="variable">sem</span></a> <span class="id" title="var">e</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Semantics.html#with_semantics:65"><span class="id" title="definition">with_semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#next:68"><span class="id" title="variable">next</span></a> (<span class="id" title="var">f</span> <a class="idref" href="FreeSpec.Core.Semantics.html#res:67"><span class="id" title="variable">res</span></a>)<br/>
+&nbsp;&nbsp;| <a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> (<a class="idref" href="FreeSpec.Core.Interface.html#in_left"><span class="id" title="constructor">in_left</span></a> <span class="id" title="var">e</span>) <span class="id" title="var">f</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> <span class="id" title="var">e</span> (<span class="id" title="keyword">fun</span> <a id="x:69" class="idref" href="#x:69"><span class="id" title="binder">x</span></a> ⇒ <a class="idref" href="FreeSpec.Core.Semantics.html#with_semantics:65"><span class="id" title="definition">with_semantics</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#sem:63"><span class="id" title="variable">sem</span></a> (<span class="id" title="var">f</span> <a class="idref" href="FreeSpec.Core.Semantics.html#x:69"><span class="id" title="variable">x</span></a>))<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We provide <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#with_store"><span class="id" title="definition">with_store</span></a></span>, a helper function to locally provide a mutable
+    variable. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="with_store" class="idref" href="#with_store"><span class="id" title="definition">with_store</span></a> {<a id="ix:70" class="idref" href="#ix:70"><span class="id" title="binder">ix</span></a> <a id="s:71" class="idref" href="#s:71"><span class="id" title="binder">s</span></a> <a id="a:72" class="idref" href="#a:72"><span class="id" title="binder">a</span></a>} (<a id="x:73" class="idref" href="#x:73"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.Semantics.html#s:71"><span class="id" title="variable">s</span></a>) (<a id="p:74" class="idref" href="#p:74"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> (<a class="idref" href="FreeSpec.Core.Semantics.html#ix:70"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Interface.html#faf6e8c7f8d05e98d2c9dbdd57814bbf"><span class="id" title="notation">+</span></a> <a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#s:71"><span class="id" title="variable">s</span></a>) <a class="idref" href="FreeSpec.Core.Semantics.html#a:72"><span class="id" title="variable">a</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#ix:70"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#a:72"><span class="id" title="variable">a</span></a> :=<br/>
+&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Semantics.html#with_semantics"><span class="id" title="definition">with_semantics</span></a> (<a class="idref" href="FreeSpec.Core.Semantics.html#store"><span class="id" title="definition">store</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#x:73"><span class="id" title="variable">x</span></a>) <a class="idref" href="FreeSpec.Core.Semantics.html#p:74"><span class="id" title="variable">p</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Nesting <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#with_semantics"><span class="id" title="definition">with_semantics</span></a></span> calls works to some extends. If each
+    <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#with_semantics"><span class="id" title="definition">with_semantics</span></a></span> provides a different interface from the rest of the stack,
+    then everything behaves as expected. If, for some reason, you end up in a
+    situation where you provide the exact same interface twice (typically if you
+    use <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Semantics.html#with_store"><span class="id" title="definition">with_store</span></a></span>), then the typeclass inferences will favor the deepest one
+    in the stack. For instance,
+
+<div class="paragraph"> </div>
+
+<pre>
+Compute (with_store 0 (with_store 1 get)).
+</pre>
+
+<div class="paragraph"> </div>
+
+    returns
+
+<div class="paragraph"> </div>
+
+<pre>
+     = local 1
+     : impure ?ix nat
+</pre>
+ 
+</div>
+<div class="code">
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

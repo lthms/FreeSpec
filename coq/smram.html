@@ -1,0 +1,413 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>smram</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library smram</h1>
+
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Core</span> <span class="id" title="var">CoreFacts</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+This library introduces the starting point of the FreeSpec framework, that
+    is the original example that has motivated everything else. 
+<div class="paragraph"> </div>
+
+<a id="lab59"></a><h1 class="section">The Verification Problem</h1>
+
+<div class="paragraph"> </div>
+
+ We model a small subset of a x86 architecture, where a Memory Controller
+    (now integrated inside the CPU) received memory accesses from cores, and
+    dispatches these accesses to different controllers.  In our case, we only
+    consider the DRAM and VGA controllers.
+
+<div class="paragraph"> </div>
+
+    From a FreeSpec perspective, we therefore consider three components and as
+    many interfaces, with the memory controller exposing its own interfaces and
+    relying on the interfaces of the two other controllers.
+
+<div class="paragraph"> </div>
+
+    The DRAM contains a special-purpose memory region called the SMRAM,
+    dedicated to the x86 System Management Mode (SMM).  It is expected that only
+    a CPU in SMM can access the SMRAM. The CPU set a dedicated pin (SMIACT) when
+    it is in SMM, for the Memory Controller to know. 
+<div class="paragraph"> </div>
+
+<a id="lab60"></a><h1 class="section">Specifying the Subsystem</h1>
+
+<div class="paragraph"> </div>
+
+ The overview of the system we want to model is the following:
+
+<div class="paragraph"> </div>
+
+<pre>
+             |
+             |
+             v
+      -----------------
+     +-----------------+
+     |Memory Controller|
+     +-----------------+
+       |            |
+       |            |
+       v            v
+ ----------     ----------
++----------+   +----------+
+|   DRAM   |   |   VGA    |
+|Controller|   |Controller|
++----------+   +----------+
+</pre>
+    We will focus on the Memory Controller, and only model the interfaces of the
+    DRAM and VGA controllers. 
+<div class="paragraph"> </div>
+
+<a id="lab61"></a><h2 class="section">Addressing Memories</h2>
+
+<div class="paragraph"> </div>
+
+ We leave how the memory is actually addressed (in terms of memory cell
+    addresses and contents) as a parameter of the model. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Parameters</span> (<span class="id" title="var">address</span> <span class="id" title="var">cell</span> : <span class="id" title="keyword">Type</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">address_eq</span> : <span class="id" title="var">address</span> → <span class="id" title="var">address</span> → <span class="id" title="keyword">Prop</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">address_eq_refl</span> : <span class="id" title="keyword">∀</span> (<span class="id" title="var">addr</span> <span class="id" title="var">addr'</span> : <span class="id" title="var">address</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">address_eq</span> <span class="id" title="var">addr</span> <span class="id" title="var">addr'</span> → <span class="id" title="var">address_eq</span> <span class="id" title="var">addr'</span> <span class="id" title="var">addr</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">address_eq_dec</span> : <span class="id" title="keyword">∀</span> (<span class="id" title="var">addr</span> <span class="id" title="var">addr'</span> : <span class="id" title="var">address</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="id" title="var">address_eq</span> <span class="id" title="var">addr</span> <span class="id" title="var">addr'</span> } + { ¬ <span class="id" title="var">address_eq</span> <span class="id" title="var">addr</span> <span class="id" title="var">addr'</span> })<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">in_smram</span> : <span class="id" title="var">address</span> → <span class="id" title="var">bool</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">in_smram_morphism</span> : <span class="id" title="keyword">∀</span> (<span class="id" title="var">addr</span> <span class="id" title="var">addr'</span> : <span class="id" title="var">address</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">address_eq</span> <span class="id" title="var">addr</span> <span class="id" title="var">addr'</span> → <span class="id" title="var">in_smram</span> <span class="id" title="var">addr</span> = <span class="id" title="var">in_smram</span> <span class="id" title="var">addr'</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab62"></a><h2 class="section">VGA and DRAM Controllers</h2>
+
+<div class="paragraph"> </div>
+
+ We consider that the DRAM and VGA controllers expose the same interface
+    which allows for reading from and writing to memory cells. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">MEMORY</span> : <span class="id" title="var">interface</span> :=<br/>
+| <span class="id" title="var">ReadFrom</span> (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) : <span class="id" title="var">MEMORY</span> <span class="id" title="var">cell</span><br/>
+| <span class="id" title="var">WriteTo</span> (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) (<span class="id" title="var">value</span> : <span class="id" title="var">cell</span>) : <span class="id" title="var">MEMORY</span> <span class="id" title="var">unit</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">DRAM</span> : <span class="id" title="var">interface</span> :=<br/>
+| <span class="id" title="var">MakeDRAM</span> {<span class="id" title="var">a</span> : <span class="id" title="keyword">Type</span>} (<span class="id" title="var">e</span> : <span class="id" title="var">MEMORY</span> <span class="id" title="var">a</span>) : <span class="id" title="var">DRAM</span> <span class="id" title="var">a</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">dram_read_from</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DRAM</span>} (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">cell</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">request</span> (<span class="id" title="var">MakeDRAM</span> (<span class="id" title="var">ReadFrom</span> <span class="id" title="var">addr</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">dram_write_to</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DRAM</span>} (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) (<span class="id" title="var">val</span> : <span class="id" title="var">cell</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">unit</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">request</span> (<span class="id" title="var">MakeDRAM</span> (<span class="id" title="var">WriteTo</span> <span class="id" title="var">addr</span> <span class="id" title="var">val</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">VGA</span> : <span class="id" title="var">interface</span> :=<br/>
+| <span class="id" title="var">MakeVGA</span> {<span class="id" title="var">a</span> : <span class="id" title="keyword">Type</span>} (<span class="id" title="var">e</span> : <span class="id" title="var">MEMORY</span> <span class="id" title="var">a</span>) : <span class="id" title="var">VGA</span> <span class="id" title="var">a</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">vga_read_from</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">VGA</span>} (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) : <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">cell</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">request</span> (<span class="id" title="var">MakeVGA</span> (<span class="id" title="var">ReadFrom</span> <span class="id" title="var">addr</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">vga_write_to</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">VGA</span>} (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) (<span class="id" title="var">val</span> : <span class="id" title="var">cell</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">unit</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">request</span> (<span class="id" title="var">MakeVGA</span> (<span class="id" title="var">WriteTo</span> <span class="id" title="var">addr</span> <span class="id" title="var">val</span>)).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab63"></a><h2 class="section">Memory Controller</h2>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">smiact</span> := <span class="id" title="var">smiact_set</span> | <span class="id" title="var">smiact_unset</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">MEMORY_CONTROLLER</span> : <span class="id" title="var">interface</span> :=<br/>
+| <span class="id" title="var">Read</span> (<span class="id" title="var">pin</span> : <span class="id" title="var">smiact</span>) (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) : <span class="id" title="var">MEMORY_CONTROLLER</span> <span class="id" title="var">cell</span><br/>
+| <span class="id" title="var">Write</span> (<span class="id" title="var">pin</span> : <span class="id" title="var">smiact</span>) (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) (<span class="id" title="var">value</span> : <span class="id" title="var">cell</span>) : <span class="id" title="var">MEMORY_CONTROLLER</span> <span class="id" title="var">unit</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">unwrap_sumbool</span> {<span class="id" title="var">A</span> <span class="id" title="var">B</span>} (<span class="id" title="var">x</span> : { <span class="id" title="var">A</span> } + { <span class="id" title="var">B</span> }) : <span class="id" title="var">bool</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">x</span> <span class="id" title="keyword">then</span> <span class="id" title="var">true</span> <span class="id" title="keyword">else</span> <span class="id" title="var">false</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Coercion</span> <span class="id" title="var">unwrap_sumbool</span> : <span class="id" title="var">sumbool</span> &gt;-&gt; <span class="id" title="var">bool</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">dispatch</span> {<span class="id" title="var">a</span>} `{<span class="id" title="var">Provide3</span> <span class="id" title="var">ix</span> (<span class="id" title="var">STORE</span> <span class="id" title="var">bool</span>) <span class="id" title="var">DRAM</span> <span class="id" title="var">VGA</span>}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) (<span class="id" title="var">unpriv</span> : <span class="id" title="var">address</span> → <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">a</span>) (<span class="id" title="var">priv</span> : <span class="id" title="var">address</span> → <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">a</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">a</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span>× <span class="id" title="var">reg</span> := <span class="id" title="var">get</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">if</span> (<span class="id" title="var">andb</span> <span class="id" title="var">reg</span> (<span class="id" title="var">in_smram</span> <span class="id" title="var">addr</span>))<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">then</span> <span class="id" title="var">unpriv</span> <span class="id" title="var">addr</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">else</span> <span class="id" title="var">priv</span> <span class="id" title="var">addr</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">memory_controller</span> `{<span class="id" title="var">Provide3</span> <span class="id" title="var">ix</span> (<span class="id" title="var">STORE</span> <span class="id" title="var">bool</span>) <span class="id" title="var">DRAM</span> <span class="id" title="var">VGA</span>}<br/>
+&nbsp;&nbsp;: <span class="id" title="var">component</span> <span class="id" title="var">MEMORY_CONTROLLER</span> <span class="id" title="var">ix</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">fun</span> <span class="id" title="var">_</span> <span class="id" title="var">op</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">op</span> <span class="id" title="keyword">with</span><br/>
+<br/>
+</div>
+
+<div class="doc">
+When SMIACT is set, the CPU is in SMM.  According to its specification, the
+    Memory Controller can simply forward the memory access to the DRAM. 
+</div>
+<div class="code">
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Read</span> <span class="id" title="var">smiact_set</span> <span class="id" title="var">addr</span> ⇒ <span class="id" title="var">dram_read_from</span> <span class="id" title="var">addr</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Write</span> <span class="id" title="var">smiact_set</span> <span class="id" title="var">addr</span> <span class="id" title="var">val</span> ⇒ <span class="id" title="var">dram_write_to</span> <span class="id" title="var">addr</span> <span class="id" title="var">val</span><br/>
+<br/>
+</div>
+
+<div class="doc">
+On the contrary, when the SMIACT is not set, the CPU is not in SMM.  As a
+    consequence, the memory controller implements a dedicated access control
+    mechanism.  If the requested address belongs to the SMRAM and if the SMRAM
+    lock has been set, then the memory access is forwarded to the VGA.
+    Otherwise, it is forwarded to the DRAM by default.  This is specified in the
+    <span class="inlinecode"><span class="id" title="definition">dispatch</span></span> function. 
+</div>
+<div class="code">
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Read</span> <span class="id" title="var">smiact_unset</span> <span class="id" title="var">addr</span> ⇒ <span class="id" title="var">dispatch</span> <span class="id" title="var">addr</span> <span class="id" title="var">vga_read_from</span> <span class="id" title="var">dram_read_from</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Write</span> <span class="id" title="var">smiact_unset</span> <span class="id" title="var">addr</span> <span class="id" title="var">val</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">dispatch</span> <span class="id" title="var">addr</span> (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> ⇒ <span class="id" title="var">vga_write_to</span> <span class="id" title="var">x</span> <span class="id" title="var">val</span>) (<span class="id" title="keyword">fun</span> <span class="id" title="var">x</span> ⇒ <span class="id" title="var">dram_write_to</span> <span class="id" title="var">x</span> <span class="id" title="var">val</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab64"></a><h1 class="section">Verifying our Subsystem</h1>
+
+<div class="paragraph"> </div>
+
+<a id="lab65"></a><h2 class="section">Memory View</h2>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">memory_view</span> : <span class="id" title="keyword">Type</span> := <span class="id" title="var">address</span> → <span class="id" title="var">cell</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">update_memory_view_address</span> (ω : <span class="id" title="var">memory_view</span>) (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) (<span class="id" title="var">content</span> : <span class="id" title="var">cell</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">memory_view</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">fun</span> (<span class="id" title="var">addr'</span> : <span class="id" title="var">address</span>) ⇒ <span class="id" title="keyword">if</span> <span class="id" title="var">address_eq_dec</span> <span class="id" title="var">addr</span> <span class="id" title="var">addr'</span> <span class="id" title="keyword">then</span> <span class="id" title="var">content</span> <span class="id" title="keyword">else</span> ω <span class="id" title="var">addr'</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab66"></a><h2 class="section">Specification</h2>
+
+<div class="paragraph"> </div>
+
+<a id="lab67"></a><h3 class="section">DRAM Controller Specification</h3>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">update_dram_view</span> (ω : <span class="id" title="var">memory_view</span>) (<span class="id" title="var">a</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">DRAM</span> <span class="id" title="var">a</span>) (<span class="id" title="var">_</span> : <span class="id" title="var">a</span>) : <span class="id" title="var">memory_view</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">p</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">MakeDRAM</span> (<span class="id" title="var">WriteTo</span> <span class="id" title="var">a</span> <span class="id" title="var">v</span>)  ⇒ <span class="id" title="var">update_memory_view_address</span> ω <span class="id" title="var">a</span> <span class="id" title="var">v</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ ω<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">dram_o_callee</span> (ω : <span class="id" title="var">memory_view</span>) : <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="keyword">Type</span>), <span class="id" title="var">DRAM</span> <span class="id" title="var">a</span> → <span class="id" title="var">a</span> → <span class="id" title="keyword">Prop</span> :=<br/>
+<br/>
+| <span class="id" title="var">read_in_smram</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">a</span> : <span class="id" title="var">address</span>) (<span class="id" title="var">v</span> : <span class="id" title="var">cell</span>) (<span class="id" title="var">prom</span> : <span class="id" title="var">in_smram</span> <span class="id" title="var">a</span> = <span class="id" title="var">true</span> → <span class="id" title="var">v</span> = ω <span class="id" title="var">a</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">dram_o_callee</span> ω <span class="id" title="var">cell</span> (<span class="id" title="var">MakeDRAM</span> (<span class="id" title="var">ReadFrom</span> <span class="id" title="var">a</span>)) (ω <span class="id" title="var">a</span>)<br/>
+<br/>
+| <span class="id" title="var">write</span> (<span class="id" title="var">a</span> : <span class="id" title="var">address</span>) (<span class="id" title="var">v</span> : <span class="id" title="var">cell</span>) (<span class="id" title="var">r</span> : <span class="id" title="var">unit</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">dram_o_callee</span> ω <span class="id" title="var">unit</span> (<span class="id" title="var">MakeDRAM</span> (<span class="id" title="var">WriteTo</span> <span class="id" title="var">a</span> <span class="id" title="var">v</span>)) <span class="id" title="var">r</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">dram_specs</span> : <span class="id" title="var">contract</span> <span class="id" title="var">DRAM</span> <span class="id" title="var">memory_view</span> :=<br/>
+&nbsp;&nbsp;{| <span class="id" title="var">witness_update</span> := <span class="id" title="var">update_dram_view</span><br/>
+&nbsp;&nbsp;&nbsp;; <span class="id" title="var">caller_obligation</span> := <span class="id" title="var">no_caller_obligation</span><br/>
+&nbsp;&nbsp;&nbsp;; <span class="id" title="var">callee_obligation</span> := <span class="id" title="var">dram_o_callee</span><br/>
+&nbsp;&nbsp;&nbsp;|}.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab68"></a><h3 class="section">Memory Controller Specification</h3>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">update_memory_controller_view</span> (ω : <span class="id" title="var">memory_view</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">a</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">MEMORY_CONTROLLER</span> <span class="id" title="var">a</span>) (<span class="id" title="var">_</span> : <span class="id" title="var">a</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">memory_view</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">p</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">Write</span> <span class="id" title="var">smiact_set</span> <span class="id" title="var">a</span> <span class="id" title="var">v</span>  ⇒ <span class="id" title="var">update_memory_view_address</span> ω <span class="id" title="var">a</span> <span class="id" title="var">v</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ ω<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">memory_controller_o_callee</span> (ω : <span class="id" title="var">memory_view</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">MEMORY_CONTROLLER</span> <span class="id" title="var">a</span>) (<span class="id" title="var">x</span> : <span class="id" title="var">a</span>), <span class="id" title="keyword">Prop</span> :=<br/>
+<br/>
+| <span class="id" title="var">memory_controller_read_o_callee</span> (<span class="id" title="var">pin</span> : <span class="id" title="var">smiact</span>) (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) (<span class="id" title="var">content</span> : <span class="id" title="var">cell</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">prom</span> : <span class="id" title="var">pin</span> = <span class="id" title="var">smiact_set</span> → <span class="id" title="var">in_smram</span> <span class="id" title="var">addr</span> = <span class="id" title="var">true</span> → ω <span class="id" title="var">addr</span> = <span class="id" title="var">content</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">memory_controller_o_callee</span> ω <span class="id" title="var">cell</span> (<span class="id" title="var">Read</span> <span class="id" title="var">pin</span> <span class="id" title="var">addr</span>) <span class="id" title="var">content</span><br/>
+<br/>
+| <span class="id" title="var">memory_controller_write_o_callee</span> (<span class="id" title="var">pin</span> : <span class="id" title="var">smiact</span>) (<span class="id" title="var">addr</span> : <span class="id" title="var">address</span>) (<span class="id" title="var">content</span> : <span class="id" title="var">cell</span>) (<span class="id" title="var">b</span> : <span class="id" title="var">unit</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">memory_controller_o_callee</span> ω <span class="id" title="var">unit</span> (<span class="id" title="var">Write</span> <span class="id" title="var">pin</span> <span class="id" title="var">addr</span> <span class="id" title="var">content</span>) <span class="id" title="var">b</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">mc_specs</span> : <span class="id" title="var">contract</span> <span class="id" title="var">MEMORY_CONTROLLER</span> <span class="id" title="var">memory_view</span> :=<br/>
+&nbsp;&nbsp;{| <span class="id" title="var">witness_update</span> := <span class="id" title="var">update_memory_controller_view</span><br/>
+&nbsp;&nbsp;&nbsp;; <span class="id" title="var">caller_obligation</span> := <span class="id" title="var">no_caller_obligation</span><br/>
+&nbsp;&nbsp;&nbsp;; <span class="id" title="var">callee_obligation</span> := <span class="id" title="var">memory_controller_o_callee</span><br/>
+&nbsp;&nbsp;&nbsp;|}.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab69"></a><h2 class="section">Main Theorem</h2>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">smram_pred</span> (ω<span class="id" title="var">mc</span> : <span class="id" title="var">memory_view</span>) (ω<span class="id" title="var">mem</span> : <span class="id" title="var">memory_view</span> × <span class="id" title="var">bool</span>) : <span class="id" title="keyword">Prop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">snd</span> ω<span class="id" title="var">mem</span> = <span class="id" title="var">true</span> ∧ <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="var">address</span>), <span class="id" title="var">in_smram</span> <span class="id" title="var">a</span> = <span class="id" title="var">true</span> → ω<span class="id" title="var">mc</span> <span class="id" title="var">a</span> = (<span class="id" title="var">fst</span> ω<span class="id" title="var">mem</span>) <span class="id" title="var">a</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">memory_controller_respectful</span> `{<span class="id" title="var">StrictProvide3</span> <span class="id" title="var">ix</span> (<span class="id" title="var">STORE</span> <span class="id" title="var">bool</span>) <span class="id" title="var">VGA</span> <span class="id" title="var">DRAM</span>}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">a</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">op</span> : <span class="id" title="var">MEMORY_CONTROLLER</span> <span class="id" title="var">a</span>) (ω : <span class="id" title="var">memory_view</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">pre</span> (<span class="id" title="var">to_hoare</span> (<span class="id" title="var">dram_specs</span> × <span class="id" title="var">store_specs</span> <span class="id" title="var">bool</span>) (<span class="id" title="var">memory_controller</span> <span class="id" title="var">a</span> <span class="id" title="var">op</span>)) (ω, <span class="id" title="var">true</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">op</span>; <span class="id" title="tactic">destruct</span> <span class="id" title="var">pin</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">prove</span> <span class="id" title="var">impure</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">local</span>]<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">semantics_scope</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">local</span>]<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">contract_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">simpl_tuple</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="keyword">goal</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">H</span>: (<span class="id" title="var">_</span>, <span class="id" title="var">_</span>) = (<span class="id" title="var">_</span>, <span class="id" title="var">_</span>) |- <span class="id" title="var">_</span> ⇒ <span class="id" title="tactic">inversion</span> <span class="id" title="var">H</span>; <span class="id" title="tactic">subst</span>; <span class="id" title="tactic">clear</span> <span class="id" title="var">H</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">memory_controller_correct</span> `{<span class="id" title="var">StrictProvide3</span> <span class="id" title="var">ix</span> <span class="id" title="var">VGA</span> (<span class="id" title="var">STORE</span> <span class="id" title="var">bool</span>) <span class="id" title="var">DRAM</span>}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(ω : <span class="id" title="var">memory_view</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">sem</span> : <span class="id" title="var">semantics</span> <span class="id" title="var">ix</span>) (<span class="id" title="var">comp</span> : <span class="id" title="var">compliant_semantics</span> (<span class="id" title="var">dram_specs</span> × <span class="id" title="var">store_specs</span> <span class="id" title="var">bool</span>) (ω, <span class="id" title="var">true</span>) <span class="id" title="var">sem</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">compliant_semantics</span> <span class="id" title="var">mc_specs</span> ω (<span class="id" title="var">derive_semantics</span> <span class="id" title="var">memory_controller</span> <span class="id" title="var">sem</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">correct_component_derives_compliant_semantics</span> <span class="id" title="keyword">with</span> (<span class="id" title="var">pred</span> := <span class="id" title="var">smram_pred</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">cj</span> := <span class="id" title="var">dram_specs</span> × <span class="id" title="var">store_specs</span> <span class="id" title="var">bool</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(ω<span class="id" title="var">j</span> := (ω, <span class="id" title="var">true</span>)).<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">intros</span> ω<span class="id" title="var">mc</span> [ω<span class="id" title="var">dram</span> <span class="id" title="var">b</span>] [<span class="id" title="var">b_true</span> <span class="id" title="var">pred</span>] <span class="id" title="var">a</span> <span class="id" title="var">e</span> <span class="id" title="var">_</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span> <span class="id" title="tactic">in</span> <span class="id" title="var">b_true</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">rewrite</span> <span class="id" title="var">b_true</span> <span class="id" title="tactic">in</span> *; <span class="id" title="tactic">clear</span> <span class="id" title="var">b_true</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">apply</span> <span class="id" title="var">memory_controller_respectful</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">intros</span> <span class="id" title="var">x</span> [ω<span class="id" title="var">dram'</span> <span class="id" title="var">st'</span>] <span class="id" title="var">respectful</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">destruct</span> <span class="id" title="var">e</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">unroll_post</span> <span class="id" title="var">respectful</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">repeat</span> <span class="id" title="var">simpl_tuple</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">constructor</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="tactic">intros</span> ?<span class="id" title="var">equ</span> <span class="id" title="var">hin</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="keyword">lazymatch</span> <span class="id" title="keyword">goal</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">H</span>: <span class="id" title="var">dram_o_callee</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> (<span class="id" title="var">MakeDRAM</span> (<span class="id" title="var">ReadFrom</span> <span class="id" title="var">_</span>)) <span class="id" title="var">_</span> |- <span class="id" title="var">_</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">pred</span> <span class="id" title="tactic">in</span> <span class="id" title="var">hin</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">rewrite</span> <span class="id" title="var">hin</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">inversion</span> <span class="id" title="var">H</span>; <span class="id" title="var">now</span> <span class="id" title="var">ssubst</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">discriminate</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">destruct</span> <span class="id" title="var">e</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">unroll_post</span> <span class="id" title="var">respectful</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">repeat</span> <span class="id" title="var">simpl_tuple</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="tactic">try</span> <span class="id" title="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="tactic">intros</span> <span class="id" title="var">addr'</span> <span class="id" title="var">hin</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <span class="id" title="var">pred</span>) || <span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="tactic">unfold</span> <span class="id" title="var">update_memory_view_address</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">address_eq_dec</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="tactic">try</span> <span class="id" title="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="tactic">try</span> <span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <span class="id" title="var">pred</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">rewrite</span> &lt;- (<span class="id" title="var">in_smram_morphism</span> <span class="id" title="var">addr</span> <span class="id" title="var">_</span> <span class="id" title="var">a</span>) <span class="id" title="tactic">in</span> <span class="id" title="var">hin</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">inversion</span> <span class="id" title="var">H8</span>; <span class="id" title="var">ssubst</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span> <span class="id" title="tactic">in</span> <span class="id" title="var">equ</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">rewrite</span> <span class="id" title="var">equ</span> <span class="id" title="tactic">in</span> <span class="id" title="var">hin</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">discriminate</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">now</span> <span class="id" title="tactic">constructor</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">exact</span> <span class="id" title="var">comp</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

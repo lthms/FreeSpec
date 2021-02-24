@@ -1,0 +1,256 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>FreeSpec.Core.HoareFacts</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FreeSpec.Core.HoareFacts</h1>
+
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.Core</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="FreeSpec.Core.Interface.html#"><span class="id" title="library">Interface</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#"><span class="id" title="library">ImpureFacts</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#"><span class="id" title="library">Contract</span></a>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.Core</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="FreeSpec.Core.Hoare.html#"><span class="id" title="library">Hoare</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab37"></a><h1 class="section">Equivalence Relation</h1>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <a id="hoare_eq" class="idref" href="#hoare_eq"><span class="id" title="inductive">hoare_eq</span></a> {<a id="0101b9beac487b383a5ba2a8f6922788" class="idref" href="#0101b9beac487b383a5ba2a8f6922788"><span class="id" title="binder">Σ</span></a> <a id="dbe7daa3f4200dd60831b0ac13fea06b" class="idref" href="#dbe7daa3f4200dd60831b0ac13fea06b"><span class="id" title="binder">α</span></a>} (<a id="h1:3" class="idref" href="#h1:3"><span class="id" title="binder">h1</span></a> <a id="h2:4" class="idref" href="#h2:4"><span class="id" title="binder">h2</span></a> : <a class="idref" href="FreeSpec.Core.Hoare.html#hoare"><span class="id" title="record">hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#0101b9beac487b383a5ba2a8f6922788"><span class="id" title="variable">Σ</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#dbe7daa3f4200dd60831b0ac13fea06b"><span class="id" title="variable">α</span></a>) : <span class="id" title="keyword">Prop</span> :=<br/>
+| <a id="mk_hoare_eq" class="idref" href="#mk_hoare_eq"><span class="id" title="constructor">mk_hoare_eq</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="pre_eq:8" class="idref" href="#pre_eq:8"><span class="id" title="binder">pre_eq</span></a> : <span class="id" title="keyword">∀</span> <a id="s:7" class="idref" href="#s:7"><span class="id" title="binder">s</span></a>, <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#h1:3"><span class="id" title="variable">h1</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#s:7"><span class="id" title="variable">s</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'&lt;-&gt;'_x"><span class="id" title="notation">↔</span></a> <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#h2:4"><span class="id" title="variable">h2</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#s:7"><span class="id" title="variable">s</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="post_eq:12" class="idref" href="#post_eq:12"><span class="id" title="binder">post_eq</span></a> : <span class="id" title="keyword">∀</span> <a id="s:9" class="idref" href="#s:9"><span class="id" title="binder">s</span></a> <a id="x:10" class="idref" href="#x:10"><span class="id" title="binder">x</span></a> <a id="s':11" class="idref" href="#s':11"><span class="id" title="binder">s'</span></a>, <a class="idref" href="FreeSpec.Core.Hoare.html#post"><span class="id" title="projection">post</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#h1:3"><span class="id" title="variable">h1</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#s:9"><span class="id" title="variable">s</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#x:10"><span class="id" title="variable">x</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#s':11"><span class="id" title="variable">s'</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'&lt;-&gt;'_x"><span class="id" title="notation">↔</span></a> <a class="idref" href="FreeSpec.Core.Hoare.html#post"><span class="id" title="projection">post</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#h2:4"><span class="id" title="variable">h2</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#s:9"><span class="id" title="variable">s</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#x:10"><span class="id" title="variable">x</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#s':11"><span class="id" title="variable">s'</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.HoareFacts.html#hoare_eq:5"><span class="id" title="inductive">hoare_eq</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#h1:3"><span class="id" title="variable">h1</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#h2:4"><span class="id" title="variable">h2</span></a>.<br/>
+
+<br/>
+#[<span class="id" title="var">program</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="hoare_Equivalence" class="idref" href="#hoare_Equivalence"><span class="id" title="instance">hoare_Equivalence</span></a> : @<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.RelationClasses.html#Equivalence"><span class="id" title="class">Equivalence</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#hoare"><span class="id" title="record">hoare</span></a> <span class="id" title="var">Σ</span> <span class="id" title="var">α</span>) <a class="idref" href="FreeSpec.Core.HoareFacts.html#hoare_eq"><span class="id" title="inductive">hoare_eq</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">easy</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">h1</span> <span class="id" title="var">h2</span> <span class="id" title="var">equ</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">constructor</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">symmetry</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">equ</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">h1</span> <span class="id" title="var">h2</span> <span class="id" title="var">h3</span> <span class="id" title="var">equ_1_2</span> <span class="id" title="var">equ_2_3</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">constructor</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">intros</span> <span class="id" title="var">s</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">transitivity</span> (<a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> <span class="id" title="var">h2</span> <span class="id" title="var">s</span>); [ <span class="id" title="tactic">apply</span> <span class="id" title="var">equ_1_2</span> | <span class="id" title="tactic">apply</span> <span class="id" title="var">equ_2_3</span> ].<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">intros</span> <span class="id" title="var">s</span> <span class="id" title="var">x</span> <span class="id" title="var">s'</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">transitivity</span> (<a class="idref" href="FreeSpec.Core.Hoare.html#post"><span class="id" title="projection">post</span></a> <span class="id" title="var">h2</span> <span class="id" title="var">s</span> <span class="id" title="var">x</span> <span class="id" title="var">s'</span>); [ <span class="id" title="tactic">apply</span> <span class="id" title="var">equ_1_2</span> | <span class="id" title="tactic">apply</span> <span class="id" title="var">equ_2_3</span> ].<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab38"></a><h1 class="section">Proper Instances</h1>
+
+</div>
+<div class="code">
+
+<br/>
+#[<span class="id" title="var">program</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="pre_Proper" class="idref" href="#pre_Proper"><span class="id" title="instance">pre_Proper</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#Proper"><span class="id" title="class">Proper</span></a> (<a class="idref" href="FreeSpec.Core.HoareFacts.html#hoare_eq"><span class="id" title="inductive">hoare_eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#eq"><span class="id" title="inductive">eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#iff"><span class="id" title="definition">iff</span></a>) (@<a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> <span class="id" title="var">Σ</span> <span class="id" title="var">α</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">add_morphism_tactic</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">h1</span> <span class="id" title="var">h2</span> <span class="id" title="var">equ</span> <span class="id" title="var">s</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">equ</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">program</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="post_Proper" class="idref" href="#post_Proper"><span class="id" title="instance">post_Proper</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#Proper"><span class="id" title="class">Proper</span></a> (<a class="idref" href="FreeSpec.Core.HoareFacts.html#hoare_eq"><span class="id" title="inductive">hoare_eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#eq"><span class="id" title="inductive">eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#eq"><span class="id" title="inductive">eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#eq"><span class="id" title="inductive">eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#iff"><span class="id" title="definition">iff</span></a>) (@<a class="idref" href="FreeSpec.Core.Hoare.html#post"><span class="id" title="projection">post</span></a> <span class="id" title="var">Σ</span> <span class="id" title="var">α</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">add_morphism_tactic</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">h1</span> <span class="id" title="var">h2</span> <span class="id" title="var">equ</span> <span class="id" title="var">s</span> <span class="id" title="var">x</span> <span class="id" title="var">s'</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">equ</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">program</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="to_hoare_Proper" class="idref" href="#to_hoare_Proper"><span class="id" title="instance">to_hoare_Proper</span></a><br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#Proper"><span class="id" title="class">Proper</span></a> (<a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#hoare_eq"><span class="id" title="inductive">hoare_eq</span></a>) (@<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <span class="id" title="var">ix</span> <span class="id" title="var">i</span> <span class="id" title="var">MP</span> <span class="id" title="var">Ω</span> <span class="id" title="var">c</span> <span class="id" title="var">α</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">add_morphism_tactic</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> <span class="id" title="var">equ</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">equ</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">constructor</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">intros</span> ω.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span> <span class="id" title="tactic">in</span> ×.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">setoid_rewrite</span> <span class="id" title="var">H</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">intros</span> ω <span class="id" title="var">x</span> ω'.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span> <span class="id" title="tactic">in</span> ×.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">setoid_rewrite</span> <span class="id" title="var">H</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">reflexivity</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab39"></a><h1 class="section">General Lemmas</h1>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="to_hoare_step" class="idref" href="#to_hoare_step"><span class="id" title="lemma">to_hoare_step</span></a> `{<a id="H:27" class="idref" href="#H:27"><span class="id" title="binder">MayProvide</span></a> <a id="H:27" class="idref" href="#H:27"><span class="id" title="binder">ix</span></a> <a id="H:27" class="idref" href="#H:27"><span class="id" title="binder">i</span></a>} `(<a id="c:29" class="idref" href="#c:29"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#i:26"><span class="id" title="variable">i</span></a> <a id="187c644a97608796bd9c6979fd5c7476" class="idref" href="#187c644a97608796bd9c6979fd5c7476"><span class="id" title="binder">Ω</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="e:31" class="idref" href="#e:31"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.HoareFacts.html#ix:25"><span class="id" title="variable">ix</span></a> <a id="a:30" class="idref" href="#a:30"><span class="id" title="binder">a</span></a>) `(<a id="f:32" class="idref" href="#f:32"><span class="id" title="binder">f</span></a> : <a class="idref" href="FreeSpec.Core.HoareFacts.html#a:30"><span class="id" title="variable">a</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#ix:25"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#a:30"><span class="id" title="variable">a</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="hpre:34" class="idref" href="#hpre:34"><span class="id" title="binder">hpre</span></a> : <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:29"><span class="id" title="variable">c</span></a> (<a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#e:31"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#f:32"><span class="id" title="variable">f</span></a>)) <a id="597d2b8f35d03759c3ef530177f3fe32" class="idref" href="#597d2b8f35d03759c3ef530177f3fe32"><span class="id" title="binder">ω</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="x:35" class="idref" href="#x:35"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.HoareFacts.html#a:30"><span class="id" title="variable">a</span></a>) (<a id="step:36" class="idref" href="#step:36"><span class="id" title="binder">step</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#gen_callee_obligation"><span class="id" title="definition">gen_callee_obligation</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:29"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#597d2b8f35d03759c3ef530177f3fe32"><span class="id" title="variable">ω</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#e:31"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#x:35"><span class="id" title="variable">x</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:29"><span class="id" title="variable">c</span></a> (<a class="idref" href="FreeSpec.Core.HoareFacts.html#f:32"><span class="id" title="variable">f</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#x:35"><span class="id" title="variable">x</span></a>)) (<a class="idref" href="FreeSpec.Core.Contract.html#gen_witness_update"><span class="id" title="definition">gen_witness_update</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:29"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#597d2b8f35d03759c3ef530177f3fe32"><span class="id" title="variable">ω</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#e:31"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#x:35"><span class="id" title="variable">x</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">hpre</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">hbefore</span> <span class="id" title="var">hafter</span>].<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">hafter</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="FreeSpec.Core.Contract.html#gen_callee_obligation"><span class="id" title="definition">gen_callee_obligation</span></a>, <a class="idref" href="FreeSpec.Core.Contract.html#gen_witness_update"><span class="id" title="definition">gen_witness_update</span></a> <span class="id" title="tactic">in</span> ×.<br/>
+&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">destruct</span> <a class="idref" href="FreeSpec.Core.Interface.html#proj_p"><span class="id" title="method">proj_p</span></a>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">to_hoare_step</span> : <span class="id" title="var">freespec</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="to_hoare_pre_bind_assoc" class="idref" href="#to_hoare_pre_bind_assoc"><span class="id" title="lemma">to_hoare_pre_bind_assoc</span></a> `{<a id="H:39" class="idref" href="#H:39"><span class="id" title="binder">MayProvide</span></a> <a id="H:39" class="idref" href="#H:39"><span class="id" title="binder">ix</span></a> <a id="H:39" class="idref" href="#H:39"><span class="id" title="binder">i</span></a>} `(<a id="c:41" class="idref" href="#c:41"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#i:38"><span class="id" title="variable">i</span></a> <a id="5cd452430b9df090c2178f096a67b53e" class="idref" href="#5cd452430b9df090c2178f096a67b53e"><span class="id" title="binder">Ω</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="p:43" class="idref" href="#p:43"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#ix:37"><span class="id" title="variable">ix</span></a> <a id="a:42" class="idref" href="#a:42"><span class="id" title="binder">a</span></a>) `(<a id="Hp:45" class="idref" href="#Hp:45"><span class="id" title="binder">Hp</span></a> : <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:41"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#p:43"><span class="id" title="variable">p</span></a>) <a id="b42e798286ffa64670a173382d30709a" class="idref" href="#b42e798286ffa64670a173382d30709a"><span class="id" title="binder">ω</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="f:47" class="idref" href="#f:47"><span class="id" title="binder">f</span></a> : <a class="idref" href="FreeSpec.Core.HoareFacts.html#a:42"><span class="id" title="variable">a</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#ix:37"><span class="id" title="variable">ix</span></a> <a id="b:46" class="idref" href="#b:46"><span class="id" title="binder">b</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="run:50" class="idref" href="#run:50"><span class="id" title="binder">run</span></a> : <span class="id" title="keyword">∀</span> (<a id="x:48" class="idref" href="#x:48"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.HoareFacts.html#a:42"><span class="id" title="variable">a</span></a>) (<a id="14b06579daba54f1275a4126c3f39a7e" class="idref" href="#14b06579daba54f1275a4126c3f39a7e"><span class="id" title="binder">ω'</span></a> : <a class="idref" href="FreeSpec.Core.HoareFacts.html#5cd452430b9df090c2178f096a67b53e"><span class="id" title="variable">Ω</span></a>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Hoare.html#post"><span class="id" title="projection">post</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:41"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#p:43"><span class="id" title="variable">p</span></a>) <a class="idref" href="FreeSpec.Core.HoareFacts.html#b42e798286ffa64670a173382d30709a"><span class="id" title="variable">ω</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#x:48"><span class="id" title="variable">x</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#14b06579daba54f1275a4126c3f39a7e"><span class="id" title="variable">ω'</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:41"><span class="id" title="variable">c</span></a> (<a class="idref" href="FreeSpec.Core.HoareFacts.html#f:47"><span class="id" title="variable">f</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#x:48"><span class="id" title="variable">x</span></a>)) <a class="idref" href="FreeSpec.Core.HoareFacts.html#14b06579daba54f1275a4126c3f39a7e"><span class="id" title="variable">ω'</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:41"><span class="id" title="variable">c</span></a> (<a class="idref" href="FreeSpec.Core.HoareFacts.html#p:43"><span class="id" title="variable">p</span></a> <span class="id" title="notation">&gt;&gt;=</span> <a class="idref" href="FreeSpec.Core.HoareFacts.html#f:47"><span class="id" title="variable">f</span></a>)) <a class="idref" href="FreeSpec.Core.HoareFacts.html#b42e798286ffa64670a173382d30709a"><span class="id" title="variable">ω</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">revert</span> ω <span class="id" title="var">Hp</span> <span class="id" title="var">run</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">p</span>; <span class="id" title="tactic">intros</span> ω <span class="id" title="var">Hp</span> <span class="id" title="var">run</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <span class="id" title="var">run</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">cbn</span> <span class="id" title="tactic">in</span> <span class="id" title="var">Hp</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">Hp</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">He</span> <span class="id" title="var">Hn</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">change</span> (<a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> <span class="id" title="var">e</span> <span class="id" title="var">f0</span> <span class="id" title="notation">&gt;&gt;=</span> <span class="id" title="var">f</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">with</span> (<a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> <span class="id" title="var">e</span> (<span class="id" title="keyword">fun</span> <a id="x:52" class="idref" href="#x:52"><span class="id" title="binder">x</span></a> ⇒ <span class="id" title="var">f0</span> <a class="idref" href="FreeSpec.Core.HoareFacts.html#x:51"><span class="id" title="variable">x</span></a> <span class="id" title="notation">&gt;&gt;=</span> <span class="id" title="var">f</span>)).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">exact</span> <span class="id" title="var">He</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">intros</span> <span class="id" title="var">x</span> ω' <span class="id" title="var">Hpost</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">specialize</span> <span class="id" title="var">Hn</span> <span class="id" title="keyword">with</span> <span class="id" title="var">x</span> ω'.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">Hpost</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">rewrite</span> <span class="id" title="var">H2</span> <span class="id" title="tactic">in</span> ×.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">assert</span> (<span class="id" title="var">Hpre</span> : <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <span class="id" title="var">c</span> (<span class="id" title="var">f0</span> <span class="id" title="var">x</span>)) (<a class="idref" href="FreeSpec.Core.Contract.html#gen_witness_update"><span class="id" title="definition">gen_witness_update</span></a> <span class="id" title="var">c</span> ω <span class="id" title="var">e</span> <span class="id" title="var">x</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">by</span> <span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <span class="id" title="var">Hn</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">H0</span>; [ <span class="id" title="tactic">apply</span> <span class="id" title="var">Hpre</span> |].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">y</span> ω'' <span class="id" title="var">Hpost</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">run</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">∃</span> <span class="id" title="var">x</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">∃</span> ω'.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>; [<span class="id" title="tactic">split</span> |].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">exact</span> <span class="id" title="var">H1</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">exact</span> <span class="id" title="var">H2</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">rewrite</span> <span class="id" title="var">H2</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">exact</span> <span class="id" title="var">Hpost</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">to_hoare_pre_bind_assoc</span> : <span class="id" title="var">freespec</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="to_hoare_post_bind_assoc" class="idref" href="#to_hoare_post_bind_assoc"><span class="id" title="lemma">to_hoare_post_bind_assoc</span></a> `{<a id="H:55" class="idref" href="#H:55"><span class="id" title="binder">MayProvide</span></a> <a id="H:55" class="idref" href="#H:55"><span class="id" title="binder">ix</span></a> <a id="H:55" class="idref" href="#H:55"><span class="id" title="binder">i</span></a>} `(<a id="c:57" class="idref" href="#c:57"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#i:54"><span class="id" title="variable">i</span></a> <a id="ac5e7b4b3dae09306c6e63fc7b8ac8ed" class="idref" href="#ac5e7b4b3dae09306c6e63fc7b8ac8ed"><span class="id" title="binder">Ω</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="p:59" class="idref" href="#p:59"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#ix:53"><span class="id" title="variable">ix</span></a> <a id="a:58" class="idref" href="#a:58"><span class="id" title="binder">a</span></a>) `(<a id="f:61" class="idref" href="#f:61"><span class="id" title="binder">f</span></a> : <a class="idref" href="FreeSpec.Core.HoareFacts.html#a:58"><span class="id" title="variable">a</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#ix:53"><span class="id" title="variable">ix</span></a> <a id="b:60" class="idref" href="#b:60"><span class="id" title="binder">b</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="Hp:65" class="idref" href="#Hp:65"><span class="id" title="binder">Hp</span></a> : <a class="idref" href="FreeSpec.Core.Hoare.html#post"><span class="id" title="projection">post</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:57"><span class="id" title="variable">c</span></a> (<a class="idref" href="FreeSpec.Core.Impure.html#impure_bind"><span class="id" title="definition">impure_bind</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#p:59"><span class="id" title="variable">p</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#f:61"><span class="id" title="variable">f</span></a>)) <a id="101cdfa9c0fa887d44289d77f6995525" class="idref" href="#101cdfa9c0fa887d44289d77f6995525"><span class="id" title="binder">ω</span></a> <a id="x:63" class="idref" href="#x:63"><span class="id" title="binder">x</span></a> <a id="55ab050df099fb99e656b46c25620296" class="idref" href="#55ab050df099fb99e656b46c25620296"><span class="id" title="binder">ω'</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">∃</span></a> <a id="y:66" class="idref" href="#y:66"><span class="id" title="binder">y</span></a> <a id="1bccb93be44caf296ba1655d9266568d" class="idref" href="#1bccb93be44caf296ba1655d9266568d"><span class="id" title="binder">ω''</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">,</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Hoare.html#post"><span class="id" title="projection">post</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:57"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#p:59"><span class="id" title="variable">p</span></a>) <a class="idref" href="FreeSpec.Core.HoareFacts.html#101cdfa9c0fa887d44289d77f6995525"><span class="id" title="variable">ω</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#y:66"><span class="id" title="variable">y</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#1bccb93be44caf296ba1655d9266568d"><span class="id" title="variable">ω''</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#ba2b0e492d2b4675a0acf3ea92aabadd"><span class="id" title="notation">∧</span></a> <a class="idref" href="FreeSpec.Core.Hoare.html#post"><span class="id" title="projection">post</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#c:57"><span class="id" title="variable">c</span></a> <span class="id" title="notation">$</span> <a class="idref" href="FreeSpec.Core.HoareFacts.html#f:61"><span class="id" title="variable">f</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#y:66"><span class="id" title="variable">y</span></a>) <a class="idref" href="FreeSpec.Core.HoareFacts.html#1bccb93be44caf296ba1655d9266568d"><span class="id" title="variable">ω''</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#x:63"><span class="id" title="variable">x</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#55ab050df099fb99e656b46c25620296"><span class="id" title="variable">ω'</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">revert</span> ω <span class="id" title="var">Hp</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">p</span>; <span class="id" title="tactic">intros</span> ω <span class="id" title="var">Hp</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">now</span> <span class="id" title="tactic">∃</span> <span class="id" title="var">x0</span>, ω.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">destruct</span> <span class="id" title="var">Hp</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">y</span> [ω'' [<span class="id" title="var">Hp1</span> <span class="id" title="var">Hp2</span>]]].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">H0</span> <span class="id" title="tactic">in</span> <span class="id" title="var">Hp2</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">Hp2</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">z</span> [ω''' [<span class="id" title="var">Hp2</span> <span class="id" title="var">Hp3</span>]]].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">∃</span> <span class="id" title="var">z</span>, ω'''.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>; [| <span class="id" title="tactic">apply</span> <span class="id" title="var">Hp3</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">∃</span> <span class="id" title="var">y</span>, ω''.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">split</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">to_hoare_post_bind_assoc</span> : <span class="id" title="var">freespec</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="to_hoare_contractprod" class="idref" href="#to_hoare_contractprod"><span class="id" title="lemma">to_hoare_contractprod</span></a> `{<a id="H0:71" class="idref" href="#H0:71"><span class="id" title="binder">Provide</span></a> <a id="H0:71" class="idref" href="#H0:71"><span class="id" title="binder">ix</span></a> <a id="H0:71" class="idref" href="#H0:71"><span class="id" title="binder">i</span></a>, <a id="H2:74" class="idref" href="#H2:74"><span class="id" title="binder">Provide</span></a> <a id="H2:74" class="idref" href="#H2:74"><span class="id" title="binder">ix</span></a> <a id="H2:74" class="idref" href="#H2:74"><span class="id" title="binder">j</span></a>}<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="ci:76" class="idref" href="#ci:76"><span class="id" title="binder">ci</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#i:69"><span class="id" title="variable">i</span></a> <a id="7051b3e124cc4d37a7ebeb2d19b66b0c" class="idref" href="#7051b3e124cc4d37a7ebeb2d19b66b0c"><span class="id" title="binder">Ωi</span></a>) `(<a id="cj:78" class="idref" href="#cj:78"><span class="id" title="binder">cj</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#j:72"><span class="id" title="variable">j</span></a> <a id="b433d71d2ec75fbdd43b358eec1b98e1" class="idref" href="#b433d71d2ec75fbdd43b358eec1b98e1"><span class="id" title="binder">Ωj</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="p:80" class="idref" href="#p:80"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#ix:68"><span class="id" title="variable">ix</span></a> <a id="a:79" class="idref" href="#a:79"><span class="id" title="binder">a</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;`(<a id="prei:82" class="idref" href="#prei:82"><span class="id" title="binder">prei</span></a> : <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#ci:76"><span class="id" title="variable">ci</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#p:80"><span class="id" title="variable">p</span></a>) <a id="3e63d86e8b657b3d3ee0df0e8fdd4bd6" class="idref" href="#3e63d86e8b657b3d3ee0df0e8fdd4bd6"><span class="id" title="binder">ω</span></a><a id="3e63d86e8b657b3d3ee0df0e8fdd4bd6" class="idref" href="#3e63d86e8b657b3d3ee0df0e8fdd4bd6"><span class="id" title="binder">i</span></a>) `(<a id="prej:84" class="idref" href="#prej:84"><span class="id" title="binder">prej</span></a> : <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#cj:78"><span class="id" title="variable">cj</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#p:80"><span class="id" title="variable">p</span></a>) <a id="a49be86f16d9ac283abf0d398df6b56b" class="idref" href="#a49be86f16d9ac283abf0d398df6b56b"><span class="id" title="binder">ω</span></a><a id="a49be86f16d9ac283abf0d398df6b56b" class="idref" href="#a49be86f16d9ac283abf0d398df6b56b"><span class="id" title="binder">j</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Hoare.html#pre"><span class="id" title="projection">pre</span></a> (<a class="idref" href="FreeSpec.Core.Hoare.html#to_hoare"><span class="id" title="definition">to_hoare</span></a> (<a class="idref" href="FreeSpec.Core.HoareFacts.html#ci:76"><span class="id" title="variable">ci</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#51fe4140c202ad7416f5312bfec932fa"><span class="id" title="notation">×</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#cj:78"><span class="id" title="variable">cj</span></a>) <a class="idref" href="FreeSpec.Core.HoareFacts.html#p:80"><span class="id" title="variable">p</span></a>) <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="FreeSpec.Core.HoareFacts.html#3e63d86e8b657b3d3ee0df0e8fdd4bd6"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.HoareFacts.html#3e63d86e8b657b3d3ee0df0e8fdd4bd6"><span class="id" title="variable">i</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a> <a class="idref" href="FreeSpec.Core.HoareFacts.html#a49be86f16d9ac283abf0d398df6b56b"><span class="id" title="variable">ω</span></a><a class="idref" href="FreeSpec.Core.HoareFacts.html#a49be86f16d9ac283abf0d398df6b56b"><span class="id" title="variable">j</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">revert</span> ω<span class="id" title="var">i</span> <span class="id" title="var">prei</span> ω<span class="id" title="var">j</span> <span class="id" title="var">prej</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">p</span>; <span class="id" title="tactic">intros</span> ω<span class="id" title="var">i</span> <span class="id" title="var">prei</span> ω<span class="id" title="var">j</span> <span class="id" title="var">prej</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">auto</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">destruct</span> <span class="id" title="var">prei</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">calleri</span> <span class="id" title="var">Hcalleei</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">prej</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">callerj</span> <span class="id" title="var">Hcalleej</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="var">now</span> <span class="id" title="tactic">split</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">intros</span> <span class="id" title="var">x</span> [ω<span class="id" title="var">i'</span> ω<span class="id" title="var">j'</span>] [[<span class="id" title="var">calleei</span> <span class="id" title="var">calleej</span>] <span class="id" title="var">equ</span>ω<span class="id" title="var">s</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span> <span class="id" title="tactic">in</span> <span class="id" title="var">equ</span>ω<span class="id" title="var">s</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">inversion</span> <span class="id" title="var">equ</span>ω<span class="id" title="var">s</span>; <span class="id" title="tactic">subst</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">H3</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">apply</span> <span class="id" title="var">Hcalleei</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">split</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">apply</span> <span class="id" title="var">Hcalleej</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">split</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">to_hoare_contractprod</span> : <span class="id" title="var">freespec</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

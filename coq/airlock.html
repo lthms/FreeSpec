@@ -1,0 +1,539 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>airlock</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library airlock</h1>
+
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Arith</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.Core</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Core</span> <span class="id" title="var">CoreFacts</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">local</span>] <span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">nat_scope</span>.<br/>
+
+<br/>
+<span class="id" title="var">Create</span> <span class="id" title="var">HintDb</span> <span class="id" title="var">airlock</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab49"></a><h1 class="section">Specifying</h1>
+
+<div class="paragraph"> </div>
+
+<a id="lab50"></a><h2 class="section">Doors</h2>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">door</span> : <span class="id" title="keyword">Type</span> := <span class="id" title="tactic">left</span> | <span class="id" title="tactic">right</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">door_eq_dec</span> (<span class="id" title="var">d</span> <span class="id" title="var">d'</span> : <span class="id" title="var">door</span>) : { <span class="id" title="var">d</span> = <span class="id" title="var">d'</span> } + { ¬ <span class="id" title="var">d</span> = <span class="id" title="var">d'</span> } :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">ltac</span>:(<span class="id" title="var">decide</span> <span class="id" title="var">equality</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">DOORS</span> : <span class="id" title="var">interface</span> :=<br/>
+| <span class="id" title="var">IsOpen</span> : <span class="id" title="var">door</span> → <span class="id" title="var">DOORS</span> <span class="id" title="var">bool</span><br/>
+| <span class="id" title="var">Toggle</span> : <span class="id" title="var">door</span> → <span class="id" title="var">DOORS</span> <span class="id" title="var">unit</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Generalizable</span> <span class="id" title="keyword">All</span> <span class="id" title="keyword">Variables</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">is_open</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DOORS</span>} (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) : <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">bool</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">request</span> (<span class="id" title="var">IsOpen</span> <span class="id" title="var">d</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">toggle</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DOORS</span>} (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) : <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">unit</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">request</span> (<span class="id" title="var">Toggle</span> <span class="id" title="var">d</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">open_door</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DOORS</span>} (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) : <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">unit</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span>× <span class="id" title="var">open</span> := <span class="id" title="var">is_open</span> <span class="id" title="var">d</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="var">when</span> (<span class="id" title="var">negb</span> <span class="id" title="var">open</span>) (<span class="id" title="var">toggle</span> <span class="id" title="var">d</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">close_door</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DOORS</span>} (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) : <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">unit</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span>× <span class="id" title="var">open</span> := <span class="id" title="var">is_open</span> <span class="id" title="var">d</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;<span class="id" title="var">when</span> <span class="id" title="var">open</span> (<span class="id" title="var">toggle</span> <span class="id" title="var">d</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab51"></a><h2 class="section">Controller</h2>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">CONTROLLER</span> : <span class="id" title="var">interface</span> :=<br/>
+| <span class="id" title="var">Tick</span> : <span class="id" title="var">CONTROLLER</span> <span class="id" title="var">unit</span><br/>
+| <span class="id" title="var">RequestOpen</span> (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) : <span class="id" title="var">CONTROLLER</span> <span class="id" title="var">unit</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">tick</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">CONTROLLER</span>} : <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">unit</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">request</span> <span class="id" title="var">Tick</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">request_open</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">CONTROLLER</span>} (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) : <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">unit</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">request</span> (<span class="id" title="var">RequestOpen</span> <span class="id" title="var">d</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">co</span> (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) : <span class="id" title="var">door</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">d</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="tactic">left</span> ⇒ <span class="id" title="tactic">right</span><br/>
+&nbsp;&nbsp;| <span class="id" title="tactic">right</span> ⇒ <span class="id" title="tactic">left</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">controller</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DOORS</span>, <span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> (<span class="id" title="var">STORE</span> <span class="id" title="var">nat</span>)}<br/>
+&nbsp;&nbsp;: <span class="id" title="var">component</span> <span class="id" title="var">CONTROLLER</span> <span class="id" title="var">ix</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">fun</span> <span class="id" title="var">_</span> <span class="id" title="var">op</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">op</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Tick</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span>× <span class="id" title="var">cpt</span> := <span class="id" title="var">get</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">when</span> (15 &lt;? <span class="id" title="var">cpt</span>) <span class="id" title="var">begin</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">close_door</span> <span class="id" title="tactic">left</span>;;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">close_door</span> <span class="id" title="tactic">right</span>;;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">put</span> 0<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">RequestOpen</span> <span class="id" title="var">d</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">close_door</span> (<span class="id" title="var">co</span> <span class="id" title="var">d</span>);;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">open_door</span> <span class="id" title="var">d</span>;;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">put</span> 0<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab52"></a><h1 class="section">Verifying the Airlock Controller</h1>
+
+<div class="paragraph"> </div>
+
+<a id="lab53"></a><h2 class="section">Doors Specification</h2>
+
+<div class="paragraph"> </div>
+
+<a id="lab54"></a><h3 class="section">Witness States</h3>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">Ω</span> : <span class="id" title="keyword">Type</span> := <span class="id" title="var">bool</span> × <span class="id" title="var">bool</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">sel</span> (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) : <span class="id" title="var">Ω</span> → <span class="id" title="var">bool</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">d</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="tactic">left</span> ⇒ <span class="id" title="var">fst</span><br/>
+&nbsp;&nbsp;| <span class="id" title="tactic">right</span> ⇒ <span class="id" title="var">snd</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">tog</span> (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) (ω : <span class="id" title="var">Ω</span>) : <span class="id" title="var">Ω</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">d</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="tactic">left</span> ⇒ (<span class="id" title="var">negb</span> (<span class="id" title="var">fst</span> ω), <span class="id" title="var">snd</span> ω)<br/>
+&nbsp;&nbsp;| <span class="id" title="tactic">right</span> ⇒ (<span class="id" title="var">fst</span> ω, <span class="id" title="var">negb</span> (<span class="id" title="var">snd</span> ω))<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">tog_equ_1</span> (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) (ω : <span class="id" title="var">Ω</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">sel</span> <span class="id" title="var">d</span> (<span class="id" title="var">tog</span> <span class="id" title="var">d</span> ω) = <span class="id" title="var">negb</span> (<span class="id" title="var">sel</span> <span class="id" title="var">d</span> ω).<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">d</span>; <span class="id" title="tactic">reflexivity</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">tog_equ_2</span> (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) (ω : <span class="id" title="var">Ω</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">sel</span> (<span class="id" title="var">co</span> <span class="id" title="var">d</span>) (<span class="id" title="var">tog</span> <span class="id" title="var">d</span> ω) = <span class="id" title="var">sel</span> (<span class="id" title="var">co</span> <span class="id" title="var">d</span>) ω.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">d</span>; <span class="id" title="tactic">reflexivity</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+From now on, we will reason about <span class="inlinecode"><span class="id" title="definition">tog</span></span> using <span class="inlinecode"><span class="id" title="lemma">tog_equ_1</span></span> and <span class="inlinecode"><span class="id" title="lemma">tog_equ_2</span></span>.
+    FreeSpec tactics rely heavily on <span class="inlinecode"><span class="id" title="var">cbn</span></span> to simplify certain terms, so we use
+    the <tt>simpl never</tt> options of the <span class="inlinecode"><span class="id" title="var">Arguments</span></span> vernacular command to prevent
+    <span class="inlinecode"><span class="id" title="var">cbn</span></span> from unfolding <span class="inlinecode"><span class="id" title="definition">tog</span></span>.
+
+<div class="paragraph"> </div>
+
+    This pattern is common in FreeSpec.  Later in this example, we will use this
+    trick to prevent <span class="inlinecode"><span class="id" title="var">cbn</span></span> to unfold impure computations covered by intermediary
+    theorems. 
+</div>
+<div class="code">
+
+<br/>
+#[<span class="id" title="var">local</span>] <span class="id" title="keyword">Opaque</span> <span class="id" title="var">tog</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">step</span> (ω : <span class="id" title="var">Ω</span>) (<span class="id" title="var">a</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">e</span> : <span class="id" title="var">DOORS</span> <span class="id" title="var">a</span>) (<span class="id" title="var">x</span> : <span class="id" title="var">a</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">e</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">Toggle</span> <span class="id" title="var">d</span> ⇒ <span class="id" title="var">tog</span> <span class="id" title="var">d</span> ω<br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ ω<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab55"></a><h3 class="section">Requirements</h3>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">doors_o_caller</span> : <span class="id" title="var">Ω</span> → <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="keyword">Type</span>), <span class="id" title="var">DOORS</span> <span class="id" title="var">a</span> → <span class="id" title="keyword">Prop</span> :=<br/>
+<br/>
+</div>
+
+<div class="doc">
+<ul class="doclist">
+<li> Given the door <span class="inlinecode"><span class="id" title="var">d</span></span> of o system <span class="inlinecode">ω</span>, it is always possible to ask for the
+      state of <span class="inlinecode"><span class="id" title="var">d</span></span>. 
+</li>
+</ul>
+
+</div>
+<div class="code">
+<br/>
+| <span class="id" title="var">req_is_open</span> (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) (ω : <span class="id" title="var">Ω</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">doors_o_caller</span> ω <span class="id" title="var">bool</span> (<span class="id" title="var">IsOpen</span> <span class="id" title="var">d</span>)<br/>
+<br/>
+</div>
+
+<div class="doc">
+<ul class="doclist">
+<li> Given the door <span class="inlinecode"><span class="id" title="var">d</span></span> of o system <span class="inlinecode">ω</span>, if <span class="inlinecode"><span class="id" title="var">d</span></span> is closed, then the second door
+      <span class="inlinecode"><span class="id" title="definition">co</span></span> <span class="inlinecode"><span class="id" title="var">d</span></span> has to be closed too for a request to toggle <span class="inlinecode"><span class="id" title="var">d</span></span> to be valid. 
+</li>
+</ul>
+
+</div>
+<div class="code">
+<br/>
+| <span class="id" title="var">req_toggle</span> (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) (ω : <span class="id" title="var">Ω</span>) (<span class="id" title="var">H</span> : <span class="id" title="var">sel</span> <span class="id" title="var">d</span> ω = <span class="id" title="var">false</span> → <span class="id" title="var">sel</span> (<span class="id" title="var">co</span> <span class="id" title="var">d</span>) ω = <span class="id" title="var">false</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">doors_o_caller</span> ω <span class="id" title="var">unit</span> (<span class="id" title="var">Toggle</span> <span class="id" title="var">d</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Constructors</span> <span class="id" title="var">doors_o_caller</span> : <span class="id" title="var">airlock</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab56"></a><h3 class="section">Promises</h3>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">doors_o_callee</span> : <span class="id" title="var">Ω</span> → <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="keyword">Type</span>), <span class="id" title="var">DOORS</span> <span class="id" title="var">a</span> → <span class="id" title="var">a</span> → <span class="id" title="keyword">Prop</span> :=<br/>
+<br/>
+</div>
+
+<div class="doc">
+<ul class="doclist">
+<li> When a system in a state <span class="inlinecode">ω</span> reports the state of the door <span class="inlinecode"><span class="id" title="var">d</span></span>, it shall
+      reflect the true state of <span class="inlinecode"><span class="id" title="var">d</span></span>. 
+</li>
+</ul>
+
+</div>
+<div class="code">
+<br/>
+| <span class="id" title="var">doors_o_callee_is_open</span> (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) (ω : <span class="id" title="var">Ω</span>) (<span class="id" title="var">x</span> : <span class="id" title="var">bool</span>) (<span class="id" title="var">equ</span> : <span class="id" title="var">sel</span> <span class="id" title="var">d</span> ω = <span class="id" title="var">x</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">doors_o_callee</span> ω <span class="id" title="var">bool</span> (<span class="id" title="var">IsOpen</span> <span class="id" title="var">d</span>) <span class="id" title="var">x</span><br/>
+<br/>
+</div>
+
+<div class="doc">
+<ul class="doclist">
+<li> There is no particular doors_o_calleeises on the result <span class="inlinecode"><span class="id" title="var">x</span></span> of a request for <span class="inlinecode">ω</span> to
+      close the door <span class="inlinecode"><span class="id" title="var">d</span></span>. 
+</li>
+</ul>
+
+</div>
+<div class="code">
+<br/>
+| <span class="id" title="var">doors_o_callee_toggle</span> (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) (ω : <span class="id" title="var">Ω</span>) (<span class="id" title="var">x</span> : <span class="id" title="var">unit</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">doors_o_callee</span> ω <span class="id" title="var">unit</span> (<span class="id" title="var">Toggle</span> <span class="id" title="var">d</span>) <span class="id" title="var">x</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Constructors</span> <span class="id" title="var">doors_o_callee</span> : <span class="id" title="var">airlock</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">doors_contract</span> : <span class="id" title="var">contract</span> <span class="id" title="var">DOORS</span> <span class="id" title="var">Ω</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">make_contract</span> <span class="id" title="var">step</span> <span class="id" title="var">doors_o_caller</span> <span class="id" title="var">doors_o_callee</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab57"></a><h2 class="section">Intermediary Lemmas</h2>
+
+<div class="paragraph"> </div>
+
+ Closing a door <span class="inlinecode"><span class="id" title="var">d</span></span> in any system <span class="inlinecode">ω</span> is always a respectful operation. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">close_door_respectful</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DOORS</span>} (ω : <span class="id" title="var">Ω</span>) (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">pre</span> (<span class="id" title="var">to_hoare</span> <span class="id" title="var">doors_contract</span> (<span class="id" title="var">close_door</span> <span class="id" title="var">d</span>)) ω.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="var">prove</span> <span class="id" title="var">impure</span> <span class="id" title="keyword">with</span> <span class="id" title="var">airlock</span>; <span class="id" title="tactic">subst</span>; <span class="id" title="tactic">constructor</span>.<br/>
+
+<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">inversion</span> <span class="id" title="var">o_caller0</span>; <span class="id" title="var">ssubst</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">H3</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">close_door_respectful</span> : <span class="id" title="var">airlock</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">open_door_respectful</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DOORS</span>} (ω : <span class="id" title="var">Ω</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) (<span class="id" title="var">safe</span> : <span class="id" title="var">sel</span> (<span class="id" title="var">co</span> <span class="id" title="var">d</span>) ω = <span class="id" title="var">false</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">pre</span> (<span class="id" title="var">to_hoare</span> <span class="id" title="var">doors_contract</span> (<span class="id" title="var">open_door</span> (<span class="id" title="var">ix</span> := <span class="id" title="var">ix</span>) <span class="id" title="var">d</span>)) ω.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">prove</span> <span class="id" title="var">impure</span>; <span class="id" title="tactic">repeat</span> <span class="id" title="tactic">constructor</span>; <span class="id" title="tactic">subst</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">inversion</span> <span class="id" title="var">o_caller0</span>; <span class="id" title="var">ssubst</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">safe</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">open_door_respectful</span> : <span class="id" title="var">airlock</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">close_door_run</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DOORS</span>} (ω : <span class="id" title="var">Ω</span>) (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>) (ω' : <span class="id" title="var">Ω</span>) (<span class="id" title="var">x</span> : <span class="id" title="var">unit</span>)<br/>
+&nbsp;&nbsp;(<span class="id" title="var">run</span> : <span class="id" title="var">post</span> (<span class="id" title="var">to_hoare</span> <span class="id" title="var">doors_contract</span> (<span class="id" title="var">close_door</span> <span class="id" title="var">d</span>)) ω <span class="id" title="var">x</span> ω')<br/>
+&nbsp;&nbsp;: <span class="id" title="var">sel</span> <span class="id" title="var">d</span> ω' = <span class="id" title="var">false</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">unroll_post</span> <span class="id" title="var">run</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">rewrite</span> <span class="id" title="var">tog_equ_1</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">inversion</span> <span class="id" title="var">H1</span>; <span class="id" title="var">ssubst</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">H5</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">now</span> <span class="id" title="tactic">inversion</span> <span class="id" title="var">H1</span>; <span class="id" title="var">ssubst</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Resolve</span> <span class="id" title="var">close_door_run</span> : <span class="id" title="var">airlock</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">local</span>] <span class="id" title="keyword">Opaque</span> <span class="id" title="var">close_door</span>.<br/>
+#[<span class="id" title="var">local</span>] <span class="id" title="keyword">Opaque</span> <span class="id" title="var">open_door</span>.<br/>
+#[<span class="id" title="var">local</span>] <span class="id" title="keyword">Opaque</span> <span class="id" title="var">Nat.ltb</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Remark</span> <span class="id" title="var">one_door_safe_all_doors_safe</span> (ω : <span class="id" title="var">Ω</span>) (<span class="id" title="var">d</span> : <span class="id" title="var">door</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">safe</span> : <span class="id" title="var">sel</span> <span class="id" title="var">d</span> ω = <span class="id" title="var">false</span> ∨ <span class="id" title="var">sel</span> (<span class="id" title="var">co</span> <span class="id" title="var">d</span>) ω = <span class="id" title="var">false</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="keyword">∀</span> (<span class="id" title="var">d'</span> : <span class="id" title="var">door</span>), <span class="id" title="var">sel</span> <span class="id" title="var">d'</span> ω = <span class="id" title="var">false</span> ∨ <span class="id" title="var">sel</span> (<span class="id" title="var">co</span> <span class="id" title="var">d'</span>) ω = <span class="id" title="var">false</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">d'</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">d</span>; <span class="id" title="tactic">destruct</span> <span class="id" title="var">d'</span>; <span class="id" title="tactic">auto</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">cbn</span> -[<span class="id" title="var">sel</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">or_comm</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">cbn</span> -[<span class="id" title="var">sel</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">fold</span> (<span class="id" title="var">co</span> <span class="id" title="tactic">right</span>).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">or_comm</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+The objective of this lemma is to prove that, if either the right door or
+    the left door is closed, then after any respectful run of a computation
+    <span class="inlinecode"><span class="id" title="var">p</span></span> that interacts with doors, this fact remains true. 
+</div>
+<div class="code">
+
+<br/>
+#[<span class="id" title="var">local</span>] <span class="id" title="keyword">Opaque</span> <span class="id" title="var">sel</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">respectful_run_inv</span> `{<span class="id" title="var">Provide</span> <span class="id" title="var">ix</span> <span class="id" title="var">DOORS</span>} {<span class="id" title="var">a</span>} (<span class="id" title="var">p</span> : <span class="id" title="var">impure</span> <span class="id" title="var">ix</span> <span class="id" title="var">a</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(ω : <span class="id" title="var">Ω</span>) (<span class="id" title="var">safe</span> : <span class="id" title="var">sel</span> <span class="id" title="tactic">left</span> ω = <span class="id" title="var">false</span> ∨ <span class="id" title="var">sel</span> <span class="id" title="tactic">right</span> ω = <span class="id" title="var">false</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">x</span> : <span class="id" title="var">a</span>) (ω' : <span class="id" title="var">Ω</span>) (<span class="id" title="var">hpre</span> : <span class="id" title="var">pre</span> (<span class="id" title="var">to_hoare</span> <span class="id" title="var">doors_contract</span> <span class="id" title="var">p</span>) ω)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">hpost</span> : <span class="id" title="var">post</span> (<span class="id" title="var">to_hoare</span> <span class="id" title="var">doors_contract</span> <span class="id" title="var">p</span>) ω <span class="id" title="var">x</span> ω')<br/>
+&nbsp;&nbsp;: <span class="id" title="var">sel</span> <span class="id" title="tactic">left</span> ω' = <span class="id" title="var">false</span> ∨ <span class="id" title="var">sel</span> <span class="id" title="tactic">right</span> ω' = <span class="id" title="var">false</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+We reason by induction on the impure computation <span class="inlinecode"><span class="id" title="var">p</span></span>:
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> Either <span class="inlinecode"><span class="id" title="var">p</span></span> is a local, pure computation; in such a case, the doors state
+      does not change, hence the proof is trivial.
+
+<div class="paragraph"> </div>
+
+
+</li>
+<li> Or <span class="inlinecode"><span class="id" title="var">p</span></span> consists in a request to the doors interface, and a continuation
+      whose domain satisfies the theorem, i.e. it preserves the invariant that
+      either the left or the right door is closed.  Due to this hypothesis, we
+      only have to prove that the first request made by <span class="inlinecode"><span class="id" title="var">p</span></span> does not break the
+      invariant. We consider two cases.
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> Either the computation asks for the state of a given door (<span class="inlinecode"><span class="id" title="constructor">IsOpen</span></span>),
+        then again the doors state does not change and the proof is trivial.
+
+</li>
+<li> Or the computation wants to toggle a door <span class="inlinecode"><span class="id" title="var">d</span></span>.  We know by hypothesis
+        that either <span class="inlinecode"><span class="id" title="var">d</span></span> is closed or <span class="inlinecode"><span class="id" title="var">d</span></span> is open (thanks to the
+        <span class="inlinecode"><span class="id" title="lemma">one_door_safe_all_doors_safe</span></span> result and the <span class="inlinecode"><span class="id" title="var">safe</span></span> hypothesis).
+        Again, we consider both cases.
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> If <span class="inlinecode"><span class="id" title="var">d</span></span> is closed —and therefore will be opened—, then because we
+           consider a respectful run, <span class="inlinecode"><span class="id" title="definition">co</span></span> <span class="inlinecode"><span class="id" title="var">d</span></span> is necessarily closed too (it is a
+           requirements of <span class="inlinecode"><span class="id" title="var">door_contract</span></span>). Once <span class="inlinecode"><span class="id" title="var">d</span></span> is opened, <span class="inlinecode"><span class="id" title="definition">co</span></span> <span class="inlinecode"><span class="id" title="var">d</span></span> is still
+           closed.
+
+</li>
+<li> Otherwise, <span class="inlinecode"><span class="id" title="definition">co</span></span> <span class="inlinecode"><span class="id" title="var">d</span></span> is closed, which means once <span class="inlinecode"><span class="id" title="var">d</span></span> is toggled (no
+           matter its initial state), then <span class="inlinecode"><span class="id" title="definition">co</span></span> <span class="inlinecode"><span class="id" title="var">d</span></span> is still closed.
+
+<div class="paragraph"> </div>
+
+
+</li>
+</ul>
+         That is, we prove that, when <span class="inlinecode"><span class="id" title="var">p</span></span> toggles <span class="inlinecode"><span class="id" title="var">d</span></span>, <span class="inlinecode"><span class="id" title="definition">co</span></span> <span class="inlinecode"><span class="id" title="var">d</span></span> is necessarily
+         closed after the request has been handled.  Because there is at least
+         one door closed (<span class="inlinecode"><span class="id" title="definition">co</span></span> <span class="inlinecode"><span class="id" title="var">d</span></span>), we can conclude that either the right or the
+         left door is closed thanks to <span class="inlinecode"><span class="id" title="lemma">one_door_safe_all_doors_safe</span></span>. 
+</li>
+</ul>
+
+</li>
+</ul>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">fold</span> (<span class="id" title="var">co</span> <span class="id" title="tactic">left</span>) <span class="id" title="tactic">in</span> ×.<br/>
+&nbsp;&nbsp;<span class="id" title="var">revert</span> ω <span class="id" title="var">hpre</span> <span class="id" title="var">hpost</span> <span class="id" title="var">safe</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">p</span>; <span class="id" title="tactic">intros</span> ω <span class="id" title="var">hpre</span> <span class="id" title="var">run</span> <span class="id" title="var">safe</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">now</span> <span class="id" title="var">unroll_post</span> <span class="id" title="var">run</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">unroll_post</span> <span class="id" title="var">run</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">assert</span> (<span class="id" title="var">hpost</span> : <span class="id" title="var">post</span> (<span class="id" title="var">interface_to_hoare</span> <span class="id" title="var">doors_contract</span> <span class="id" title="var">β</span> <span class="id" title="var">e</span>) ω <span class="id" title="var">x0</span> ω0). {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">split</span>; [<span class="id" title="tactic">apply</span> <span class="id" title="var">H2</span>|<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">H3</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">H1</span> <span class="id" title="keyword">with</span> (ω:=ω0) (<span class="id" title="var">β</span>:=<span class="id" title="var">x0</span>); <span class="id" title="tactic">auto</span>; [<span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <span class="id" title="var">hpre</span>|].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span> <span class="id" title="tactic">in</span> ×.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <span class="id" title="var">gen_caller_obligation</span>, <span class="id" title="var">gen_callee_obligation</span>, <span class="id" title="var">gen_witness_update</span> <span class="id" title="tactic">in</span> ×.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> (<span class="id" title="var">proj_p</span> <span class="id" title="var">e</span>) <span class="id" title="keyword">as</span> [<span class="id" title="var">e'</span>|].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">destruct</span> <span class="id" title="var">hpost</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">o_callee</span> <span class="id" title="var">equ</span>ω].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">e'</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">d</span>|<span class="id" title="var">d</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">rewrite</span> <span class="id" title="var">H3</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">safe</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+++ <span class="id" title="tactic">apply</span> <span class="id" title="var">one_door_safe_all_doors_safe</span> <span class="id" title="keyword">with</span> (<span class="id" title="var">d</span> := <span class="id" title="var">d</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">one_door_safe_all_doors_safe</span> <span class="id" title="keyword">with</span> (<span class="id" title="var">d'</span> := <span class="id" title="var">d</span>) <span class="id" title="tactic">in</span> <span class="id" title="var">safe</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">subst</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">hpre</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">hbefore</span> <span class="id" title="var">hafter</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">inversion</span> <span class="id" title="var">hbefore</span>; <span class="id" title="var">ssubst</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">destruct</span> <span class="id" title="var">safe</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">safe</span>|<span class="id" title="var">safe</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">all</span>: <span class="id" title="tactic">right</span>; <span class="id" title="tactic">rewrite</span> <span class="id" title="var">tog_equ_2</span>; <span class="id" title="tactic">auto</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;++ <span class="id" title="tactic">destruct</span> <span class="id" title="var">hpost</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">_</span> <span class="id" title="var">equ</span>ω].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">subst</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">exact</span> <span class="id" title="var">safe</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab58"></a><h2 class="section">Main Theorem</h2>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">controller_correct</span> `{<span class="id" title="var">StrictProvide2</span> <span class="id" title="var">ix</span> <span class="id" title="var">DOORS</span> (<span class="id" title="var">STORE</span> <span class="id" title="var">nat</span>)}<br/>
+&nbsp;&nbsp;: <span class="id" title="var">correct_component</span> <span class="id" title="var">controller</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">no_contract</span> <span class="id" title="var">CONTROLLER</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">doors_contract</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">fun</span> <span class="id" title="var">_</span> ω ⇒ <span class="id" title="var">sel</span> <span class="id" title="tactic">left</span> ω = <span class="id" title="var">false</span> ∨ <span class="id" title="var">sel</span> <span class="id" title="tactic">right</span> ω = <span class="id" title="var">false</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> ω<span class="id" title="var">c</span> ω<span class="id" title="var">d</span> <span class="id" title="var">pred</span> <span class="id" title="var">a</span> <span class="id" title="var">e</span> <span class="id" title="var">req</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">assert</span> (<span class="id" title="var">hpre</span> : <span class="id" title="var">pre</span> (<span class="id" title="var">to_hoare</span> <span class="id" title="var">doors_contract</span> (<span class="id" title="var">controller</span> <span class="id" title="var">a</span> <span class="id" title="var">e</span>)) ω<span class="id" title="var">d</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">by</span> (<span class="id" title="tactic">destruct</span> <span class="id" title="var">e</span>; <span class="id" title="var">prove</span> <span class="id" title="var">impure</span> <span class="id" title="keyword">with</span> <span class="id" title="var">airlock</span>).<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">split</span>; <span class="id" title="tactic">auto</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">x</span> ω<span class="id" title="var">j'</span> <span class="id" title="var">run</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">auto</span> <span class="id" title="keyword">with</span> <span class="id" title="var">freespec</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">apply</span> <span class="id" title="var">respectful_run_inv</span> <span class="id" title="tactic">in</span> <span class="id" title="var">run</span>; <span class="id" title="tactic">auto</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

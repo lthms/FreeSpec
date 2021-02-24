@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Coqprod.html">
+<link rel="next" href="Coqunit.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Refs" rel="Chapter" href="Refs.html">
+<link title="Coqbool" rel="Chapter" href="Coqbool.html">
+<link title="Coqbyte" rel="Chapter" href="Coqbyte.html">
+<link title="Coqi63" rel="Chapter" href="Coqi63.html">
+<link title="Coqlist" rel="Chapter" href="Coqlist.html">
+<link title="Coqprod" rel="Chapter" href="Coqprod.html">
+<link title="Coqsum" rel="Chapter" href="Coqsum.html">
+<link title="Coqunit" rel="Chapter" href="Coqunit.html">
+<link title="Interfaces" rel="Chapter" href="Interfaces.html">
+<link title="Extends" rel="Chapter" href="Extends.html">
+<link title="Heap" rel="Chapter" href="Heap.html">
+<link title="Resources" rel="Chapter" href="Resources.html">
+<link title="Store" rel="Chapter" href="Store.html"><title>Coqsum</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Coqprod.html" title="Coqprod">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Coqunit.html" title="Coqunit">Next</a>
+</div>
+<h1>Module <a href="type_Coqsum.html">Coqsum</a></h1>
+
+<pre><span id="MODULECoqsum"><span class="keyword">module</span> Coqsum</span>: <code class="code">sig</code> <a href="Coqsum.html">..</a> <code class="code">end</code></pre><hr width="100%">
+
+<pre><code><span id="TYPEsum"><span class="keyword">type</span> <code class="type">('a, 'b)</code> sum</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsum.Left"><span class="constructor">Left</span></span> <span class="keyword">of</span> <code class="type">'a</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsum.Right"><span class="constructor">Right</span></span> <span class="keyword">of</span> <code class="type">'b</code></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALsum_of_coqsum"><span class="keyword">val</span> sum_of_coqsum</span> : <code class="type">(Constr.constr -> 'a) -><br>       (Constr.constr -> 'b) -> Constr.constr -> ('a, 'b) <a href="Coqsum.html#TYPEsum">sum</a></code></pre>
+<pre><span id="VALsum_to_coqsum"><span class="keyword">val</span> sum_to_coqsum</span> : <code class="type">Constr.constr -><br>       ('a -> Constr.constr) -><br>       Constr.constr -><br>       ('b -> Constr.constr) -> ('a, 'b) <a href="Coqsum.html#TYPEsum">sum</a> -> Constr.constr</code></pre></body></html>

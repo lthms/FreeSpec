@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>FreeSpec.Exec.Exec</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FreeSpec.Exec.Exec</h1>
+
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.Core</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="FreeSpec.Core.Core.html#"><span class="id" title="library">Core</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+This module loads a Coq plugin which provides the <span class="inlinecode"><span class="id" title="library">Exec</span></span>
+    vernacular command. <span class="inlinecode"><span class="id" title="library">Exec</span></span> is analogous to <span class="inlinecode"><span class="id" title="keyword">Compute</span></span>, but works
+    with <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a></span> terms. <span class="inlinecode"><span class="id" title="library">Exec</span></span> uses the Coq reduction engine to make
+    the head constructor of the term provided as argument for <span class="inlinecode"><span class="id" title="library">Exec</span></span>
+    appears. Then, in presence of the <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a></span> constructor, it
+    uses handler functions provided by FreeSpec users to perform the
+    impure tasks and compute a result. This result is passed to the
+    continuation, and the <span class="inlinecode"><span class="id" title="library">Exec</span></span> interpreter is recursively
+    called. When the constructor is <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Impure.html#local"><span class="id" title="constructor">local</span></a></span>, the computation is
+    completed.
+
+<div class="paragraph"> </div>
+
+    By default, <span class="inlinecode"><span class="id" title="library">Exec</span></span> uses a reduction strategy analogous to
+    <span class="inlinecode"><span class="id" title="var">cbn</span></span>. It also accepts the <tt>nf</tt> attribute to change this
+    behavior, and prefers an approach analogous to
+    <tt>compute</tt>. Changing the reduction strategy can be handy in
+    presence of a term which takes a very long time to reduce with
+    <tt>cbn</tt>. This is typically the case with terms that relies on
+    well-founded recursion rather than structural recursion. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">CoqFFI</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">Int</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.Exec</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="FreeSpec.Exec.Eval.html#"><span class="id" title="library">Eval</span></a>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.FFI</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="FreeSpec.FFI.FFI.html#"><span class="id" title="library">FFI</span></a> <a class="idref" href="FreeSpec.FFI.Refs.html#"><span class="id" title="library">Refs</span></a> <a class="idref" href="FreeSpec.FFI.ML.html#"><span class="id" title="library">ML</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Strings.String.html#"><span class="id" title="library">String</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Strings.Ascii.html#"><span class="id" title="library">Ascii</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Strings.Byte.html#"><span class="id" title="library">Byte</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab48"></a><h1 class="section">Extending FreeSpec.Exec</h1>
+
+<div class="paragraph"> </div>
+
+ The FreeSpec.Exec plugin has been designed to be extensible, meaning it
+    shall be easy for FreeSpec users to provide handlers for their own
+    interfaces.
+
+<div class="paragraph"> </div>
+
+    In FreeSpec, primitives are modeled with Coq constructors of an <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#interface"><span class="id" title="definition">interface</span></a></span>
+    inductive type. FreeSpec.Exec allows to define so-called
+    <tt>effectful_semantic</tt> for these constructors which aim to compute the
+    related primitive results.
+
+<div class="paragraph"> </div>
+
+    The OCaml type <tt>effectful_semantic</tt> is defined as follows:
+
+<div class="paragraph"> </div>
+
+<pre>
+type effectful_semantic =
+  Constr.constr list -&gt; Constr.constr
+</pre>
+
+<div class="paragraph"> </div>
+
+    If you are not familiar with Coq internals, <tt>Constr.constr</tt> is the
+    representation of Coq terms. Therefore, an <tt>effectful_semantic</tt> is an
+    OCaml function which maps a list of Coq terms (the arguments of the
+    primitives) to its result.
+
+<div class="paragraph"> </div>
+
+    For instance, if we consider the following interface:
+
+<div class="paragraph"> </div>
+
+<pre>
+Inductive CONSOLE : interface :=
+| WriteLine : string -&gt; CONSOLE unit
+| ReadLine : CONSOLE string.
+</pre>
+
+<div class="paragraph"> </div>
+
+    Since <tt>Coq-8.10</tt>, it is required to manually register both the type of an
+    interface and its constructors for plugins to easily interact with them. This is done
+    with the <span class="inlinecode"><span class="id" title="var">Register</span></span> command.
+
+<div class="paragraph"> </div>
+
+<pre>
+Register &lt;Coq Name&gt; &lt;Unique ID&gt;.
+</pre>
+
+<div class="paragraph"> </div>
+
+    The <tt>FreeSpec.Exec</tt> plugin expects the unique ID to be of the form <tt>&lt;some
+    path&gt;.&lt;Coq Name&gt; </tt>for contructors and <tt>&lt;some path&gt;.type</tt> for the type. In
+    the case of the <tt>CONSOLE</tt> interface, we could use:
+
+<div class="paragraph"> </div>
+
+<pre>
+Register CONSOLE freespec.exec.console.type.
+Register WriteLine freespec.exec.console.WriteLine.
+Register ReadLine freespec.exec.console.ReadLine.
+</pre>
+
+<div class="paragraph"> </div>
+
+    Then, one can implement two <tt>effectful_semantic</tt>: one for the constructor
+    <tt>WriteLine</tt> and the other for the constructor <tt>ReadLine</tt>:
+
+<div class="paragraph"> </div>
+
+<pre>
+let writeline = function
+  | [str] -&gt; print_bytes (bytes_of_coqstr str);
+             coqtt
+  | _ -&gt; assert false
+
+let readline = function
+  | [] -&gt; string_to_coqstr (read_line ())
+  | _ -&gt; assert false
+</pre>
+
+<div class="paragraph"> </div>
+
+    There are several facts to explain.
+
+<div class="paragraph"> </div>
+
+    First, manipulating <tt>Constr.constr</tt> value manually shall not be required
+    most of the time, since the FreeSpec.Exec plugin provides several helpers
+    isomorphisms to turn Coq term into OCaml values and vice-versa.
+    Hence, <tt>bytes_of_coqstr</tt> translates a <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a></span> term into a <span class="inlinecode"><span class="id" title="var">bytes</span></span> value,
+    while <tt>string_to_coqstr</tt> translates a OCaml <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a></span> value into a Coq
+    <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Strings.String.html#string"><span class="id" title="inductive">string</span></a></span> term.
+
+<div class="paragraph"> </div>
+
+    Secondly, it is the responsibility of plugin developers to ensure they
+    consider the right number of arguments for their <tt>effectful_semantic</tt>. The
+    <tt>WriteLine</tt> constructor has one argument, so the <tt>writeline</tt> OCaml
+    function only considers one-element lists. The <tt>ReadLine</tt> constructor has
+    no argument, so the <tt>readline</tt> OCaml function only handles the empty list.
+
+<div class="paragraph"> </div>
+
+    Thirdly, it is also the responsibility of plugin developers to forge a
+    well-typed result for their primitives.
+
+<div class="paragraph"> </div>
+
+    Once the <tt>effectful_semantic</tt> have been defined, they need to be
+    registered to FreeSpec.Exec, so that the plugin effectively use them. The
+    <tt>Extends</tt> OCaml module of FreeSpec.Exec provides a function to that hand:
+
+<div class="paragraph"> </div>
+
+<pre>
+val register_interface :
+  (* The base path we have chosen to register our interface. *)
+     string
+  (* A list to map each constructor of this interface
+     to an effectful semantic. *)
+  -&gt; (string * effectful_semantic) list
+  -&gt; unit
+</pre>
+
+<div class="paragraph"> </div>
+
+    It shall be used as follows:
+
+<div class="paragraph"> </div>
+
+<pre>
+let _ =
+  register_interface
+    "freespec.exec.console"
+    [("WriteLine", writeline); ("ReadLine", readline)]
+</pre>
+ 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="var">Register</span> <span class="id" title="var">byte</span> <span class="id" title="keyword">as</span> <span class="id" title="var">coq.byte.type</span>.<br/>
+
+<br/>
+<span class="id" title="var">Register</span> <span class="id" title="var">REFS</span> <span class="id" title="keyword">as</span> <span class="id" title="var">freespec.ffi.REFS.type</span>.<br/>
+<span class="id" title="var">Register</span> <span class="id" title="var">Make_ref</span> <span class="id" title="keyword">as</span> <span class="id" title="var">freespec.ffi.REFS.Make_ref</span>.<br/>
+<span class="id" title="var">Register</span> <span class="id" title="var">Assign</span> <span class="id" title="keyword">as</span> <span class="id" title="var">freespec.ffi.REFS.Assign</span>.<br/>
+<span class="id" title="var">Register</span> <span class="id" title="var">Deref</span> <span class="id" title="keyword">as</span> <span class="id" title="var">freespec.ffi.REFS.Deref</span>.<br/>
+
+<br/>
+<span class="id" title="var">Declare</span> <span class="id" title="var">ML</span> <span class="id" title="keyword">Module</span> "freespec_exec".<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

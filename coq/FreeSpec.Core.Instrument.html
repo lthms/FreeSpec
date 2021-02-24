@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>FreeSpec.Core.Instrument</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FreeSpec.Core.Instrument</h1>
+
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ExtLib</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">StateMonad</span> <span class="id" title="library">MonadTrans</span>.<br/>
+#[<span class="id" title="var">local</span>] <span class="id" title="var">Existing</span> <span class="id" title="keyword">Instance</span> <span class="id" title="var">Monad_stateT</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.Core</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="FreeSpec.Core.Interface.html#"><span class="id" title="library">Interface</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#"><span class="id" title="library">Semantics</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#"><span class="id" title="library">Contract</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <a id="instrument" class="idref" href="#instrument"><span class="id" title="abbreviation">instrument</span></a> <span class="id" title="var">Ω</span> <span class="id" title="var">i</span> := (<span class="id" title="record">stateT</span> <span class="id" title="var">Ω</span> (<span class="id" title="record">state</span> (<a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <span class="id" title="var">i</span>))).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="interface_to_instrument" class="idref" href="#interface_to_instrument"><span class="id" title="definition">interface_to_instrument</span></a> `{<a id="H:3" class="idref" href="#H:3"><span class="id" title="binder">MayProvide</span></a> <a id="H:3" class="idref" href="#H:3"><span class="id" title="binder">ix</span></a> <a id="H:3" class="idref" href="#H:3"><span class="id" title="binder">i</span></a>} `(<a id="c:5" class="idref" href="#c:5"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#i:2"><span class="id" title="variable">i</span></a> <a id="d3ff669e2403880e05633ecb2b018b1c" class="idref" href="#d3ff669e2403880e05633ecb2b018b1c"><span class="id" title="binder">Ω</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Instrument.html#ix:1"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Init.html#f7397da22bdab7f77b06c5d98764e7b9"><span class="id" title="notation">~&gt;</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#instrument"><span class="id" title="abbreviation">instrument</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#d3ff669e2403880e05633ecb2b018b1c"><span class="id" title="variable">Ω</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#ix:1"><span class="id" title="variable">ix</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">fun</span> <a id="a:6" class="idref" href="#a:6"><span class="id" title="binder">a</span></a> <a id="e:7" class="idref" href="#e:7"><span class="id" title="binder">e</span></a> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="notation">let</span><span class="id" title="notation">×</span> <a id="x:8" class="idref" href="#x:8"><span class="id" title="binder">x</span></a> <span class="id" title="notation">:=</span> <span class="id" title="method">lift</span> <span class="id" title="notation">$</span> <a class="idref" href="FreeSpec.Core.Semantics.html#interface_to_state"><span class="id" title="definition">interface_to_state</span></a> <span class="id" title="var">_</span> <a class="idref" href="FreeSpec.Core.Instrument.html#e:7"><span class="id" title="variable">e</span></a> <span class="id" title="notation">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="definition">modify</span> (<span class="id" title="keyword">fun</span> <a id="0ca13ed3bfdd4371c3b7e497b552fc2f" class="idref" href="#0ca13ed3bfdd4371c3b7e497b552fc2f"><span class="id" title="binder">ω</span></a> ⇒ <a class="idref" href="FreeSpec.Core.Contract.html#gen_witness_update"><span class="id" title="definition">gen_witness_update</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#c:5"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#0ca13ed3bfdd4371c3b7e497b552fc2f"><span class="id" title="variable">ω</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#e:7"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#x:8"><span class="id" title="variable">x</span></a>)<span class="id" title="notation">;;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="method">ret</span> <a class="idref" href="FreeSpec.Core.Instrument.html#x:8"><span class="id" title="variable">x</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="to_instrument" class="idref" href="#to_instrument"><span class="id" title="definition">to_instrument</span></a> `{<a id="H:12" class="idref" href="#H:12"><span class="id" title="binder">MayProvide</span></a> <a id="H:12" class="idref" href="#H:12"><span class="id" title="binder">ix</span></a> <a id="H:12" class="idref" href="#H:12"><span class="id" title="binder">i</span></a>} `(<a id="c:14" class="idref" href="#c:14"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#i:11"><span class="id" title="variable">i</span></a> <a id="5a2160f2a8d988a9b50d9d6303b3bf31" class="idref" href="#5a2160f2a8d988a9b50d9d6303b3bf31"><span class="id" title="binder">Ω</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#ix:10"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Init.html#f7397da22bdab7f77b06c5d98764e7b9"><span class="id" title="notation">~&gt;</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#instrument"><span class="id" title="abbreviation">instrument</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#5a2160f2a8d988a9b50d9d6303b3bf31"><span class="id" title="variable">Ω</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#ix:10"><span class="id" title="variable">ix</span></a> :=<br/>
+&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Impure.html#impure_lift"><span class="id" title="definition">impure_lift</span></a> <span class="id" title="notation">$</span> <a class="idref" href="FreeSpec.Core.Instrument.html#interface_to_instrument"><span class="id" title="definition">interface_to_instrument</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#c:14"><span class="id" title="variable">c</span></a>.<br/>
+
+<br/>
+<span class="id" title="var">Arguments</span> <a class="idref" href="FreeSpec.Core.Instrument.html#to_instrument"><span class="id" title="definition">to_instrument</span></a> {<span class="id" title="var">ix</span> <span class="id" title="var">i</span> <span class="id" title="var">_</span> <span class="id" title="var">Ω</span>} (<span class="id" title="var">c</span>) {<span class="id" title="var">α</span>}.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="instrument_to_state" class="idref" href="#instrument_to_state"><span class="id" title="definition">instrument_to_state</span></a> {<a id="i:15" class="idref" href="#i:15"><span class="id" title="binder">i</span></a>} `(<a id="ea2eb4fb80ca4a5d5fdf83a928d31eda" class="idref" href="#ea2eb4fb80ca4a5d5fdf83a928d31eda"><span class="id" title="binder">ω</span></a> : <a id="4b05df6977d6b63ba09be3f80d791c9f" class="idref" href="#4b05df6977d6b63ba09be3f80d791c9f"><span class="id" title="binder">Ω</span></a>) : <a class="idref" href="FreeSpec.Core.Instrument.html#instrument"><span class="id" title="abbreviation">instrument</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#4b05df6977d6b63ba09be3f80d791c9f"><span class="id" title="variable">Ω</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#i:15"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Init.html#f7397da22bdab7f77b06c5d98764e7b9"><span class="id" title="notation">~&gt;</span></a> <span class="id" title="record">state</span> (<a class="idref" href="FreeSpec.Core.Semantics.html#semantics"><span class="id" title="inductive">semantics</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#i:15"><span class="id" title="variable">i</span></a>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">fun</span> <a id="a:18" class="idref" href="#a:18"><span class="id" title="binder">a</span></a> <a id="instr:19" class="idref" href="#instr:19"><span class="id" title="binder">instr</span></a> ⇒ <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#fst"><span class="id" title="definition">fst</span></a> <span class="id" title="notation">&lt;$&gt;</span> <span class="id" title="projection">runStateT</span> <a class="idref" href="FreeSpec.Core.Instrument.html#instr:19"><span class="id" title="variable">instr</span></a> <a class="idref" href="FreeSpec.Core.Instrument.html#ea2eb4fb80ca4a5d5fdf83a928d31eda"><span class="id" title="variable">ω</span></a>.<br/>
+
+<br/>
+<span class="id" title="var">Arguments</span> <a class="idref" href="FreeSpec.Core.Instrument.html#instrument_to_state"><span class="id" title="definition">instrument_to_state</span></a> {<span class="id" title="var">i</span> <span class="id" title="var">Ω</span>} (ω) {<span class="id" title="var">α</span>}.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

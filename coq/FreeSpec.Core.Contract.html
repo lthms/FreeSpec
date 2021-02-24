@@ -1,0 +1,322 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>FreeSpec.Core.Contract</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FreeSpec.Core.Contract</h1>
+
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+In this library, we provide the necessary material to reason about FreeSpec
+    components both in isolation, and in composition.  To do that, we focus our
+    reasoning principles on interfaces, by defining how their primitives shall
+    be used, and what to expect the result computed by “correct” operational
+    semantics (according to a certain definition of “correct”). 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Setoids.Setoid.html#"><span class="id" title="library">Setoid</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#"><span class="id" title="library">Morphisms</span></a>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ExtLib</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">StateMonad</span> <span class="id" title="library">MonadState</span> <span class="id" title="library">MonadTrans</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.Core</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="FreeSpec.Core.Interface.html#"><span class="id" title="library">Interface</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#"><span class="id" title="library">Impure</span></a> <a class="idref" href="FreeSpec.Core.Semantics.html#"><span class="id" title="library">Semantics</span></a> <a class="idref" href="FreeSpec.Core.Component.html#"><span class="id" title="library">Component</span></a>.<br/>
+
+<br/>
+#[<span class="id" title="var">local</span>]<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">signature_scope</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab19"></a><h1 class="section">Definition</h1>
+
+<div class="paragraph"> </div>
+
+ A contract dedicated to <span class="inlinecode"><span class="id" title="var">i</span></span> <span class="inlinecode">:</span> <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#interface"><span class="id" title="definition">interface</span></a></span> primarily provides two
+    predicates.
+
+<div class="paragraph"> </div>
+
+<ul class="doclist">
+<li> <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Contract.html#caller_obligation"><span class="id" title="projection">caller_obligation</span></a></span> distinguishes between primitives that can be used (by
+      an impure computation), and primitives that cannot be used.
+
+</li>
+<li> <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Contract.html#callee_obligation"><span class="id" title="projection">callee_obligation</span></a></span> specifies which guarantees can be expected from
+      primitives results, as computed by a “good” operational semantics.
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+    Both <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Contract.html#caller_obligation"><span class="id" title="projection">caller_obligation</span></a></span> and <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Contract.html#callee_obligation"><span class="id" title="projection">callee_obligation</span></a></span> model properties that may
+    vary in time, e.g., a primitive may be forbidden at a given time, but
+    authorized later.  To take this possibility into account, contracts are
+    parameterized by what we have called a “witness.”  A witness is a term which
+    describes the necessary information of the past, and allows for taking
+    decision for the present.  It can be seen as an abstraction of the concrete
+    state of the interface implementor.
+
+<div class="paragraph"> </div>
+
+    To keep this state up-to-date after each primitive interpretation,
+    contracts also define a dedicated function <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Contract.html#witness_update"><span class="id" title="projection">witness_update</span></a></span>. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Record</span> <a id="contract" class="idref" href="#contract"><span class="id" title="record">contract</span></a> (<a id="i:1" class="idref" href="#i:1"><span class="id" title="binder">i</span></a> : <a class="idref" href="FreeSpec.Core.Interface.html#interface"><span class="id" title="definition">interface</span></a>) (<a id="2c39639b51c62ebe8f2daf701f58be52" class="idref" href="#2c39639b51c62ebe8f2daf701f58be52"><span class="id" title="binder">Ω</span></a> : <span class="id" title="keyword">Type</span>) : <span class="id" title="keyword">Type</span> := <a id="make_contract" class="idref" href="#make_contract"><span class="id" title="constructor">make_contract</span></a><br/>
+&nbsp;&nbsp;{ <a id="witness_update" class="idref" href="#witness_update"><span class="id" title="projection">witness_update</span></a> (<a id="9a81606440b3e0afb45c81185f076f24" class="idref" href="#9a81606440b3e0afb45c81185f076f24"><span class="id" title="binder">ω</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#2c39639b51c62ebe8f2daf701f58be52"><span class="id" title="variable">Ω</span></a>) : <span class="id" title="keyword">∀</span> (<a id="c18e2a91f576aa9c767d85d85d474d01" class="idref" href="#c18e2a91f576aa9c767d85d85d474d01"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>), <a class="idref" href="FreeSpec.Core.Contract.html#i:1"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#c18e2a91f576aa9c767d85d85d474d01"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#c18e2a91f576aa9c767d85d85d474d01"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#2c39639b51c62ebe8f2daf701f58be52"><span class="id" title="variable">Ω</span></a><br/>
+&nbsp;&nbsp;; <a id="caller_obligation" class="idref" href="#caller_obligation"><span class="id" title="projection">caller_obligation</span></a> (<a id="dc4c44f2cc45d845942d1632a5e9a8bd" class="idref" href="#dc4c44f2cc45d845942d1632a5e9a8bd"><span class="id" title="binder">ω</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#2c39639b51c62ebe8f2daf701f58be52"><span class="id" title="variable">Ω</span></a>) : <span class="id" title="keyword">∀</span> (<a id="7c2a876058bec11f1f67edd3c69b84ad" class="idref" href="#7c2a876058bec11f1f67edd3c69b84ad"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>),  <a class="idref" href="FreeSpec.Core.Contract.html#i:1"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#7c2a876058bec11f1f67edd3c69b84ad"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="keyword">Prop</span><br/>
+&nbsp;&nbsp;; <a id="callee_obligation" class="idref" href="#callee_obligation"><span class="id" title="projection">callee_obligation</span></a> (<a id="d0b23ea306fcd36def43b57e5859d86f" class="idref" href="#d0b23ea306fcd36def43b57e5859d86f"><span class="id" title="binder">ω</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#2c39639b51c62ebe8f2daf701f58be52"><span class="id" title="variable">Ω</span></a>) : <span class="id" title="keyword">∀</span> (<a id="f318545e8b3ea33486eea0794024f37c" class="idref" href="#f318545e8b3ea33486eea0794024f37c"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>), <a class="idref" href="FreeSpec.Core.Contract.html#i:1"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#f318545e8b3ea33486eea0794024f37c"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#f318545e8b3ea33486eea0794024f37c"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="keyword">Prop</span><br/>
+&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="var">Declare</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">contract_scope</span>.<br/>
+<span class="id" title="keyword">Bind</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">contract_scope</span> <span class="id" title="keyword">with</span> <span class="id" title="var">contract</span>.<br/>
+
+<br/>
+<span class="id" title="var">Arguments</span> <a class="idref" href="FreeSpec.Core.Contract.html#make_contract"><span class="id" title="constructor">make_contract</span></a> [<span class="id" title="var">i</span> <span class="id" title="var">Ω</span>] (<span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span>).<br/>
+<span class="id" title="var">Arguments</span> <a class="idref" href="FreeSpec.Core.Contract.html#witness_update"><span class="id" title="projection">witness_update</span></a> [<span class="id" title="var">i</span> <span class="id" title="var">Ω</span>] (<span class="id" title="var">c</span> ω) [<span class="id" title="var">α</span>] (<span class="id" title="var">_</span> <span class="id" title="var">_</span>).<br/>
+<span class="id" title="var">Arguments</span> <a class="idref" href="FreeSpec.Core.Contract.html#caller_obligation"><span class="id" title="projection">caller_obligation</span></a> [<span class="id" title="var">i</span> <span class="id" title="var">Ω</span>] (<span class="id" title="var">c</span> ω) [<span class="id" title="var">α</span>] (<span class="id" title="var">_</span>).<br/>
+<span class="id" title="var">Arguments</span> <a class="idref" href="FreeSpec.Core.Contract.html#callee_obligation"><span class="id" title="projection">callee_obligation</span></a> [<span class="id" title="var">i</span> <span class="id" title="var">Ω</span>] (<span class="id" title="var">c</span> ω) [<span class="id" title="var">α</span>] (<span class="id" title="var">_</span> <span class="id" title="var">_</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+The most simple contract we can define is the one that requires
+    anything both for the impure computations which uses the primitives of a
+    given interface, and for the operational semantics which compute results for
+    these primitives. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="const_witness" class="idref" href="#const_witness"><span class="id" title="definition">const_witness</span></a> {<a id="i:13" class="idref" href="#i:13"><span class="id" title="binder">i</span></a>} :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">fun</span> (<a id="u:14" class="idref" href="#u:14"><span class="id" title="binder">u</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a>) (<a id="02b0af0daad361079c3c6c4a8ed28287" class="idref" href="#02b0af0daad361079c3c6c4a8ed28287"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>) (<a id="e:16" class="idref" href="#e:16"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#i:13"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#02b0af0daad361079c3c6c4a8ed28287"><span class="id" title="variable">α</span></a>) (<a id="x:17" class="idref" href="#x:17"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#02b0af0daad361079c3c6c4a8ed28287"><span class="id" title="variable">α</span></a>) ⇒ <a class="idref" href="FreeSpec.Core.Contract.html#u:14"><span class="id" title="variable">u</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <a id="no_caller_obligation" class="idref" href="#no_caller_obligation"><span class="id" title="inductive">no_caller_obligation</span></a> {<a id="i:18" class="idref" href="#i:18"><span class="id" title="binder">i</span></a> <a id="48cb9f48ac36be2b6d825257f749f545" class="idref" href="#48cb9f48ac36be2b6d825257f749f545"><span class="id" title="binder">Ω</span></a>} (<a id="20456928aa12c5556b47e0248e05de5d" class="idref" href="#20456928aa12c5556b47e0248e05de5d"><span class="id" title="binder">ω</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#48cb9f48ac36be2b6d825257f749f545"><span class="id" title="variable">Ω</span></a>) (<a id="3e54f05cff61f00248ebd6ea8d337c37" class="idref" href="#3e54f05cff61f00248ebd6ea8d337c37"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>) (<a id="e:22" class="idref" href="#e:22"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#i:18"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#3e54f05cff61f00248ebd6ea8d337c37"><span class="id" title="variable">α</span></a>) : <span class="id" title="keyword">Prop</span> :=<br/>
+| <a id="mk_no_caller_obligation" class="idref" href="#mk_no_caller_obligation"><span class="id" title="constructor">mk_no_caller_obligation</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#no_caller_obligation:23"><span class="id" title="inductive">no_caller_obligation</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#20456928aa12c5556b47e0248e05de5d"><span class="id" title="variable">ω</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#3e54f05cff61f00248ebd6ea8d337c37"><span class="id" title="variable">α</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#e:22"><span class="id" title="variable">e</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Constructors</span> <a class="idref" href="FreeSpec.Core.Contract.html#no_caller_obligation"><span class="id" title="inductive">no_caller_obligation</span></a> : <span class="id" title="var">freespec</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <a id="no_callee_obligation" class="idref" href="#no_callee_obligation"><span class="id" title="inductive">no_callee_obligation</span></a> {<a id="i:25" class="idref" href="#i:25"><span class="id" title="binder">i</span></a> <a id="db9adf16c0233b2b12fcd2c36d31c39f" class="idref" href="#db9adf16c0233b2b12fcd2c36d31c39f"><span class="id" title="binder">Ω</span></a>} (<a id="f7cb0877736c7cf6376cc85f8eebc1a6" class="idref" href="#f7cb0877736c7cf6376cc85f8eebc1a6"><span class="id" title="binder">ω</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#db9adf16c0233b2b12fcd2c36d31c39f"><span class="id" title="variable">Ω</span></a>) (<a id="96ad1ac1716b109ad2893defa1eaf2a8" class="idref" href="#96ad1ac1716b109ad2893defa1eaf2a8"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>) (<a id="e:29" class="idref" href="#e:29"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#i:25"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#96ad1ac1716b109ad2893defa1eaf2a8"><span class="id" title="variable">α</span></a>) (<a id="x:30" class="idref" href="#x:30"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#96ad1ac1716b109ad2893defa1eaf2a8"><span class="id" title="variable">α</span></a>) : <span class="id" title="keyword">Prop</span> :=<br/>
+| <a id="mk_no_callee_obligation" class="idref" href="#mk_no_callee_obligation"><span class="id" title="constructor">mk_no_callee_obligation</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#no_callee_obligation:31"><span class="id" title="inductive">no_callee_obligation</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#f7cb0877736c7cf6376cc85f8eebc1a6"><span class="id" title="variable">ω</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#96ad1ac1716b109ad2893defa1eaf2a8"><span class="id" title="variable">α</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#e:29"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x:30"><span class="id" title="variable">x</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Hint Constructors</span> <a class="idref" href="FreeSpec.Core.Contract.html#no_callee_obligation"><span class="id" title="inductive">no_callee_obligation</span></a> : <span class="id" title="var">freespec</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="no_contract" class="idref" href="#no_contract"><span class="id" title="definition">no_contract</span></a> (<a id="i:33" class="idref" href="#i:33"><span class="id" title="binder">i</span></a> : <a class="idref" href="FreeSpec.Core.Interface.html#interface"><span class="id" title="definition">interface</span></a>) : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#i:33"><span class="id" title="variable">i</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a> :=<br/>
+&nbsp;&nbsp;{| <a class="idref" href="FreeSpec.Core.Contract.html#witness_update"><span class="id" title="projection">witness_update</span></a> := <a class="idref" href="FreeSpec.Core.Contract.html#const_witness"><span class="id" title="definition">const_witness</span></a><br/>
+&nbsp;&nbsp;&nbsp;; <a class="idref" href="FreeSpec.Core.Contract.html#caller_obligation"><span class="id" title="projection">caller_obligation</span></a> := <a class="idref" href="FreeSpec.Core.Contract.html#no_caller_obligation"><span class="id" title="inductive">no_caller_obligation</span></a><br/>
+&nbsp;&nbsp;&nbsp;; <a class="idref" href="FreeSpec.Core.Contract.html#callee_obligation"><span class="id" title="projection">callee_obligation</span></a> := <a class="idref" href="FreeSpec.Core.Contract.html#no_callee_obligation"><span class="id" title="inductive">no_callee_obligation</span></a><br/>
+&nbsp;&nbsp;&nbsp;|}.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+A similar —and as simple— contract is the one that forbids the use of a
+    given interface. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="do_no_use" class="idref" href="#do_no_use"><span class="id" title="definition">do_no_use</span></a> {<a id="i:34" class="idref" href="#i:34"><span class="id" title="binder">i</span></a> <a id="a67d4157791f18e448bfc675dcc713bd" class="idref" href="#a67d4157791f18e448bfc675dcc713bd"><span class="id" title="binder">Ω</span></a>} (<a id="7f4c797cc7084902a72eb12b562218d5" class="idref" href="#7f4c797cc7084902a72eb12b562218d5"><span class="id" title="binder">ω</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#a67d4157791f18e448bfc675dcc713bd"><span class="id" title="variable">Ω</span></a>) (<a id="c290c8d458fea6df1bce590532558f01" class="idref" href="#c290c8d458fea6df1bce590532558f01"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>) (<a id="e:38" class="idref" href="#e:38"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#i:34"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#c290c8d458fea6df1bce590532558f01"><span class="id" title="variable">α</span></a>) : <span class="id" title="keyword">Prop</span> := <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#False"><span class="id" title="inductive">False</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="forbid_specs" class="idref" href="#forbid_specs"><span class="id" title="definition">forbid_specs</span></a> (<a id="i:39" class="idref" href="#i:39"><span class="id" title="binder">i</span></a> : <a class="idref" href="FreeSpec.Core.Interface.html#interface"><span class="id" title="definition">interface</span></a>) : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#i:39"><span class="id" title="variable">i</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a> :=<br/>
+&nbsp;&nbsp;{| <a class="idref" href="FreeSpec.Core.Contract.html#witness_update"><span class="id" title="projection">witness_update</span></a> := <a class="idref" href="FreeSpec.Core.Contract.html#const_witness"><span class="id" title="definition">const_witness</span></a><br/>
+&nbsp;&nbsp;&nbsp;; <a class="idref" href="FreeSpec.Core.Contract.html#caller_obligation"><span class="id" title="projection">caller_obligation</span></a> := <a class="idref" href="FreeSpec.Core.Contract.html#do_no_use"><span class="id" title="definition">do_no_use</span></a><br/>
+&nbsp;&nbsp;&nbsp;; <a class="idref" href="FreeSpec.Core.Contract.html#callee_obligation"><span class="id" title="projection">callee_obligation</span></a> := <a class="idref" href="FreeSpec.Core.Contract.html#no_callee_obligation"><span class="id" title="inductive">no_callee_obligation</span></a><br/>
+&nbsp;&nbsp;&nbsp;|}.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab20"></a><h1 class="section">Composing Contracts</h1>
+
+<div class="paragraph"> </div>
+
+ As we compose interfaces and operational semantics, we can easily compose
+    contracts together, by means of the <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Contract.html#contractprod"><span class="id" title="definition">contractprod</span></a></span> operator. Given <span class="inlinecode"><span class="id" title="var">i</span></span> and <span class="inlinecode"><span class="id" title="var">j</span></span>
+    two interfaces, if we can reason about <span class="inlinecode"><span class="id" title="var">i</span></span> and <span class="inlinecode"><span class="id" title="var">j</span></span> independently (e.g., the
+    caller obligations of <span class="inlinecode"><span class="id" title="var">j</span></span> do not vary when we use <span class="inlinecode"><span class="id" title="var">i</span></span>), then we can compose
+    <span class="inlinecode"><span class="id" title="var">ci</span></span> <span class="inlinecode">:</span> <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a></span> <span class="inlinecode"><span class="id" title="var">i</span></span> <span class="inlinecode"><span class="id" title="var">Ωi</span></span> and <span class="inlinecode"><span class="id" title="var">cj</span></span> <span class="inlinecode">:</span> <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a></span> <span class="inlinecode"><span class="id" title="var">j</span></span> <span class="inlinecode"><span class="id" title="var">Ωj</span></span>, such that <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Contract.html#contractprod"><span class="id" title="definition">contractprod</span></a></span> <span class="inlinecode"><span class="id" title="var">ci</span></span> <span class="inlinecode"><span class="id" title="var">cj</span></span> in a
+    contract for <span class="inlinecode"><span class="id" title="var">i</span></span> <span class="inlinecode">+</span> <span class="inlinecode"><span class="id" title="var">j</span></span>. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="gen_witness_update" class="idref" href="#gen_witness_update"><span class="id" title="definition">gen_witness_update</span></a> `{<a id="H:42" class="idref" href="#H:42"><span class="id" title="binder">MayProvide</span></a> <a id="H:42" class="idref" href="#H:42"><span class="id" title="binder">ix</span></a> <a id="H:42" class="idref" href="#H:42"><span class="id" title="binder">i</span></a>} {<a id="c0483d53255b56183547b8214c9bca75" class="idref" href="#c0483d53255b56183547b8214c9bca75"><span class="id" title="binder">Ω</span></a> <a id="16ea9a3246cad4755fd38c94de1f8ba3" class="idref" href="#16ea9a3246cad4755fd38c94de1f8ba3"><span class="id" title="binder">α</span></a>} (<a id="c:45" class="idref" href="#c:45"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#i:41"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#c0483d53255b56183547b8214c9bca75"><span class="id" title="variable">Ω</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="ce832ecd83fb3a84f11ae31888f3ca96" class="idref" href="#ce832ecd83fb3a84f11ae31888f3ca96"><span class="id" title="binder">ω</span></a> :  <a class="idref" href="FreeSpec.Core.Contract.html#c0483d53255b56183547b8214c9bca75"><span class="id" title="variable">Ω</span></a>) (<a id="e:47" class="idref" href="#e:47"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#ix:40"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#16ea9a3246cad4755fd38c94de1f8ba3"><span class="id" title="variable">α</span></a>) (<a id="x:48" class="idref" href="#x:48"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#16ea9a3246cad4755fd38c94de1f8ba3"><span class="id" title="variable">α</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Contract.html#c0483d53255b56183547b8214c9bca75"><span class="id" title="variable">Ω</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="FreeSpec.Core.Interface.html#proj_p"><span class="id" title="method">proj_p</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#e:47"><span class="id" title="variable">e</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">e</span> ⇒ <a class="idref" href="FreeSpec.Core.Contract.html#witness_update"><span class="id" title="projection">witness_update</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#c:45"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#ce832ecd83fb3a84f11ae31888f3ca96"><span class="id" title="variable">ω</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#e:47"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x:48"><span class="id" title="variable">x</span></a><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="FreeSpec.Core.Contract.html#ce832ecd83fb3a84f11ae31888f3ca96"><span class="id" title="variable">ω</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="gen_caller_obligation" class="idref" href="#gen_caller_obligation"><span class="id" title="definition">gen_caller_obligation</span></a> `{<a id="H:51" class="idref" href="#H:51"><span class="id" title="binder">MayProvide</span></a> <a id="H:51" class="idref" href="#H:51"><span class="id" title="binder">ix</span></a> <a id="H:51" class="idref" href="#H:51"><span class="id" title="binder">i</span></a>} {<a id="81f2b049422c3ff61f969c1462840638" class="idref" href="#81f2b049422c3ff61f969c1462840638"><span class="id" title="binder">Ω</span></a> <a id="eeb98ec63beea1749dd111a01f732e7c" class="idref" href="#eeb98ec63beea1749dd111a01f732e7c"><span class="id" title="binder">α</span></a>} (<a id="c:54" class="idref" href="#c:54"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#i:50"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#81f2b049422c3ff61f969c1462840638"><span class="id" title="variable">Ω</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="9d0e169f344faac930eeab84e4d2876b" class="idref" href="#9d0e169f344faac930eeab84e4d2876b"><span class="id" title="binder">ω</span></a> :  <a class="idref" href="FreeSpec.Core.Contract.html#81f2b049422c3ff61f969c1462840638"><span class="id" title="variable">Ω</span></a>) (<a id="e:56" class="idref" href="#e:56"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#ix:49"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#eeb98ec63beea1749dd111a01f732e7c"><span class="id" title="variable">α</span></a>)<br/>
+&nbsp;&nbsp;: <span class="id" title="keyword">Prop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="FreeSpec.Core.Interface.html#proj_p"><span class="id" title="method">proj_p</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#e:56"><span class="id" title="variable">e</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">e</span> ⇒ <a class="idref" href="FreeSpec.Core.Contract.html#caller_obligation"><span class="id" title="projection">caller_obligation</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#c:54"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#9d0e169f344faac930eeab84e4d2876b"><span class="id" title="variable">ω</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#e:56"><span class="id" title="variable">e</span></a><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#True"><span class="id" title="inductive">True</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="gen_callee_obligation" class="idref" href="#gen_callee_obligation"><span class="id" title="definition">gen_callee_obligation</span></a> `{<a id="H:59" class="idref" href="#H:59"><span class="id" title="binder">MayProvide</span></a> <a id="H:59" class="idref" href="#H:59"><span class="id" title="binder">ix</span></a> <a id="H:59" class="idref" href="#H:59"><span class="id" title="binder">i</span></a>} {<a id="4b245ebd0f4627780a85f77dc4de9659" class="idref" href="#4b245ebd0f4627780a85f77dc4de9659"><span class="id" title="binder">Ω</span></a> <a id="074c5cd4c99b96115793e67cd302ecf0" class="idref" href="#074c5cd4c99b96115793e67cd302ecf0"><span class="id" title="binder">α</span></a>} (<a id="c:62" class="idref" href="#c:62"><span class="id" title="binder">c</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#i:58"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#4b245ebd0f4627780a85f77dc4de9659"><span class="id" title="variable">Ω</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="ef70fa2f028259ebf74f683d5bfead25" class="idref" href="#ef70fa2f028259ebf74f683d5bfead25"><span class="id" title="binder">ω</span></a> :  <a class="idref" href="FreeSpec.Core.Contract.html#4b245ebd0f4627780a85f77dc4de9659"><span class="id" title="variable">Ω</span></a>) (<a id="e:64" class="idref" href="#e:64"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#ix:57"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#074c5cd4c99b96115793e67cd302ecf0"><span class="id" title="variable">α</span></a>) (<a id="x:65" class="idref" href="#x:65"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#074c5cd4c99b96115793e67cd302ecf0"><span class="id" title="variable">α</span></a>)<br/>
+&nbsp;&nbsp;: <span class="id" title="keyword">Prop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="FreeSpec.Core.Interface.html#proj_p"><span class="id" title="method">proj_p</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#e:64"><span class="id" title="variable">e</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#Some"><span class="id" title="constructor">Some</span></a> <span class="id" title="var">e</span> ⇒ <a class="idref" href="FreeSpec.Core.Contract.html#callee_obligation"><span class="id" title="projection">callee_obligation</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#c:62"><span class="id" title="variable">c</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#ef70fa2f028259ebf74f683d5bfead25"><span class="id" title="variable">ω</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#e:64"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x:65"><span class="id" title="variable">x</span></a><br/>
+&nbsp;&nbsp;| <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#None"><span class="id" title="constructor">None</span></a> ⇒ <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#True"><span class="id" title="inductive">True</span></a><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="contractprod" class="idref" href="#contractprod"><span class="id" title="definition">contractprod</span></a> `{<a id="H0:69" class="idref" href="#H0:69"><span class="id" title="binder">Provide</span></a> <a id="H0:69" class="idref" href="#H0:69"><span class="id" title="binder">ix</span></a> <a id="H0:69" class="idref" href="#H0:69"><span class="id" title="binder">i</span></a>, <a id="H2:72" class="idref" href="#H2:72"><span class="id" title="binder">Provide</span></a> <a id="H2:72" class="idref" href="#H2:72"><span class="id" title="binder">ix</span></a> <a id="H2:72" class="idref" href="#H2:72"><span class="id" title="binder">j</span></a>} {<a id="e7864ebd6422d3a5445a0c010230eacc" class="idref" href="#e7864ebd6422d3a5445a0c010230eacc"><span class="id" title="binder">Ωi</span></a> <a id="b639dc900b364af7952b0e1f2fbd4016" class="idref" href="#b639dc900b364af7952b0e1f2fbd4016"><span class="id" title="binder">Ωj</span></a>}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="ci:75" class="idref" href="#ci:75"><span class="id" title="binder">ci</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#i:67"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#e7864ebd6422d3a5445a0c010230eacc"><span class="id" title="variable">Ωi</span></a>) (<a id="cj:76" class="idref" href="#cj:76"><span class="id" title="binder">cj</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#j:70"><span class="id" title="variable">j</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#b639dc900b364af7952b0e1f2fbd4016"><span class="id" title="variable">Ωj</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#ix:66"><span class="id" title="variable">ix</span></a> (<a class="idref" href="FreeSpec.Core.Contract.html#e7864ebd6422d3a5445a0c010230eacc"><span class="id" title="variable">Ωi</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">×</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#b639dc900b364af7952b0e1f2fbd4016"><span class="id" title="variable">Ωj</span></a>) :=<br/>
+&nbsp;&nbsp;{| <a class="idref" href="FreeSpec.Core.Contract.html#witness_update"><span class="id" title="projection">witness_update</span></a> := <span class="id" title="keyword">fun</span> (<a id="8397606f2a95502a48b02ea1c89c6ee9" class="idref" href="#8397606f2a95502a48b02ea1c89c6ee9"><span class="id" title="binder">ω</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#e7864ebd6422d3a5445a0c010230eacc"><span class="id" title="variable">Ωi</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">×</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#b639dc900b364af7952b0e1f2fbd4016"><span class="id" title="variable">Ωj</span></a>) (<a id="88f363a3d58dfc75e8ca35b781cf14f7" class="idref" href="#88f363a3d58dfc75e8ca35b781cf14f7"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>) (<a id="e:86" class="idref" href="#e:86"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#ix:66"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#88f363a3d58dfc75e8ca35b781cf14f7"><span class="id" title="variable">α</span></a>) (<a id="x:87" class="idref" href="#x:87"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#88f363a3d58dfc75e8ca35b781cf14f7"><span class="id" title="variable">α</span></a>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><a class="idref" href="FreeSpec.Core.Contract.html#gen_witness_update"><span class="id" title="definition">gen_witness_update</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#ci:75"><span class="id" title="variable">ci</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#fst"><span class="id" title="definition">fst</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#8397606f2a95502a48b02ea1c89c6ee9"><span class="id" title="variable">ω</span></a>) <a class="idref" href="FreeSpec.Core.Contract.html#e:86"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x:87"><span class="id" title="variable">x</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#gen_witness_update"><span class="id" title="definition">gen_witness_update</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#cj:76"><span class="id" title="variable">cj</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#snd"><span class="id" title="definition">snd</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#8397606f2a95502a48b02ea1c89c6ee9"><span class="id" title="variable">ω</span></a>) <a class="idref" href="FreeSpec.Core.Contract.html#e:86"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x:87"><span class="id" title="variable">x</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a><br/>
+&nbsp;&nbsp;;  <a class="idref" href="FreeSpec.Core.Contract.html#caller_obligation"><span class="id" title="projection">caller_obligation</span></a> := <span class="id" title="keyword">fun</span> (<a id="3a29062b367cf203a106cafbc953c36d" class="idref" href="#3a29062b367cf203a106cafbc953c36d"><span class="id" title="binder">ω</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#e7864ebd6422d3a5445a0c010230eacc"><span class="id" title="variable">Ωi</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">×</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#b639dc900b364af7952b0e1f2fbd4016"><span class="id" title="variable">Ωj</span></a>) (<a id="bca6954c7268ca0b93cad625299858fa" class="idref" href="#bca6954c7268ca0b93cad625299858fa"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>) (<a id="e:83" class="idref" href="#e:83"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#ix:66"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#bca6954c7268ca0b93cad625299858fa"><span class="id" title="variable">α</span></a>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Contract.html#gen_caller_obligation"><span class="id" title="definition">gen_caller_obligation</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#ci:75"><span class="id" title="variable">ci</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#fst"><span class="id" title="definition">fst</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#3a29062b367cf203a106cafbc953c36d"><span class="id" title="variable">ω</span></a>) <a class="idref" href="FreeSpec.Core.Contract.html#e:83"><span class="id" title="variable">e</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#ba2b0e492d2b4675a0acf3ea92aabadd"><span class="id" title="notation">∧</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#gen_caller_obligation"><span class="id" title="definition">gen_caller_obligation</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#cj:76"><span class="id" title="variable">cj</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#snd"><span class="id" title="definition">snd</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#3a29062b367cf203a106cafbc953c36d"><span class="id" title="variable">ω</span></a>) <a class="idref" href="FreeSpec.Core.Contract.html#e:83"><span class="id" title="variable">e</span></a><br/>
+&nbsp;&nbsp;;  <a class="idref" href="FreeSpec.Core.Contract.html#callee_obligation"><span class="id" title="projection">callee_obligation</span></a> := <span class="id" title="keyword">fun</span> (<a id="5f4427b22c1a6177af421ee4d5879bea" class="idref" href="#5f4427b22c1a6177af421ee4d5879bea"><span class="id" title="binder">ω</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#e7864ebd6422d3a5445a0c010230eacc"><span class="id" title="variable">Ωi</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">×</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#b639dc900b364af7952b0e1f2fbd4016"><span class="id" title="variable">Ωj</span></a>) (<a id="d5bd0e35c298c132b96bb9105114682c" class="idref" href="#d5bd0e35c298c132b96bb9105114682c"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>) (<a id="e:79" class="idref" href="#e:79"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#ix:66"><span class="id" title="variable">ix</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#d5bd0e35c298c132b96bb9105114682c"><span class="id" title="variable">α</span></a>) (<a id="x:80" class="idref" href="#x:80"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#d5bd0e35c298c132b96bb9105114682c"><span class="id" title="variable">α</span></a>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.Contract.html#gen_callee_obligation"><span class="id" title="definition">gen_callee_obligation</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#ci:75"><span class="id" title="variable">ci</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#fst"><span class="id" title="definition">fst</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#5f4427b22c1a6177af421ee4d5879bea"><span class="id" title="variable">ω</span></a>) <a class="idref" href="FreeSpec.Core.Contract.html#e:79"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x:80"><span class="id" title="variable">x</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#ba2b0e492d2b4675a0acf3ea92aabadd"><span class="id" title="notation">∧</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#gen_callee_obligation"><span class="id" title="definition">gen_callee_obligation</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#cj:76"><span class="id" title="variable">cj</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#snd"><span class="id" title="definition">snd</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#5f4427b22c1a6177af421ee4d5879bea"><span class="id" title="variable">ω</span></a>) <a class="idref" href="FreeSpec.Core.Contract.html#e:79"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x:80"><span class="id" title="variable">x</span></a><br/>
+&nbsp;&nbsp;|}.<br/>
+
+<br/>
+<span class="id" title="keyword">Infix</span> <a id="51fe4140c202ad7416f5312bfec932fa" class="idref" href="#51fe4140c202ad7416f5312bfec932fa"><span class="id" title="notation">&quot;</span></a>×" := <a class="idref" href="FreeSpec.Core.Contract.html#contractprod"><span class="id" title="definition">contractprod</span></a> : <span class="id" title="var">contract_scope</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Finally, and as an example, we define a contract for the interface
+    <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a></span> <span class="inlinecode"><span class="id" title="var">s</span></span> we discuss in <span class="inlinecode"><span class="id" title="library">FreeSpec.Core.Impure</span></span>.  As a reminder, the
+    interface is defined as follows:
+
+<div class="paragraph"> </div>
+
+<pre>
+Inductive STORE (s : Type) : interface :=
+| Get : STORE s s
+| Put (x : s) : STORE s unit.
+</pre>
+
+<div class="paragraph"> </div>
+
+    For <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a></span> <span class="inlinecode"><span class="id" title="var">s</span></span>, the best witness is the actual value of the mutable
+    variable.  Therefore, the contract for <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a></span> <span class="inlinecode"><span class="id" title="var">s</span></span> may be <span class="inlinecode"><span class="id" title="var">specs</span></span> <span class="inlinecode">(<a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a></span>
+    <span class="inlinecode"><span class="id" title="var">s</span>)</span> <span class="inlinecode"><span class="id" title="var">s</span></span>, and the witness will be updated after each <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#Put"><span class="id" title="constructor">Put</span></a></span> call. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="store_update" class="idref" href="#store_update"><span class="id" title="definition">store_update</span></a> (<a id="s:88" class="idref" href="#s:88"><span class="id" title="binder">s</span></a> : <span class="id" title="keyword">Type</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">fun</span> (<a id="x:89" class="idref" href="#x:89"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#s:88"><span class="id" title="variable">s</span></a>) (<a id="f89a02dbca914e38212fb59e93eb0309" class="idref" href="#f89a02dbca914e38212fb59e93eb0309"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>) (<a id="e:91" class="idref" href="#e:91"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#s:88"><span class="id" title="variable">s</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#f89a02dbca914e38212fb59e93eb0309"><span class="id" title="variable">α</span></a>) (<span class="id" title="var">_</span> : <a class="idref" href="FreeSpec.Core.Contract.html#f89a02dbca914e38212fb59e93eb0309"><span class="id" title="variable">α</span></a>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <a class="idref" href="FreeSpec.Core.Contract.html#e:91"><span class="id" title="variable">e</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="FreeSpec.Core.Interface.html#Get"><span class="id" title="constructor">Get</span></a> ⇒ <a class="idref" href="FreeSpec.Core.Contract.html#x:89"><span class="id" title="variable">x</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <a class="idref" href="FreeSpec.Core.Interface.html#Put"><span class="id" title="constructor">Put</span></a> <span class="id" title="var">x'</span> ⇒ <span class="id" title="var">x'</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Assuming the mutable variable is being initialized prior to any impure
+    computation interpretation, we do not have any obligations over the use of
+    <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a></span> <span class="inlinecode"><span class="id" title="var">s</span></span> primitives.  We will get back to this assertion once we have
+    defined our contract, but in the meantime, we define its callee obligation.
+
+<div class="paragraph"> </div>
+
+    The logic of these callee obligations is as follows: <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#Get"><span class="id" title="constructor">Get</span></a></span> is expected to
+    produce a result strictly equivalent to the witness, and we do not have any
+    obligations about the result of <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#Put"><span class="id" title="constructor">Put</span></a></span> (which belongs to <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a></span> anyway, so
+    there is not much to tell). 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <a id="o_callee_store" class="idref" href="#o_callee_store"><span class="id" title="inductive">o_callee_store</span></a> (<a id="s:93" class="idref" href="#s:93"><span class="id" title="binder">s</span></a> : <span class="id" title="keyword">Type</span>) (<a id="x:94" class="idref" href="#x:94"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#s:93"><span class="id" title="variable">s</span></a>) : <span class="id" title="keyword">∀</span> (<a id="2c33648b2cf0db4627780e14acbca4c2" class="idref" href="#2c33648b2cf0db4627780e14acbca4c2"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>), <a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a> <span class="id" title="var">s</span> <a class="idref" href="FreeSpec.Core.Contract.html#2c33648b2cf0db4627780e14acbca4c2"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#2c33648b2cf0db4627780e14acbca4c2"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="keyword">Prop</span> :=<br/>
+| <a id="get_o_callee" class="idref" href="#get_o_callee"><span class="id" title="constructor">get_o_callee</span></a> (<a id="x':98" class="idref" href="#x':98"><span class="id" title="binder">x'</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#s:93"><span class="id" title="variable">s</span></a>) (<a id="equ:99" class="idref" href="#equ:99"><span class="id" title="binder">equ</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#x:94"><span class="id" title="variable">x</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x':98"><span class="id" title="variable">x'</span></a>) : <a class="idref" href="FreeSpec.Core.Contract.html#o_callee_store:96"><span class="id" title="inductive">o_callee_store</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#s:93"><span class="id" title="variable">s</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x:94"><span class="id" title="variable">x</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#s:93"><span class="id" title="variable">s</span></a> <a class="idref" href="FreeSpec.Core.Interface.html#Get"><span class="id" title="constructor">Get</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x':98"><span class="id" title="variable">x'</span></a><br/>
+| <a id="put_o_callee" class="idref" href="#put_o_callee"><span class="id" title="constructor">put_o_callee</span></a> (<a id="x':100" class="idref" href="#x':100"><span class="id" title="binder">x'</span></a> : <a class="idref" href="FreeSpec.Core.Contract.html#s:93"><span class="id" title="variable">s</span></a>) (<a id="u:101" class="idref" href="#u:101"><span class="id" title="binder">u</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a>) : <a class="idref" href="FreeSpec.Core.Contract.html#o_callee_store:96"><span class="id" title="inductive">o_callee_store</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#s:93"><span class="id" title="variable">s</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x:94"><span class="id" title="variable">x</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a> (<a class="idref" href="FreeSpec.Core.Interface.html#Put"><span class="id" title="constructor">Put</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#x':100"><span class="id" title="variable">x'</span></a>) <a class="idref" href="FreeSpec.Core.Contract.html#u:101"><span class="id" title="variable">u</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+The actual contract can therefore be defined as follows: 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="store_specs" class="idref" href="#store_specs"><span class="id" title="definition">store_specs</span></a> (<a id="s:102" class="idref" href="#s:102"><span class="id" title="binder">s</span></a> : <span class="id" title="keyword">Type</span>) : <a class="idref" href="FreeSpec.Core.Contract.html#contract"><span class="id" title="record">contract</span></a> (<a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#s:102"><span class="id" title="variable">s</span></a>) <a class="idref" href="FreeSpec.Core.Contract.html#s:102"><span class="id" title="variable">s</span></a> :=<br/>
+&nbsp;&nbsp;{| <a class="idref" href="FreeSpec.Core.Contract.html#witness_update"><span class="id" title="projection">witness_update</span></a> := <a class="idref" href="FreeSpec.Core.Contract.html#store_update"><span class="id" title="definition">store_update</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#s:102"><span class="id" title="variable">s</span></a><br/>
+&nbsp;&nbsp;;  <a class="idref" href="FreeSpec.Core.Contract.html#caller_obligation"><span class="id" title="projection">caller_obligation</span></a> := <a class="idref" href="FreeSpec.Core.Contract.html#no_caller_obligation"><span class="id" title="inductive">no_caller_obligation</span></a><br/>
+&nbsp;&nbsp;;  <a class="idref" href="FreeSpec.Core.Contract.html#callee_obligation"><span class="id" title="projection">callee_obligation</span></a> := <a class="idref" href="FreeSpec.Core.Contract.html#o_callee_store"><span class="id" title="inductive">o_callee_store</span></a> <a class="idref" href="FreeSpec.Core.Contract.html#s:102"><span class="id" title="variable">s</span></a><br/>
+&nbsp;&nbsp;|}.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Now, as we briefly mentionned, this contract allows for reasoning about an
+    impure computation which uses the <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#STORE"><span class="id" title="inductive">STORE</span></a></span> <span class="inlinecode"><span class="id" title="var">s</span></span> interface, assuming the mutable,
+    global variable has been initialized.  We can define another contract that
+    does not rely on such assumption, and on the contrary, requires an impure
+    computation to initialize the variable prior to using it.
+
+<div class="paragraph"> </div>
+
+    In this context, the witness can solely be a boolean which tells if the
+    variable has been initialized, and the <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Contract.html#callee_obligation"><span class="id" title="projection">callee_obligation</span></a></span> will require the
+    witness to be <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a></span> to authorize a call of <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Interface.html#Get"><span class="id" title="constructor">Get</span></a></span>.
+
+<div class="paragraph"> </div>
+
+    This is one of the key benefits of the FreeSpec approach: because the
+    contracts are defined independently from impure computations and
+    interfaces, we can actually define several contracts to consider
+    different set of hypotheses. 
+</div>
+<div class="code">
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>FreeSpec.Core.ImpureFacts</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FreeSpec.Core.ImpureFacts</h1>
+
+<div class="code">
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">FreeSpec.Core</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="FreeSpec.Core.Impure.html#"><span class="id" title="library">Impure</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab21"></a><h1 class="section">Equivalence</h1>
+
+<div class="paragraph"> </div>
+
+ Due to the definition of <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a></span> and <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Impure.html#impure_bind"><span class="id" title="definition">impure_bind</span></a></span>, we could decide to rely
+    on Coq built-in <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#eq"><span class="id" title="inductive">eq</span></a></span> to reason about impure computations equivalence, but we
+    would have to use the functional extensionality axiom to handle the
+    continuation of the <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a></span> constructor. In order to keep FreeSpec
+    axiom-free, we rather provide a custom equivalence for <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a></span> terms. 
+<div class="paragraph"> </div>
+
+<a id="lab22"></a><h2 class="section">Definition</h2>
+
+<div class="paragraph"> </div>
+
+ The definition of <span class="inlinecode"><span class="id" title="var">impure_equiv</span></span> is two-fold. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <a id="impure_eq" class="idref" href="#impure_eq"><span class="id" title="inductive">impure_eq</span></a> {<a id="i:1" class="idref" href="#i:1"><span class="id" title="binder">i</span></a> <a id="dbe7daa3f4200dd60831b0ac13fea06b" class="idref" href="#dbe7daa3f4200dd60831b0ac13fea06b"><span class="id" title="binder">α</span></a>} : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <span class="id" title="var">i</span> <span class="id" title="var">α</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <span class="id" title="var">i</span> <span class="id" title="var">α</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="keyword">Prop</span>  :=<br/>
+<br/>
+</div>
+
+<div class="doc">
+<ul class="doclist">
+<li> Two impure computations are equivalent if and only if they compute the
+      exact same term (wrt. Coq <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#eq"><span class="id" title="inductive">eq</span></a></span> function). 
+</li>
+</ul>
+
+</div>
+<div class="code">
+<br/>
+| <a id="local_eq" class="idref" href="#local_eq"><span class="id" title="constructor">local_eq</span></a> (<a id="x:5" class="idref" href="#x:5"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.ImpureFacts.html#dbe7daa3f4200dd60831b0ac13fea06b"><span class="id" title="variable">α</span></a>) : <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq:3"><span class="id" title="inductive">impure_eq</span></a> (<a class="idref" href="FreeSpec.Core.Impure.html#local"><span class="id" title="constructor">local</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#x:5"><span class="id" title="variable">x</span></a>) (<a class="idref" href="FreeSpec.Core.Impure.html#local"><span class="id" title="constructor">local</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#x:5"><span class="id" title="variable">x</span></a>)<br/>
+<br/>
+</div>
+
+<div class="doc">
+<ul class="doclist">
+<li> Two computations which consist in requesting the interpretation of an
+      primitive and passing the result to a monadic continuation are equivalent
+      if and only if they use the exact same primitive in the first place, and
+      given any result the interpretation of this primitive may produce, their
+      continuation returns equivalent impure computations. 
+</li>
+</ul>
+
+</div>
+<div class="code">
+<br/>
+| <a id="request_eq" class="idref" href="#request_eq"><span class="id" title="constructor">request_eq</span></a> {<a id="596308ea39bf4a0991662603f9bf9af1" class="idref" href="#596308ea39bf4a0991662603f9bf9af1"><span class="id" title="binder">β</span></a>} (<a id="e:7" class="idref" href="#e:7"><span class="id" title="binder">e</span></a> : <a class="idref" href="FreeSpec.Core.ImpureFacts.html#i:1"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#596308ea39bf4a0991662603f9bf9af1"><span class="id" title="variable">β</span></a>) (<a id="f:8" class="idref" href="#f:8"><span class="id" title="binder">f</span></a> <a id="g:9" class="idref" href="#g:9"><span class="id" title="binder">g</span></a> : <a class="idref" href="FreeSpec.Core.ImpureFacts.html#596308ea39bf4a0991662603f9bf9af1"><span class="id" title="variable">β</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#i:1"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#dbe7daa3f4200dd60831b0ac13fea06b"><span class="id" title="variable">α</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<a id="equ:10" class="idref" href="#equ:10"><span class="id" title="binder">equ</span></a> : <a class="idref" href="FreeSpec.Core.Init.html#function_eq"><span class="id" title="definition">function_eq</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq:3"><span class="id" title="inductive">impure_eq</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#f:8"><span class="id" title="variable">f</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#g:9"><span class="id" title="variable">g</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq:3"><span class="id" title="inductive">impure_eq</span></a> (<a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#e:7"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#f:8"><span class="id" title="variable">f</span></a>) (<a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#e:7"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#g:9"><span class="id" title="variable">g</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Infix</span> <a id="3a11ed8c906d9735bda12a19a6b157d4" class="idref" href="#3a11ed8c906d9735bda12a19a6b157d4"><span class="id" title="notation">&quot;</span></a>===" := <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> : <span class="id" title="var">impure_scope</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+The definition of <span class="inlinecode"><span class="id" title="var">impure_equiv</span></span> is very similar to <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#eq"><span class="id" title="inductive">eq</span></a></span>, with the exception
+    of the treatment of the continuation. There is no much effort to put into
+    proving this is indeed a proper equivalence. 
+</div>
+<div class="code">
+
+<br/>
+#[<span class="id" title="var">program</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="impure_Equivalence" class="idref" href="#impure_Equivalence"><span class="id" title="instance">impure_Equivalence</span></a> : @<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.RelationClasses.html#Equivalence"><span class="id" title="class">Equivalence</span></a> (<a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <span class="id" title="var">i</span> <span class="id" title="var">α</span>) <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> := {}.<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">p</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">p</span>; <span class="id" title="tactic">constructor</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">x</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">H</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> <span class="id" title="var">equ</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">equ</span>; <span class="id" title="tactic">constructor</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">x</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">H</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> <span class="id" title="var">r</span> <span class="id" title="var">pq</span> <span class="id" title="var">qr</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">revert</span> <span class="id" title="var">p</span> <span class="id" title="var">r</span> <span class="id" title="var">pq</span> <span class="id" title="var">qr</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">q</span>; <span class="id" title="tactic">intros</span> <span class="id" title="var">p</span> <span class="id" title="var">r</span> <span class="id" title="var">pq</span> <span class="id" title="var">qr</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">inversion</span> <span class="id" title="var">pq</span>; <span class="id" title="var">ssubst</span>; <span class="id" title="tactic">inversion</span> <span class="id" title="var">qr</span>; <span class="id" title="var">ssubst</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">constructor</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">inversion</span> <span class="id" title="var">pq</span>; <span class="id" title="var">ssubst</span>; <span class="id" title="tactic">inversion</span> <span class="id" title="var">qr</span>; <span class="id" title="var">ssubst</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">constructor</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">x</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">cbv</span> <span class="id" title="tactic">in</span> <span class="id" title="var">H</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">apply</span> <span class="id" title="var">H</span> <span class="id" title="keyword">with</span> (<span class="id" title="var">β</span> := <span class="id" title="var">x</span>).<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab23"></a><h2 class="section">Proper Instances</h2>
+
+</div>
+<div class="code">
+
+<br/>
+#[<span class="id" title="var">local</span>]<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">change_request_then</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="keyword">goal</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| |- (<a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> ?<span class="id" title="var">e</span> ?<span class="id" title="var">f</span> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#3a11ed8c906d9735bda12a19a6b157d4"><span class="id" title="notation">===</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> ?<span class="id" title="var">e</span> ?<span class="id" title="var">g</span>)%<span class="id" title="var">impure</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">R</span> := <span class="id" title="tactic">fresh</span> "R" <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">assert</span> (<span class="id" title="var">R</span>: <a class="idref" href="FreeSpec.Core.Init.html#function_eq"><span class="id" title="definition">function_eq</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> <span class="id" title="var">f</span> <span class="id" title="var">g</span>); [ <span class="id" title="tactic">intros</span> ?<span class="id" title="var">x</span> | <span class="id" title="tactic">rewrite</span> <span class="id" title="var">R</span>; <span class="id" title="tactic">clear</span> <span class="id" title="var">R</span> ]<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">local</span>]<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">change_impure_bind</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="keyword">goal</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| |- (<a class="idref" href="FreeSpec.Core.Impure.html#impure_bind"><span class="id" title="definition">impure_bind</span></a> ?<span class="id" title="var">e</span> ?<span class="id" title="var">f</span> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#3a11ed8c906d9735bda12a19a6b157d4"><span class="id" title="notation">===</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure_bind"><span class="id" title="definition">impure_bind</span></a> ?<span class="id" title="var">e</span> ?<span class="id" title="var">g</span>)%<span class="id" title="var">impure</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">R</span> := <span class="id" title="tactic">fresh</span> "R" <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">assert</span> (<span class="id" title="var">R</span>: <a class="idref" href="FreeSpec.Core.Init.html#function_eq"><span class="id" title="definition">function_eq</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> <span class="id" title="var">f</span> <span class="id" title="var">g</span>); [ <span class="id" title="tactic">intros</span> ?<span class="id" title="var">x</span> | <span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">R</span> ]<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">program</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="request_then_Proper" class="idref" href="#request_then_Proper"><span class="id" title="instance">request_then_Proper</span></a><br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#Proper"><span class="id" title="class">Proper</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#eq"><span class="id" title="inductive">eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="FreeSpec.Core.Init.html#function_eq"><span class="id" title="definition">function_eq</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a>) (@<a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> <span class="id" title="var">i</span> <span class="id" title="var">α</span> <span class="id" title="var">β</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">add_morphism_tactic</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">e</span> <span class="id" title="var">f</span> <span class="id" title="var">g</span> <span class="id" title="var">equ</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">constructor</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">y</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">specialize</span> (<span class="id" title="var">equ</span> <span class="id" title="var">y</span>).<br/>
+&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">equ</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">program</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="impure_bind_Proper" class="idref" href="#impure_bind_Proper"><span class="id" title="instance">impure_bind_Proper</span></a><br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#Proper"><span class="id" title="class">Proper</span></a> (<a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="FreeSpec.Core.Init.html#function_eq"><span class="id" title="definition">function_eq</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a>) (@<a class="idref" href="FreeSpec.Core.Impure.html#impure_bind"><span class="id" title="definition">impure_bind</span></a> <span class="id" title="var">i</span> <span class="id" title="var">α</span> <span class="id" title="var">β</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">add_morphism_tactic</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">x</span> <span class="id" title="var">y</span> <span class="id" title="var">equ1</span> <span class="id" title="var">f</span> <span class="id" title="var">g</span> <span class="id" title="var">equ2</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">equ1</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> (<span class="id" title="var">equ2</span> <span class="id" title="var">x</span>).<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">constructor</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">x</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">H</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Instance</span> <a id="impure_map_Proper" class="idref" href="#impure_map_Proper"><span class="id" title="instance">impure_map_Proper</span></a><br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#Proper"><span class="id" title="class">Proper</span></a> (<a class="idref" href="FreeSpec.Core.Init.html#function_eq"><span class="id" title="definition">function_eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#eq"><span class="id" title="inductive">eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a>) (@<a class="idref" href="FreeSpec.Core.Impure.html#impure_map"><span class="id" title="definition">impure_map</span></a> <span class="id" title="var">i</span> <span class="id" title="var">α</span> <span class="id" title="var">β</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">add_morphism_tactic</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">f</span> <span class="id" title="var">g</span> <span class="id" title="var">equf</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> <span class="id" title="var">equp</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="FreeSpec.Core.Impure.html#impure_map"><span class="id" title="definition">impure_map</span></a>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">rewrite</span> <span class="id" title="var">equp</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">change_impure_bind</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">equf</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">program</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="impure_apply_Proper" class="idref" href="#impure_apply_Proper"><span class="id" title="instance">impure_apply_Proper</span></a><br/>
+&nbsp;&nbsp;: <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#Proper"><span class="id" title="class">Proper</span></a> (<a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.Morphisms.html#8dc5652698a6e16f72dd37bd17d3b973"><span class="id" title="notation">==&gt;</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a>) (@<a class="idref" href="FreeSpec.Core.Impure.html#impure_apply"><span class="id" title="definition">impure_apply</span></a> <span class="id" title="var">i</span> <span class="id" title="var">α</span> <span class="id" title="var">β</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">add_morphism_tactic</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> <span class="id" title="var">equ1</span> <span class="id" title="var">r</span> <span class="id" title="var">s</span> <span class="id" title="var">equ2</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="FreeSpec.Core.Impure.html#impure_apply"><span class="id" title="definition">impure_apply</span></a>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">rewrite</span> <span class="id" title="var">equ1</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">change_impure_bind</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">equ2</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab24"></a><h1 class="section">Equations</h1>
+
+<div class="paragraph"> </div>
+
+ Monadic laws as defined in <span class="inlinecode"><span class="id" title="var">ExtLib.Structures.MonadLaws</span></span> an related are
+    expressed against <span class="inlinecode"><a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#eq"><span class="id" title="inductive">eq</span></a></span>, which is too strong in the general case, and in
+    <span class="inlinecode"><a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a></span>’s case in particular. We could prove them using the functional
+    extensionality axiom, but we’d rather provide an alternative implementaiton
+    of these laws defined against <span class="inlinecode"><a class="idref" href="FreeSpec.Core.ImpureFacts.html#impure_eq"><span class="id" title="inductive">impure_eq</span></a></span> instead. 
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="impure_bind_local" class="idref" href="#impure_bind_local"><span class="id" title="lemma">impure_bind_local</span></a> {<a id="i:25" class="idref" href="#i:25"><span class="id" title="binder">i</span></a> <a id="1add768299a84c22e7ea1785eec38322" class="idref" href="#1add768299a84c22e7ea1785eec38322"><span class="id" title="binder">α</span></a>} (<a id="p:27" class="idref" href="#p:27"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#i:25"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#1add768299a84c22e7ea1785eec38322"><span class="id" title="variable">α</span></a>)<br/>
+&nbsp;&nbsp;: (<a class="idref" href="FreeSpec.Core.Impure.html#impure_bind"><span class="id" title="definition">impure_bind</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#p:27"><span class="id" title="variable">p</span></a> (<span class="id" title="keyword">fun</span> <a id="x:28" class="idref" href="#x:28"><span class="id" title="binder">x</span></a> ⇒ <a class="idref" href="FreeSpec.Core.Impure.html#local"><span class="id" title="constructor">local</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#x:28"><span class="id" title="variable">x</span></a>) <a class="idref" href="FreeSpec.Core.ImpureFacts.html#3a11ed8c906d9735bda12a19a6b157d4"><span class="id" title="notation">===</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#p:27"><span class="id" title="variable">p</span></a>)%<span class="id" title="var">impure</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">p</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;+ <span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">change_request_then</span>; [| <span class="id" title="tactic">reflexivity</span>].<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> <span class="id" title="var">H</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="impure_bind_assoc" class="idref" href="#impure_bind_assoc"><span class="id" title="lemma">impure_bind_assoc</span></a> {<a id="i:29" class="idref" href="#i:29"><span class="id" title="binder">i</span></a> <a id="806dc0ad812820058ccb331ed12f095d" class="idref" href="#806dc0ad812820058ccb331ed12f095d"><span class="id" title="binder">α</span></a> <a id="293fed95825bf005dfd9bbe138baa3be" class="idref" href="#293fed95825bf005dfd9bbe138baa3be"><span class="id" title="binder">β</span></a> <a id="9c56f09a432551d115c848ce37b6c33f" class="idref" href="#9c56f09a432551d115c848ce37b6c33f"><span class="id" title="binder">δ</span></a>}<br/>
+&nbsp;&nbsp;(<a id="p:33" class="idref" href="#p:33"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#i:29"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#806dc0ad812820058ccb331ed12f095d"><span class="id" title="variable">α</span></a>) (<a id="f:34" class="idref" href="#f:34"><span class="id" title="binder">f</span></a> : <a class="idref" href="FreeSpec.Core.ImpureFacts.html#806dc0ad812820058ccb331ed12f095d"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#i:29"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#293fed95825bf005dfd9bbe138baa3be"><span class="id" title="variable">β</span></a>) (<a id="g:35" class="idref" href="#g:35"><span class="id" title="binder">g</span></a> : <a class="idref" href="FreeSpec.Core.ImpureFacts.html#293fed95825bf005dfd9bbe138baa3be"><span class="id" title="variable">β</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#i:29"><span class="id" title="variable">i</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#9c56f09a432551d115c848ce37b6c33f"><span class="id" title="variable">δ</span></a>)<br/>
+&nbsp;&nbsp;: (<a class="idref" href="FreeSpec.Core.Impure.html#impure_bind"><span class="id" title="definition">impure_bind</span></a> (<a class="idref" href="FreeSpec.Core.Impure.html#impure_bind"><span class="id" title="definition">impure_bind</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#p:33"><span class="id" title="variable">p</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#f:34"><span class="id" title="variable">f</span></a>) <a class="idref" href="FreeSpec.Core.ImpureFacts.html#g:35"><span class="id" title="variable">g</span></a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="FreeSpec.Core.ImpureFacts.html#3a11ed8c906d9735bda12a19a6b157d4"><span class="id" title="notation">===</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure_bind"><span class="id" title="definition">impure_bind</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#p:33"><span class="id" title="variable">p</span></a> (<span class="id" title="keyword">fun</span> <a id="x:36" class="idref" href="#x:36"><span class="id" title="binder">x</span></a> ⇒ <a class="idref" href="FreeSpec.Core.Impure.html#impure_bind"><span class="id" title="definition">impure_bind</span></a> (<a class="idref" href="FreeSpec.Core.ImpureFacts.html#f:34"><span class="id" title="variable">f</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#x:36"><span class="id" title="variable">x</span></a>) <a class="idref" href="FreeSpec.Core.ImpureFacts.html#g:35"><span class="id" title="variable">g</span></a>))%<span class="id" title="var">impure</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">p</span>; [<span class="id" title="tactic">reflexivity</span> |].<br/>
+&nbsp;&nbsp;<span class="id" title="var">cbn</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">change_request_then</span>; <span class="id" title="tactic">auto</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">reflexivity</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="bind_request_then_assoc" class="idref" href="#bind_request_then_assoc"><span class="id" title="lemma">bind_request_then_assoc</span></a> `(<a id="e:39" class="idref" href="#e:39"><span class="id" title="binder">e</span></a> : <a id="i:37" class="idref" href="#i:37"><span class="id" title="binder">i</span></a> <a id="a:38" class="idref" href="#a:38"><span class="id" title="binder">a</span></a>) `(<a id="f:41" class="idref" href="#f:41"><span class="id" title="binder">f</span></a> : <a class="idref" href="FreeSpec.Core.ImpureFacts.html#a:38"><span class="id" title="variable">a</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#i:37"><span class="id" title="variable">i</span></a> <a id="b:40" class="idref" href="#b:40"><span class="id" title="binder">b</span></a>) `(<a id="g:43" class="idref" href="#g:43"><span class="id" title="binder">g</span></a> : <a class="idref" href="FreeSpec.Core.ImpureFacts.html#b:40"><span class="id" title="variable">b</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#impure"><span class="id" title="inductive">impure</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#i:37"><span class="id" title="variable">i</span></a> <a id="c:42" class="idref" href="#c:42"><span class="id" title="binder">c</span></a>)<br/>
+&nbsp;&nbsp;: <a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#e:39"><span class="id" title="variable">e</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#f:41"><span class="id" title="variable">f</span></a> <span class="id" title="notation">&gt;&gt;=</span> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#g:43"><span class="id" title="variable">g</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="FreeSpec.Core.Impure.html#request_then"><span class="id" title="constructor">request_then</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#e:39"><span class="id" title="variable">e</span></a> (<span class="id" title="keyword">fun</span> <a id="x:44" class="idref" href="#x:44"><span class="id" title="binder">x</span></a> ⇒ <a class="idref" href="FreeSpec.Core.ImpureFacts.html#f:41"><span class="id" title="variable">f</span></a> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#x:44"><span class="id" title="variable">x</span></a> <span class="id" title="notation">&gt;&gt;=</span> <a class="idref" href="FreeSpec.Core.ImpureFacts.html#g:43"><span class="id" title="variable">g</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">reflexivity</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

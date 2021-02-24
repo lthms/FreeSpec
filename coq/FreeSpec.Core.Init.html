@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>FreeSpec.Core.Init</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FreeSpec.Core.Init</h1>
+
+<div class="code">
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab1"></a><h1 class="section">Utils Functions</h1>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="when" class="idref" href="#when"><span class="id" title="definition">when</span></a> {<a id="m:1" class="idref" href="#m:1"><span class="id" title="binder">m</span></a> : <span class="id" title="keyword">Type</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="keyword">Type</span>} `{<a id="H:2" class="idref" href="#H:2"><span class="id" title="binder">Monad</span></a> <a id="H:2" class="idref" href="#H:2"><span class="id" title="binder">m</span></a>} (<a id="cond:3" class="idref" href="#cond:3"><span class="id" title="binder">cond</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a>) `(<a id="p:5" class="idref" href="#p:5"><span class="id" title="binder">p</span></a> : <a class="idref" href="FreeSpec.Core.Init.html#m:1"><span class="id" title="variable">m</span></a> <a id="a:4" class="idref" href="#a:4"><span class="id" title="binder">a</span></a>) : <a class="idref" href="FreeSpec.Core.Init.html#m:1"><span class="id" title="variable">m</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#unit"><span class="id" title="inductive">unit</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">if</span> <a class="idref" href="FreeSpec.Core.Init.html#cond:3"><span class="id" title="variable">cond</span></a> <span class="id" title="keyword">then</span> (<a class="idref" href="FreeSpec.Core.Init.html#p:5"><span class="id" title="variable">p</span></a><span class="id" title="notation">;;</span> <span class="id" title="method">pure</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#tt"><span class="id" title="constructor">tt</span></a>) <span class="id" title="keyword">else</span> <span class="id" title="method">pure</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Datatypes.html#tt"><span class="id" title="constructor">tt</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab2"></a><h1 class="section">Tactics</h1>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Logic.Eqdep.html#"><span class="id" title="library">Eqdep</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Ltac</span> <span class="id" title="var">ssubst</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">lazymatch</span> <span class="id" title="keyword">goal</span> <span class="id" title="keyword">with</span><br/>
+| [ <span class="id" title="var">H</span> : <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Specif.html#existT"><span class="id" title="constructor">existT</span></a> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Specif.html#existT"><span class="id" title="constructor">existT</span></a> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> |- <span class="id" title="var">_</span> ]<br/>
+&nbsp;&nbsp;⇒ <span class="id" title="tactic">apply</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Logic.Eqdep.html#EqdepTheory.inj_pair2"><span class="id" title="lemma">Eqdep.EqdepTheory.inj_pair2</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">H</span>; <span class="id" title="var">ssubst</span><br/>
+| [ |- <span class="id" title="var">_</span>] ⇒ <span class="id" title="tactic">subst</span><br/>
+<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab3"></a><h1 class="section">Notations</h1>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="var">Declare</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">freespec_scope</span>.<br/>
+<span class="id" title="keyword">Delimit</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">freespec_scope</span> <span class="id" title="keyword">with</span> <span class="id" title="var">freespec</span>.<br/>
+
+<br/>
+<span class="id" title="var">Reserved</span> <span class="id" title="keyword">Infix</span> "===" (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 70, <span class="id" title="keyword">no</span> <span class="id" title="keyword">associativity</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <a id="f7397da22bdab7f77b06c5d98764e7b9" class="idref" href="#f7397da22bdab7f77b06c5d98764e7b9"><span class="id" title="notation">&quot;</span></a>m '~&gt;' n" :=<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">∀</span> (<a id="3f6f70edefebe2321c2c56ab52ea1406" class="idref" href="#3f6f70edefebe2321c2c56ab52ea1406"><span class="id" title="binder">α</span></a> : <span class="id" title="keyword">Type</span>), <span class="id" title="var">m</span> <a class="idref" href="FreeSpec.Core.Init.html#3f6f70edefebe2321c2c56ab52ea1406"><span class="id" title="variable">α</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="var">n</span> <a class="idref" href="FreeSpec.Core.Init.html#3f6f70edefebe2321c2c56ab52ea1406"><span class="id" title="variable">α</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 80, <span class="id" title="keyword">no</span> <span class="id" title="keyword">associativity</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">type_scope</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab4"></a><h1 class="section">Generalizable Functions Equality</h1>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="function_eq" class="idref" href="#function_eq"><span class="id" title="definition">function_eq</span></a> {<a id="a:7" class="idref" href="#a:7"><span class="id" title="binder">a</span></a> <a id="b:8" class="idref" href="#b:8"><span class="id" title="binder">b</span></a>} (<a id="r:9" class="idref" href="#r:9"><span class="id" title="binder">r</span></a> : <a class="idref" href="FreeSpec.Core.Init.html#b:8"><span class="id" title="variable">b</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Init.html#b:8"><span class="id" title="variable">b</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <span class="id" title="keyword">Prop</span>) (<a id="f:10" class="idref" href="#f:10"><span class="id" title="binder">f</span></a> <a id="g:11" class="idref" href="#g:11"><span class="id" title="binder">g</span></a> : <a class="idref" href="FreeSpec.Core.Init.html#a:7"><span class="id" title="variable">a</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Init.html#b:8"><span class="id" title="variable">b</span></a>) : <span class="id" title="keyword">Prop</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">∀</span> (<a id="x:12" class="idref" href="#x:12"><span class="id" title="binder">x</span></a> : <a class="idref" href="FreeSpec.Core.Init.html#a:7"><span class="id" title="variable">a</span></a>), <a class="idref" href="FreeSpec.Core.Init.html#r:9"><span class="id" title="variable">r</span></a> (<a class="idref" href="FreeSpec.Core.Init.html#f:10"><span class="id" title="variable">f</span></a> <a class="idref" href="FreeSpec.Core.Init.html#x:12"><span class="id" title="variable">x</span></a>) (<a class="idref" href="FreeSpec.Core.Init.html#g:11"><span class="id" title="variable">g</span></a> <a class="idref" href="FreeSpec.Core.Init.html#x:12"><span class="id" title="variable">x</span></a>).<br/>
+
+<br/>
+#[<span class="id" title="var">program</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="function_eq_Equivalence" class="idref" href="#function_eq_Equivalence"><span class="id" title="instance">function_eq_Equivalence</span></a> `(<a id="H:15" class="idref" href="#H:15"><span class="id" title="binder">Equivalence</span></a> <a id="H:15" class="idref" href="#H:15"><span class="id" title="binder">b</span></a> <a id="H:15" class="idref" href="#H:15"><span class="id" title="binder">r</span></a>)<br/>
+&nbsp;&nbsp;: @<a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Classes.RelationClasses.html#Equivalence"><span class="id" title="class">Equivalence</span></a> (<span class="id" title="var">a</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.12.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">→</span></a> <a class="idref" href="FreeSpec.Core.Init.html#b:13"><span class="id" title="variable">b</span></a>) (<a class="idref" href="FreeSpec.Core.Init.html#function_eq"><span class="id" title="definition">function_eq</span></a> <a class="idref" href="FreeSpec.Core.Init.html#r:14"><span class="id" title="variable">r</span></a>).<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">intros</span> <span class="id" title="var">f</span> <span class="id" title="var">x</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">f</span> <span class="id" title="var">g</span> <span class="id" title="var">equ</span> <span class="id" title="var">x</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">symmetry</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <span class="id" title="var">equ</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Next</span> <span class="id" title="keyword">Obligation</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">f</span> <span class="id" title="var">g</span> <span class="id" title="var">h</span> <span class="id" title="var">equ1</span> <span class="id" title="var">equ2</span> <span class="id" title="var">x</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">transitivity</span> (<span class="id" title="var">g</span> <span class="id" title="var">x</span>); [ <span class="id" title="tactic">apply</span> <span class="id" title="var">equ1</span> | <span class="id" title="tactic">apply</span> <span class="id" title="var">equ2</span> ].<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab5"></a><h1 class="section">Hint Databases</h1>
+
+</div>
+<div class="code">
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="var">Create</span> <span class="id" title="var">HintDb</span> <span class="id" title="var">freespec</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
