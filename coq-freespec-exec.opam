@@ -41,5 +41,5 @@ authors: [
 ]
 
 url {
-  src: "git+https://github.com/ANSSI-FR/FreeSpec.git#master"
+  src: "git+https://github.com/lthms/FreeSpec.git#master"
 }

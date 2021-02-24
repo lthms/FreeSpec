@@ -7,7 +7,7 @@ contributions.
 ## Getting Involved
 
 The autoritative repository of FreeSpec is hosted on
-[GitHub](https://github.com/ANSSI-FR/FreeSpec). If you have a
+[GitHub](https://github.com/lthms/FreeSpec). If you have a
 question, if you have found a bug or if there is a feature you would
 want to see added to FreeSpec (and even implement it yourself), feel
 free to open an issue. It is always recommended to discuss a change

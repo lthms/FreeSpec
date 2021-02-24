@@ -38,7 +38,7 @@ Besides, we provide two helper scripts:
 - `build-docs.sh` builds the OCaml and Coq source documentation
 
 Said documentations are published
-[here](https://ANSSI-FR.github.io/FreeSpec).
+[here](https://lthms.github.io/FreeSpec).
 
 In addition, FreeSpec has been the subject of two academic
 publications.
