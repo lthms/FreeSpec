@@ -38,7 +38,7 @@ Definition function_eq {a b} (r : b -> b -> Prop) (f g : a -> b) : Prop :=
   forall (x : a), r (f x) (g x).
 
 #[program]
-Instance function_eq_Equivalence `(Equivalence b r)
+Instance function_eq_Equivalence a `(Equivalence b r)
   : @Equivalence (a -> b) (function_eq r).
 
 Next Obligation.
@@ -58,5 +58,4 @@ Qed.
 
 (** * Hint Databases *)
 
-#[global]
-Create HintDb freespec.
+#[global] Create HintDb freespec.

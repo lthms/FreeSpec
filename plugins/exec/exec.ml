@@ -18,10 +18,14 @@ let reduce_all env evm trm =
   EConstr.to_constr evm (Reductionops.nf_all env evm (EConstr.of_constr trm))
 
 let reduce_strategy =
-  bool_attribute ~name:"Reduce Strategy" ~on:"nf" ~off:"whd" >>=
-    function
-    | Some true -> return reduce_all
-    | _ -> return reduce_head
+  let name = "Reduce Strategy" in
+  qualify_attribute "reduce" @@
+    attribute_of_list [
+        "nf", single_key_parser ~name ~key:"nf" reduce_all
+      ; "whd", single_key_parser ~name ~key:"nf" reduce_head
+      ] >>= function
+  | None -> return reduce_head
+  | Some x -> return x
 
 let exec_request env evm instr_trm func_trm =
   let rec find_primitive instr_trm =

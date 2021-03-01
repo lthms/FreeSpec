@@ -297,7 +297,7 @@ Ltac find_may_provide :=
   (eapply iplus_left_MayProvide; find_may_provide) +
   (eapply iplus_right_MayProvide; find_may_provide).
 
-Hint Extern 1 (MayProvide (iplus _ _) _) => find_may_provide : typeclass_instances.
+#[global] Hint Extern 1 (MayProvide (iplus _ _) _) => find_may_provide : typeclass_instances.
 
 #[program]
 Instance refl_Distinguish (i j : interface)

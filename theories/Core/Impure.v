@@ -59,7 +59,7 @@ Fixpoint impure_bind {i α β} (p : impure i α) (f : α -> impure i β) : impur
 Definition impure_map {i α β} (f : α -> β) (p : impure i α) : impure i β :=
   impure_bind p (fun x => local (f x)).
 
-Instance impure_Functor : Functor (impure i) :=
+Instance impure_Functor i : Functor (impure i) :=
   { fmap := @impure_map i
   }.
 
@@ -68,7 +68,7 @@ Definition impure_pure {i α} (x : α) : impure i α := local x.
 Definition impure_apply {i α β} (p : impure i (α -> β)) (q : impure i α) : impure i β :=
   impure_bind p (fun f => fmap f q).
 
-Instance impure_Applicative : Applicative (impure i) :=
+Instance impure_Applicative i : Applicative (impure i) :=
   { pure := @impure_pure i
   ; ap := @impure_apply i
   }.

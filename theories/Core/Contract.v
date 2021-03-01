@@ -63,12 +63,12 @@ Definition const_witness {i} :=
 Inductive no_caller_obligation {i Ω} (ω : Ω) (α : Type) (e : i α) : Prop :=
 | mk_no_caller_obligation : no_caller_obligation ω α e.
 
-Hint Constructors no_caller_obligation : freespec.
+#[global] Hint Constructors no_caller_obligation : freespec.
 
 Inductive no_callee_obligation {i Ω} (ω : Ω) (α : Type) (e : i α) (x : α) : Prop :=
 | mk_no_callee_obligation : no_callee_obligation ω α e x.
 
-Hint Constructors no_callee_obligation : freespec.
+#[global] Hint Constructors no_callee_obligation : freespec.
 
 Definition no_contract (i : interface) : contract i unit :=
   {| witness_update := const_witness

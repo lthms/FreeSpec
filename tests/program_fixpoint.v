@@ -30,5 +30,5 @@ Fail Timeout 1 Exec (enum eval [true; true; false]).
     the default behavior, but on the contrary take forever to compute with this
     option enabled. *)
 
-#[nf]
+#[reduce(nf)]
 Exec (enum eval [true; true; false]).

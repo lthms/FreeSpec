@@ -142,7 +142,7 @@ Inductive doors_o_caller : Ω -> forall (a : Type), DOORS a -> Prop :=
 | req_toggle (d : door) (ω : Ω) (H : sel d ω = false -> sel (co d) ω = false)
   : doors_o_caller ω unit (Toggle d).
 
-Hint Constructors doors_o_caller : airlock.
+#[global] Hint Constructors doors_o_caller : airlock.
 
 (** *** Promises *)
 
@@ -160,7 +160,7 @@ Inductive doors_o_callee : Ω -> forall (a : Type), DOORS a -> a -> Prop :=
 | doors_o_callee_toggle (d : door) (ω : Ω) (x : unit)
   : doors_o_callee ω unit (Toggle d) x.
 
-Hint Constructors doors_o_callee : airlock.
+#[global] Hint Constructors doors_o_callee : airlock.
 
 Definition doors_contract : contract DOORS Ω :=
   make_contract step doors_o_caller doors_o_callee.
@@ -189,7 +189,7 @@ Proof.
   now rewrite H3.
 Qed.
 
-Hint Resolve close_door_respectful : airlock.
+#[global] Hint Resolve close_door_respectful : airlock.
 
 Lemma open_door_respectful `{Provide ix DOORS} (ω : Ω)
     (d : door) (safe : sel (co d) ω = false)
@@ -201,7 +201,7 @@ Proof.
   now rewrite safe.
 Qed.
 
-Hint Resolve open_door_respectful : airlock.
+#[global] Hint Resolve open_door_respectful : airlock.
 
 Lemma close_door_run `{Provide ix DOORS} (ω : Ω) (d : door) (ω' : Ω) (x : unit)
   (run : post (to_hoare doors_contract (close_door d)) ω x ω')
@@ -215,7 +215,7 @@ Proof.
   + now inversion H1; ssubst.
 Qed.
 
-Hint Resolve close_door_run : airlock.
+#[global] Hint Resolve close_door_run : airlock.
 
 #[local] Opaque close_door.
 #[local] Opaque open_door.

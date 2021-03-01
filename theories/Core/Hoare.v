@@ -52,7 +52,7 @@ Definition hoare_apply {Σ α β} (hf : hoare Σ (α -> β)) (h : hoare Σ α)
   : hoare Σ β :=
   hoare_bind hf (fun f => hoare_map f h).
 
-Instance hoare_Applicative : Applicative (hoare Σ) :=
+Instance hoare_Applicative Σ : Applicative (hoare Σ) :=
   { ap := fun _ _ => hoare_apply
   ; pure := fun _ => hoare_pure
   }.

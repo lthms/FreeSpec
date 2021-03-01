@@ -101,7 +101,7 @@ Proof.
     lia.
 Qed.
 
-Hint Resolve repeat_dec_cpt_output : counter.
+#[local] Hint Resolve repeat_dec_cpt_output : counter.
 
 Lemma repeat_inc_cpt_output
    `(run : post (to_hoare counter_specs $ repeat x counter_inc) cpt r cpt')
@@ -116,7 +116,7 @@ Proof.
     lia.
 Qed.
 
-Hint Resolve repeat_inc_cpt_output : counter.
+#[local] Hint Resolve repeat_inc_cpt_output : counter.
 
 Lemma get_cpt_output (cpt x cpt' : nat)
     (run : post (to_hoare counter_specs $ counter_get) cpt x cpt')
@@ -126,7 +126,7 @@ Proof.
   now unroll_post run.
 Qed.
 
-Hint Resolve get_cpt_output : counter.
+#[local] Hint Resolve get_cpt_output : counter.
 
 #[local]
 Opaque counter_get.

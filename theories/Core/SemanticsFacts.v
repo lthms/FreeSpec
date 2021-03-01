@@ -48,7 +48,7 @@ Proof.
     apply compliant_semantics_rec.
 Qed.
 
-Hint Resolve store_complies_to_store_specs : freespec.
+#[global] Hint Resolve store_complies_to_store_specs : freespec.
 
 Lemma compliant_semantics_caller_obligation_callee_obligation `{MayProvide ix i}
    `(c : contract i Ω) (ω : Ω)
@@ -61,7 +61,7 @@ Proof.
   now apply o_callee.
 Qed.
 
-Hint Resolve compliant_semantics_caller_obligation_callee_obligation : freespec.
+#[global] Hint Resolve compliant_semantics_caller_obligation_callee_obligation : freespec.
 
 Lemma compliant_semantics_caller_obligation_compliant `{MayProvide ix i} {Ω α} (c : contract i Ω) (ω : Ω)
   (e : ix α) (o_caller : gen_caller_obligation c ω e)
@@ -73,7 +73,7 @@ Proof.
   now apply next.
 Qed.
 
-Hint Resolve compliant_semantics_caller_obligation_compliant : freespec.
+#[global] Hint Resolve compliant_semantics_caller_obligation_compliant : freespec.
 
 Lemma no_contract_compliant_semantics `{MayProvide ix i} (sem : semantics ix) (u : unit)
   : compliant_semantics (no_contract i) u sem.
@@ -90,7 +90,7 @@ Proof.
     destruct (proj_p e); [ apply no_contract_compliant_semantics | auto with freespec ].
 Qed.
 
-Hint Resolve no_contract_compliant_semantics : freespec.
+#[global] Hint Resolve no_contract_compliant_semantics : freespec.
 
 (** * Equivalences *)
 
@@ -151,7 +151,8 @@ Definition run_effect_eq `(x : α * semantics i) (y : α * semantics i) : Prop :
   fst x = fst y /\ (snd x === snd y)%semantics.
 
 #[program]
-Instance run_effect_Equivalence : @Equivalence (a * semantics i) run_effect_eq.
+Instance run_effect_Equivalence a i
+  : @Equivalence (a * semantics i) run_effect_eq.
 
 Next Obligation.
   intros [x next]; now split.
@@ -169,7 +170,8 @@ Qed.
 (** ** Proper Instances *)
 
 #[program]
-Instance fst_Proper : Proper (run_effect_eq ==> eq) (@fst α (semantics i)).
+Instance fst_Proper i α
+  : Proper (run_effect_eq ==> eq) (@fst α (semantics i)).
 
 Next Obligation.
   add_morphism_tactic.
@@ -178,7 +180,8 @@ Next Obligation.
 Qed.
 
 #[program]
-Instance snd_Proper : Proper (run_effect_eq ==> semantics_eq) (@snd α (semantics i)).
+Instance snd_Proper i α
+  : Proper (run_effect_eq ==> semantics_eq) (@snd α (semantics i)).
 
 Next Obligation.
   add_morphism_tactic.
@@ -187,7 +190,8 @@ Next Obligation.
 Qed.
 
 #[program]
-Instance prod_Proper : Proper (eq ==> semantics_eq ==> run_effect_eq) (@pair a (semantics i)).
+Instance prod_Proper i α
+  : Proper (eq ==> semantics_eq ==> run_effect_eq) (@pair α (semantics i)).
 
 Next Obligation.
   add_morphism_tactic.
@@ -197,7 +201,7 @@ Next Obligation.
   + apply equ.
 Qed.
 
-Instance run_effect_Proper
+Instance run_effect_Proper i α
   : Proper (semantics_eq ==> eq ==> run_effect_eq) (@run_effect i α).
 
 Proof.
@@ -211,7 +215,8 @@ Proof.
 Qed.
 
 #[program]
-Instance eval_effect_Proper : Proper (semantics_eq ==> eq ==> eq) (@eval_effect i α).
+Instance eval_effect_Proper i α
+  : Proper (semantics_eq ==> eq ==> eq) (@eval_effect i α).
 
 Next Obligation.
   add_morphism_tactic.
@@ -221,7 +226,8 @@ Next Obligation.
 Qed.
 
 #[program]
-Instance exec_effect_Proper : Proper (semantics_eq ==> eq ==> semantics_eq) (@exec_effect i α).
+Instance exec_effect_Proper i α
+  : Proper (semantics_eq ==> eq ==> semantics_eq) (@exec_effect i α).
 
 Next Obligation.
   add_morphism_tactic.

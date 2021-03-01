@@ -42,7 +42,7 @@ Infix "===" := impure_eq : impure_scope.
     proving this is indeed a proper equivalence. *)
 
 #[program]
-Instance impure_Equivalence : @Equivalence (impure i α) impure_eq := {}.
+Instance impure_Equivalence i α : @Equivalence (impure i α) impure_eq := {}.
 
 Next Obligation.
   intros p.
@@ -90,7 +90,7 @@ Ltac change_impure_bind :=
   end.
 
 #[program]
-Instance request_then_Proper
+Instance request_then_Proper i α β
   : Proper (eq ==> function_eq impure_eq ==> impure_eq) (@request_then i α β).
 
 Next Obligation.
@@ -103,7 +103,7 @@ Next Obligation.
 Qed.
 
 #[program]
-Instance impure_bind_Proper
+Instance impure_bind_Proper i α β
   : Proper (impure_eq ==> function_eq impure_eq ==> impure_eq) (@impure_bind i α β).
 
 Next Obligation.
@@ -118,7 +118,7 @@ Next Obligation.
     apply H.
 Qed.
 
-Instance impure_map_Proper
+Instance impure_map_Proper i α β
   : Proper (function_eq eq ==> impure_eq ==> impure_eq) (@impure_map i α β).
 
 Proof.
@@ -131,7 +131,7 @@ Proof.
 Qed.
 
 #[program]
-Instance impure_apply_Proper
+Instance impure_apply_Proper i α β
   : Proper (impure_eq ==> impure_eq ==> impure_eq) (@impure_apply i α β).
 
 Next Obligation.

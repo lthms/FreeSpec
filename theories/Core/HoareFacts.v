@@ -16,7 +16,7 @@ Inductive hoare_eq {Σ α} (h1 h2 : hoare Σ α) : Prop :=
   : hoare_eq h1 h2.
 
 #[program]
-Instance hoare_Equivalence : @Equivalence (hoare Σ α) hoare_eq.
+Instance hoare_Equivalence Σ α : @Equivalence (hoare Σ α) hoare_eq.
 
 Next Obligation.
   easy.
@@ -41,7 +41,7 @@ Qed.
 (** * Proper Instances *)
 
 #[program]
-Instance pre_Proper : Proper (hoare_eq ==> eq ==> iff) (@pre Σ α).
+Instance pre_Proper Σ α : Proper (hoare_eq ==> eq ==> iff) (@pre Σ α).
 
 Next Obligation.
   add_morphism_tactic.
@@ -50,7 +50,7 @@ Next Obligation.
 Qed.
 
 #[program]
-Instance post_Proper : Proper (hoare_eq ==> eq ==> eq ==> eq ==> iff) (@post Σ α).
+Instance post_Proper Σ α : Proper (hoare_eq ==> eq ==> eq ==> eq ==> iff) (@post Σ α).
 
 Next Obligation.
   add_morphism_tactic.
@@ -59,7 +59,7 @@ Next Obligation.
 Qed.
 
 #[program]
-Instance to_hoare_Proper
+Instance to_hoare_Proper ix i Ω c α MP
   : Proper (impure_eq ==> hoare_eq) (@to_hoare ix i MP Ω c α).
 
 Next Obligation.
@@ -94,7 +94,7 @@ Proof.
   now destruct proj_p.
 Qed.
 
-Hint Resolve to_hoare_step : freespec.
+#[global] Hint Resolve to_hoare_step : freespec.
 
 Lemma to_hoare_pre_bind_assoc `{MayProvide ix i} `(c : contract i Ω)
    `(p : impure ix a) `(Hp : pre (to_hoare c p) ω)
@@ -132,7 +132,7 @@ Proof.
            exact Hpost.
 Qed.
 
-Hint Resolve to_hoare_pre_bind_assoc : freespec.
+#[global] Hint Resolve to_hoare_pre_bind_assoc : freespec.
 
 Lemma to_hoare_post_bind_assoc `{MayProvide ix i} `(c : contract i Ω)
    `(p : impure ix a) `(f : a -> impure ix b)
@@ -153,7 +153,7 @@ Proof.
     now split.
 Qed.
 
-Hint Resolve to_hoare_post_bind_assoc : freespec.
+#[global] Hint Resolve to_hoare_post_bind_assoc : freespec.
 
 Lemma to_hoare_contractprod `{Provide ix i, Provide ix j}
    `(ci : contract i Ωi) `(cj : contract j Ωj)
@@ -179,4 +179,4 @@ Proof.
            now split.
 Qed.
 
-Hint Resolve to_hoare_contractprod : freespec.
+#[global] Hint Resolve to_hoare_contractprod : freespec.
