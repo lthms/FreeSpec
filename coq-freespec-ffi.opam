@@ -1,6 +1,6 @@
 opam-version: "2.0"
 maintainer: "Thomas Letan <lthms@soap.coffee>"
-version: "0.3"
+version: "dev"
 
 homepage: "https://github.com/lthms/FreeSpec"
 dev-repo: "git+https://github.com/lthms/FreeSpec.git"
@@ -24,7 +24,7 @@ depends: [
   "ocaml"
   "dune" {>= "2.5"}
   "coq" {>= "8.12" & < "8.14~" | = "dev"}
-  "coq-freespec-core" {= "0.3"}
+  "coq-freespec-core" {= "dev"}
   "coq-coqffi" {= "1.0.0~beta5"}
   "coq-simple-io" {>= "1.0" & < "2.0" | = "dev"}
 ]
