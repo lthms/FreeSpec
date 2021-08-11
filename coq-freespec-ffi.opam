@@ -25,7 +25,7 @@ depends: [
   "dune" {>= "2.5"}
   "coq" {>= "8.12" & < "8.14~" | = "dev"}
   "coq-freespec-core" {= "dev"}
-  "coq-coqffi" {= "dev"}
+  "coq-coqffi" {= "dev" | >= "1.0~"}
   "coq-simple-io" {>= "1.0" & < "2.0" | = "dev"}
 ]
 
