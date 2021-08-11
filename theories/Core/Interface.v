@@ -194,6 +194,74 @@ Instance Make_StrictProvide5 (ix i1 i2 i3 i4 i5 : interface)
      ! Distinguish ix i5 i3, ! Distinguish ix i5 i4)
   : StrictProvide5 ix i1 i2 i3 i4 i5.
 
+Class StrictProvide6 (ix i1 i2 i3 i4 i5 i6 : interface)
+   `{Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4, Provide ix i5,
+     Provide ix i6, ! Distinguish ix i1 i2, ! Distinguish ix i1 i3,
+     ! Distinguish ix i1 i4, ! Distinguish ix i1 i5, ! Distinguish ix i1 i6,
+     ! Distinguish ix i2 i1, ! Distinguish ix i2 i3, ! Distinguish ix i2 i4,
+     ! Distinguish ix i2 i5, ! Distinguish ix i2 i6, ! Distinguish ix i3 i1,
+     ! Distinguish ix i3 i2, ! Distinguish ix i3 i4, ! Distinguish ix i3 i5,
+     ! Distinguish ix i3 i6, ! Distinguish ix i4 i1, ! Distinguish ix i4 i2,
+     ! Distinguish ix i4 i3, ! Distinguish ix i4 i5, ! Distinguish ix i4 i6,
+     ! Distinguish ix i5 i1, ! Distinguish ix i5 i2, ! Distinguish ix i5 i3,
+     ! Distinguish ix i5 i4, ! Distinguish ix i5 i6, ! Distinguish ix i6 i1,
+     ! Distinguish ix i6 i2, ! Distinguish ix i6 i3, ! Distinguish ix i6 i4,
+     ! Distinguish ix i6 i5}.
+
+#[program]
+Instance Make_StrictProvide6 (ix i1 i2 i3 i4 i5 i6 : interface)
+   `(Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4, Provide ix i5,
+     Provide ix i6, ! Distinguish ix i1 i2, ! Distinguish ix i1 i3,
+     ! Distinguish ix i1 i4, ! Distinguish ix i1 i5, ! Distinguish ix i1 i6,
+     ! Distinguish ix i2 i1, ! Distinguish ix i2 i3, ! Distinguish ix i2 i4,
+     ! Distinguish ix i2 i5, ! Distinguish ix i2 i6, ! Distinguish ix i3 i1,
+     ! Distinguish ix i3 i2, ! Distinguish ix i3 i4, ! Distinguish ix i3 i5,
+     ! Distinguish ix i3 i6, ! Distinguish ix i4 i1, ! Distinguish ix i4 i2,
+     ! Distinguish ix i4 i3, ! Distinguish ix i4 i5, ! Distinguish ix i4 i6,
+     ! Distinguish ix i5 i1, ! Distinguish ix i5 i2, ! Distinguish ix i5 i3,
+     ! Distinguish ix i5 i4, ! Distinguish ix i5 i6, ! Distinguish ix i6 i1,
+     ! Distinguish ix i6 i2, ! Distinguish ix i6 i3, ! Distinguish ix i6 i4,
+     ! Distinguish ix i6 i5)
+  : StrictProvide6 ix i1 i2 i3 i4 i5 i6.
+
+Class StrictProvide7 (ix i1 i2 i3 i4 i5 i6 i7 : interface)
+   `{Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4, Provide ix i5,
+     Provide ix i6, Provide ix i7, ! Distinguish ix i1 i2, ! Distinguish ix i1 i3,
+     ! Distinguish ix i1 i4, ! Distinguish ix i1 i5, ! Distinguish ix i1 i6,
+     ! Distinguish ix i1 i7, ! Distinguish ix i2 i1, ! Distinguish ix i2 i3,
+     ! Distinguish ix i2 i4, ! Distinguish ix i2 i5, ! Distinguish ix i2 i6,
+     ! Distinguish ix i2 i7, ! Distinguish ix i3 i1, ! Distinguish ix i3 i2,
+     ! Distinguish ix i3 i4, ! Distinguish ix i3 i5, ! Distinguish ix i3 i6,
+     ! Distinguish ix i3 i7, ! Distinguish ix i4 i1, ! Distinguish ix i4 i2,
+     ! Distinguish ix i4 i3, ! Distinguish ix i4 i5, ! Distinguish ix i4 i6,
+     ! Distinguish ix i4 i7, ! Distinguish ix i5 i1, ! Distinguish ix i5 i2,
+     ! Distinguish ix i5 i3, ! Distinguish ix i5 i4, ! Distinguish ix i5 i6,
+     ! Distinguish ix i5 i7, ! Distinguish ix i6 i1, ! Distinguish ix i6 i2,
+     ! Distinguish ix i6 i3, ! Distinguish ix i6 i4, ! Distinguish ix i6 i5,
+     ! Distinguish ix i6 i7, ! Distinguish ix i7 i1, ! Distinguish ix i7 i2,
+     ! Distinguish ix i7 i3, ! Distinguish ix i7 i4, ! Distinguish ix i7 i5,
+     ! Distinguish ix i7 i6}.
+
+#[program]
+Instance Make_StrictProvide7 (ix i1 i2 i3 i4 i5 i6 i7 : interface)
+   `(Provide ix i1, Provide ix i2, Provide ix i3, Provide ix i4, Provide ix i5,
+     Provide ix i6, Provide ix i7, ! Distinguish ix i1 i2, ! Distinguish ix i1 i3,
+     ! Distinguish ix i1 i4, ! Distinguish ix i1 i5, ! Distinguish ix i1 i6,
+     ! Distinguish ix i1 i7, ! Distinguish ix i2 i1, ! Distinguish ix i2 i3,
+     ! Distinguish ix i2 i4, ! Distinguish ix i2 i5, ! Distinguish ix i2 i6,
+     ! Distinguish ix i2 i7, ! Distinguish ix i3 i1, ! Distinguish ix i3 i2,
+     ! Distinguish ix i3 i4, ! Distinguish ix i3 i5, ! Distinguish ix i3 i6,
+     ! Distinguish ix i3 i7, ! Distinguish ix i4 i1, ! Distinguish ix i4 i2,
+     ! Distinguish ix i4 i3, ! Distinguish ix i4 i5, ! Distinguish ix i4 i6,
+     ! Distinguish ix i4 i7, ! Distinguish ix i5 i1, ! Distinguish ix i5 i2,
+     ! Distinguish ix i5 i3, ! Distinguish ix i5 i4, ! Distinguish ix i5 i6,
+     ! Distinguish ix i5 i7, ! Distinguish ix i6 i1, ! Distinguish ix i6 i2,
+     ! Distinguish ix i6 i3, ! Distinguish ix i6 i4, ! Distinguish ix i6 i5,
+     ! Distinguish ix i6 i7, ! Distinguish ix i7 i1, ! Distinguish ix i7 i2,
+     ! Distinguish ix i7 i3, ! Distinguish ix i7 i4, ! Distinguish ix i7 i5,
+     ! Distinguish ix i7 i6)
+  : StrictProvide7 ix i1 i2 i3 i4 i5 i6 i7.
+
 (** * Composing Interfaces *)
 
 (** We provide the [iplus] operator to compose interface together. That is,

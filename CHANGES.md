@@ -1,3 +1,9 @@
+# Unreleased
+
+## `coq-freespec-core`
+
+- Add the `StrictProvide6` and `StrictProvide7` typeclasses
+
 # FreeSpec v0.3
 
 The third tagged release of FreeSpec (git tag `freespec.0.3`) is built
