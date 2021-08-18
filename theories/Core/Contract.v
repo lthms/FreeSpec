@@ -87,6 +87,118 @@ Definition forbid_specs (i : interface) : contract i unit :=
    ; callee_obligation := no_callee_obligation
    |}.
 
+(** * Contract Equivalence *)
+
+Definition contract_caller_equ `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (f : Ω1 -> Ω2)
+  : Prop :=
+  forall ω1 a (p : i a),
+    caller_obligation c1 ω1 p <-> caller_obligation c2 (f ω1) p.
+
+Definition contract_callee_equ `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (f : Ω1 -> Ω2)
+  : Prop :=
+  forall ω1 a (p : i a) x,
+    callee_obligation c1 ω1 p x <-> callee_obligation c2 (f ω1) p x.
+
+Definition contract_witness_equ `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (f : Ω1 -> Ω2)
+  : Prop :=
+  forall ω1 a (p : i a) x,
+    f (witness_update c1 ω1 p x) = witness_update c2 (f ω1) p x.
+
+Inductive contract_equ `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+  : Type :=
+| mk_contract_equ (f : Ω1 -> Ω2) (g : Ω2 -> Ω1)
+    (iso1 : forall x, f (g x) = x) (iso2 : forall x, g (f x) = x)
+    (caller_equ : contract_caller_equ c1 c2 f)
+    (callee_equ : contract_callee_equ c1 c2 f)
+    (witness_equ : contract_witness_equ c1 c2 f)
+  : contract_equ c1 c2.
+
+Definition contract_iso_lr `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (equ : contract_equ c1 c2) (ω1 : Ω1)
+  : Ω2 :=
+  match equ with
+  | @mk_contract_equ _ _ _ _ _ f _ _ _ _ _ _ => f ω1
+  end.
+
+Definition contract_iso_rl `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (equ : contract_equ c1 c2) (ω2 : Ω2)
+  : Ω1 :=
+  match equ with
+  | @mk_contract_equ _ _ _ _ _ _ g _ _ _ _ _ => g ω2
+  end.
+
+Arguments contract_iso_lr {i Ω1 c1 Ω2 c2} (equ ω1).
+Arguments contract_iso_rl {i Ω1 c1 Ω2 c2} (equ ω2).
+
+Lemma contract_equ_refl `(c : contract i Ω)
+  : contract_equ c c.
+
+Proof.
+  apply mk_contract_equ with (f:=fun x => x) (g:=fun x => x); auto.
+  + now intros ω α p.
+  + now intros ω α p x.
+  + now intros ω α p x.
+Defined.
+
+Lemma contract_equ_sym `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+   (equ : contract_equ c1 c2)
+  : contract_equ c2 c1.
+
+Proof.
+  induction equ.
+  apply mk_contract_equ with (f0:=g) (g0:=f).
+  + apply iso2.
+  + apply iso1.
+  + intros ω α p.
+    transitivity (caller_obligation c2 (f (g ω)) p).
+    ++ now rewrite iso1.
+    ++ now symmetry.
+  + intros ω α p x.
+    transitivity (callee_obligation c2 (f (g ω)) p x).
+    ++ now rewrite iso1.
+    ++ now symmetry.
+  + intros ω α p x.
+    rewrite <- (iso2 (witness_update c1 (g ω) p x)).
+    assert (equ : witness_update c2 ω p x = f (witness_update c1 (g ω) p x)). {
+      transitivity (witness_update c2 (f (g ω)) p x).
+      + now rewrite iso1.
+      + now rewrite witness_equ.
+    }
+    now rewrite equ.
+Defined.
+
+Lemma contract_equ_trans `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+   `(c3 : contract i Ω3)
+   `(is_equ12 : contract_equ c1 c2)
+   `(is_equ23 : contract_equ c2 c3)
+  : contract_equ c1 c3.
+
+Proof.
+  destruct is_equ12 as [f12 g21 isofg12 isogf12 caller_equ12 callee_equ12 witness_equ12].
+  destruct is_equ23 as [f23 g32 isofg23 isogf23 caller_equ23 callee_equ23 witness_equ23].
+  apply mk_contract_equ
+    with (f:=fun x => f23 (f12 x)) (g:=fun x => g21 (g32 x)).
+  + setoid_rewrite isofg12.
+    now setoid_rewrite isofg23.
+  + setoid_rewrite isogf23.
+    now setoid_rewrite isogf12.
+  + intros ω1 α p.
+    transitivity (caller_obligation c2 (f12 ω1) p);
+      [ now apply caller_equ12
+      | now apply caller_equ23 ].
+  + intros ω1 α p x.
+    transitivity (callee_obligation c2 (f12 ω1) p x); [ now apply callee_equ12
+                                                      | now apply callee_equ23 ].
+  + intros ω1 α p x.
+    rewrite <- witness_equ23.
+    assert (equ : f12 (witness_update c1 ω1 p x) = witness_update c2 (f12 ω1) p x)
+      by now rewrite <- witness_equ12.
+    now rewrite equ.
+Defined.
+
 (** * Composing Contracts *)
 
 (** As we compose interfaces and operational semantics, we can easily compose
