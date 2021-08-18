@@ -245,6 +245,36 @@ Definition contractprod `{Provide ix i, Provide ix j} {Ωi Ωj}
 
 Infix "*" := contractprod : contract_scope.
 
+(** We also introduce a second composition operator which shares the
+    witness state among its two operands. *)
+
+Definition sharedcontractprod `{StrictProvide2 ix i j}
+   `(ci : contract i Ω) (cj : contract j Ω)
+  : contract ix Ω :=
+  {|
+  witness_update :=
+    fun (ω : Ω) (α : Type) (e : ix α) (x : α) =>
+      (* we need to check [j] before [i] because [sharedcontractprod]
+         will be left associative *)
+      match proj_p (i:=j) e with
+      | Some e => witness_update cj ω e x
+      | _ => match proj_p (i:=i) e with
+             | Some e => witness_update ci ω e x
+             | _ => ω
+             end
+      end;
+  caller_obligation :=
+    fun (ω : Ω) (α : Type) (e : ix α) =>
+      gen_caller_obligation ci ω e /\ gen_caller_obligation cj ω e;
+  callee_obligation :=
+    fun (ω : Ω) (α : Type) (e : ix α) (x : α) =>
+      gen_callee_obligation ci ω e x /\ gen_callee_obligation cj ω e x
+  |}.
+
+Infix "^" := sharedcontractprod : contract_scope.
+
+(** * Contract By Example *)
+
 (** Finally, and as an example, we define a contract for the interface
     [STORE s] we discuss in [FreeSpec.Core.Impure].  As a reminder, the
     interface is defined as follows:
