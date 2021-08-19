@@ -89,115 +89,200 @@ Definition forbid_specs (i : interface) : contract i unit :=
 
 (** * Contract Equivalence *)
 
-Definition contract_caller_equ `(c1 : contract i Ω1) `(c2 : contract i Ω2)
-    (f : Ω1 -> Ω2)
+Definition contract_caller_impl `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (iso : Ω1 -> Ω2 -> Prop)
   : Prop :=
-  forall ω1 a (p : i a),
-    caller_obligation c1 ω1 p <-> caller_obligation c2 (f ω1) p.
+  forall ω1 ω2 a (p : i a),
+    iso ω1 ω2
+    -> caller_obligation c1 ω1 p -> caller_obligation c2 ω2 p.
 
-Definition contract_callee_equ `(c1 : contract i Ω1) `(c2 : contract i Ω2)
-    (f : Ω1 -> Ω2)
+Definition contract_callee_impl `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (iso : Ω1 -> Ω2 -> Prop)
   : Prop :=
-  forall ω1 a (p : i a) x,
-    callee_obligation c1 ω1 p x <-> callee_obligation c2 (f ω1) p x.
+  forall ω1 ω2 a (p : i a) x,
+    iso ω1 ω2
+    -> callee_obligation c1 ω1 p x -> callee_obligation c2 ω2 p x.
 
-Definition contract_witness_equ `(c1 : contract i Ω1) `(c2 : contract i Ω2)
-    (f : Ω1 -> Ω2)
+Definition contract_witness_impl `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (iso : Ω1 -> Ω2 -> Prop)
   : Prop :=
-  forall ω1 a (p : i a) x,
-    f (witness_update c1 ω1 p x) = witness_update c2 (f ω1) p x.
+  forall ω1 ω2 a (p : i a) x,
+    iso ω1 ω2
+    -> iso (witness_update c1 ω1 p x) (witness_update c2 ω2 p x).
+
+Inductive contract_impl `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+  : Type :=
+| mk_contract_impl (iso : Ω1 -> Ω2 -> Prop)
+    (caller_impl : contract_caller_impl c1 c2 iso)
+    (callee_impl : contract_callee_impl c2 c1 (fun ω2 ω1 => iso ω1 ω2))
+    (witness_impl : contract_witness_impl c1 c2 iso)
+  : contract_impl c1 c2.
+
+Definition ciso `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (equ : contract_impl c1 c2)
+  : Ω1 -> Ω2 -> Prop :=
+  match equ with
+  | @mk_contract_impl _ _ _ _ _ iso _ _ _ => iso
+  end.
+
+Arguments ciso {i Ω1 c1 Ω2 c2} (equ ω1 ω2).
+
+Inductive contract_strong_impl `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+  : Type :=
+| mk_contract_strong_impl (impl : contract_impl c1 c2)
+    (callee_strong_impl : contract_callee_impl c1 c2 (ciso impl))
+  : contract_strong_impl c1 c2.
 
 Inductive contract_equ `(c1 : contract i Ω1) `(c2 : contract i Ω2)
   : Type :=
-| mk_contract_equ (f : Ω1 -> Ω2) (g : Ω2 -> Ω1)
-    (iso1 : forall x, f (g x) = x) (iso2 : forall x, g (f x) = x)
-    (caller_equ : contract_caller_equ c1 c2 f)
-    (callee_equ : contract_callee_equ c1 c2 f)
-    (witness_equ : contract_witness_equ c1 c2 f)
+| mk_contract_equ (impl1 : contract_impl c1 c2)
+    (impl2 : contract_impl c2 c1)
+    (iso_equ : forall ω1 ω2, ciso impl1 ω1 ω2 <-> ciso impl2 ω2 ω1)
   : contract_equ c1 c2.
 
-Definition contract_iso_lr `(c1 : contract i Ω1) `(c2 : contract i Ω2)
-    (equ : contract_equ c1 c2) (ω1 : Ω1)
-  : Ω2 :=
-  match equ with
-  | @mk_contract_equ _ _ _ _ _ f _ _ _ _ _ _ => f ω1
-  end.
+Infix ">-" := contract_impl (at level 70, no associativity) : freespec_scope.
+Infix ">>-" := contract_strong_impl (at level 70, no associativity) : freespec_scope.
+Infix "~~" := contract_equ (at level 70, no associativity) : freespec_scope.
 
-Definition contract_iso_rl `(c1 : contract i Ω1) `(c2 : contract i Ω2)
-    (equ : contract_equ c1 c2) (ω2 : Ω2)
-  : Ω1 :=
-  match equ with
-  | @mk_contract_equ _ _ _ _ _ _ g _ _ _ _ _ => g ω2
-  end.
+#[local] Open Scope freespec_scope.
 
-Arguments contract_iso_lr {i Ω1 c1 Ω2 c2} (equ ω1).
-Arguments contract_iso_rl {i Ω1 c1 Ω2 c2} (equ ω2).
-
-Lemma contract_equ_refl `(c : contract i Ω)
-  : contract_equ c c.
+Definition impl_of_equ `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (equ : c1 ~~ c2)
+  : c1 >- c2.
 
 Proof.
-  apply mk_contract_equ with (f:=fun x => x) (g:=fun x => x); auto.
-  + now intros ω α p.
-  + now intros ω α p x.
-  + now intros ω α p x.
+  now induction equ.
+Defined.
+
+Definition impl_of_strong_impl `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (equ : c1 >>- c2)
+  : c1 >- c2.
+
+Proof.
+  now induction equ.
+Defined.
+
+Coercion impl_of_equ : contract_equ >-> contract_impl.
+Coercion impl_of_strong_impl : contract_strong_impl >-> contract_impl.
+
+Lemma contract_impl_refl `(c : contract i Ω) : c >- c.
+
+Proof.
+  apply mk_contract_impl with (iso:=eq); auto.
+  + intros ω1 ω2 α p equ.
+    now rewrite equ.
+  + intros ω1 ω2 α p x equ.
+    now rewrite equ.
+  + intros ω1 ω2 α p x equ.
+    now rewrite equ.
+Defined.
+
+Lemma contract_strong_impl_refl `(c : contract i Ω) : c >>- c.
+
+Proof.
+  apply mk_contract_strong_impl with (impl:=contract_impl_refl c); auto.
+  intros ω1 ω2 a p x iso.
+  cbn in iso.
+  now rewrite iso.
+Defined.
+
+Lemma contract_equ_refl `(c : contract i Ω)
+  : c ~~ c.
+
+Proof.
+  now apply (mk_contract_equ c c (contract_impl_refl c) (contract_impl_refl c)).
 Defined.
 
 Lemma contract_equ_sym `(c1 : contract i Ω1) `(c2 : contract i Ω2)
-   (equ : contract_equ c1 c2)
+    (equ : c1 ~~ c2)
   : contract_equ c2 c1.
 
 Proof.
-  induction equ.
-  apply mk_contract_equ with (f0:=g) (g0:=f).
-  + apply iso2.
-  + apply iso1.
-  + intros ω α p.
-    transitivity (caller_obligation c2 (f (g ω)) p).
-    ++ now rewrite iso1.
-    ++ now symmetry.
-  + intros ω α p x.
-    transitivity (callee_obligation c2 (f (g ω)) p x).
-    ++ now rewrite iso1.
-    ++ now symmetry.
-  + intros ω α p x.
-    rewrite <- (iso2 (witness_update c1 (g ω) p x)).
-    assert (equ : witness_update c2 ω p x = f (witness_update c1 (g ω) p x)). {
-      transitivity (witness_update c2 (f (g ω)) p x).
-      + now rewrite iso1.
-      + now rewrite witness_equ.
-    }
-    now rewrite equ.
+  inversion equ.
+  now apply (mk_contract_equ c2 c1 impl2 impl1).
+Defined.
+
+Lemma contract_impl_trans `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+   `(c3 : contract i Ω3)
+    (impl12 : c1 >- c2) (impl23 : c2 >- c3)
+  : c1 >- c3.
+
+Proof.
+  destruct impl12 as [iso12 caller_impl12 callee_impl12 witness_impl12].
+  destruct impl23 as [iso23 caller_impl23 callee_impl23 witness_impl23].
+  apply mk_contract_impl with (iso:=fun ω1 ω3 => exists ω2, iso12 ω1 ω2 /\ iso23 ω2 ω3).
+  + intros ω1 ω3 a p [ω2 [is_iso12 is_iso23]] ocaller.
+    apply caller_impl23 with (ω1:=ω2); auto.
+    apply caller_impl12 with (ω1:=ω1); auto.
+  + intros ω3 ω1 a p x [ω2 [is_iso12 is_iso23]] ocaller.
+    apply (callee_impl12 ω2 ω1); auto.
+    apply (callee_impl23 ω3 ω2); auto.
+  + intros ω1 ω3 a p x [ω2 [is_iso12 is_iso23]].
+    exists (witness_update c2 ω2 p x).
+    now split; [ apply witness_impl12 | apply witness_impl23 ].
+Defined.
+
+Lemma contract_strong_impl_trans `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+   `(c3 : contract i Ω3)
+    (simpl12 : c1 >>- c2) (simpl23 : c2 >>- c3)
+  : c1 >>- c3.
+
+Proof.
+  apply mk_contract_strong_impl
+    with (impl:=contract_impl_trans c1 c2 c3 simpl12 simpl23); auto.
+  intros ω1 ω2 a p x iso.
+  induction simpl12.
+  induction simpl23.
+  induction impl.
+  induction impl0.
+  cbn in *.
+  rename ω2 into ω3.
+  destruct iso as [ω2 [is_iso is_iso']].
+  intros ocallee.
+  apply (callee_strong_impl0 ω2 ω3); auto.
+  apply (callee_strong_impl ω1 ω2); auto.
 Defined.
 
 Lemma contract_equ_trans `(c1 : contract i Ω1) `(c2 : contract i Ω2)
    `(c3 : contract i Ω3)
-   `(is_equ12 : contract_equ c1 c2)
-   `(is_equ23 : contract_equ c2 c3)
-  : contract_equ c1 c3.
+    (equ12 : c1 ~~ c2) (equ23 : c2 ~~ c3)
+  : c1 ~~ c3.
 
 Proof.
-  destruct is_equ12 as [f12 g21 isofg12 isogf12 caller_equ12 callee_equ12 witness_equ12].
-  destruct is_equ23 as [f23 g32 isofg23 isogf23 caller_equ23 callee_equ23 witness_equ23].
-  apply mk_contract_equ
-    with (f:=fun x => f23 (f12 x)) (g:=fun x => g21 (g32 x)).
-  + setoid_rewrite isofg12.
-    now setoid_rewrite isofg23.
-  + setoid_rewrite isogf23.
-    now setoid_rewrite isogf12.
-  + intros ω1 α p.
-    transitivity (caller_obligation c2 (f12 ω1) p);
-      [ now apply caller_equ12
-      | now apply caller_equ23 ].
-  + intros ω1 α p x.
-    transitivity (callee_obligation c2 (f12 ω1) p x); [ now apply callee_equ12
-                                                      | now apply callee_equ23 ].
-  + intros ω1 α p x.
-    rewrite <- witness_equ23.
-    assert (equ : f12 (witness_update c1 ω1 p x) = witness_update c2 (f12 ω1) p x)
-      by now rewrite <- witness_equ12.
-    now rewrite equ.
-Defined.
+  inversion equ12; inversion equ23.
+  apply (mk_contract_equ
+           c1 c3
+           (contract_impl_trans c1 c2 c3 impl1 impl0)
+           (contract_impl_trans c3 c2 c1 impl3 impl2)).
+  intros ω1 ω3.
+  induction impl1; induction impl0; induction impl3; induction impl2.
+  cbn in *.
+  split.
+  + intros [ω2 [is_iso1 is_iso2]].
+    exists ω2.
+    split.
+    ++ now rewrite <- iso_equ0.
+    ++ now rewrite <- iso_equ.
+  + intros [ω2 [is_iso1 is_iso2]].
+    exists ω2.
+    split.
+    ++ now rewrite iso_equ.
+    ++ now rewrite iso_equ0.
+Qed.
+
+Lemma contract_strong_impl_of_equ `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (equ : c1 ~~ c2)
+  : c1 >>- c2.
+
+Proof.
+  induction equ.
+  apply mk_contract_strong_impl with (impl:=impl1).
+  induction impl2.
+  cbn in *.
+  intros ω1 ω2 a p x.
+  rewrite iso_equ.
+  apply (callee_impl ω1 ω2).
+Qed.
 
 (** * Composing Contracts *)
 

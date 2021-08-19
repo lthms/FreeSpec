@@ -181,63 +181,96 @@ Qed.
 
 #[global] Hint Resolve to_hoare_contractprod : freespec.
 
-Lemma contract_equ_pre `(c1 : contract i Ω1) `(c2 : contract i Ω2)
-   `(equ : contract_equ c1 c2) (ω1 : Ω1)
+#[local] Open Scope freespec_scope.
+
+Lemma contract_impl_pre `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+   `(equ : c1 >- c2) (ω1 : Ω1) (ω2 : Ω2) (sync : ciso equ ω1 ω2)
    `(p : impure i a)
-  : pre (to_hoare c1 p) ω1 <-> pre (to_hoare c2 p) (contract_iso_lr equ ω1).
+  : pre (to_hoare c1 p) ω1 -> pre (to_hoare c2 p) ω2.
 
 Proof.
   induction equ.
-  revert ω1.
-  induction p; intros ω1.
+  revert ω1 ω2 sync.
+  induction p; intros ω1 ω2 sync.
   + now split.
   + cbn.
-    rewrite (caller_equ ω1 β e).
-    setoid_rewrite (callee_equ ω1 β e).
+    intros [ocaller onext].
     split.
-    ++ intros [ocaller onext].
-       split; auto.
-       intros x ω1' [ocallee owitness].
-       rewrite owitness.
-       rewrite <- witness_equ.
-       rewrite <- H; eauto.
-    ++ intros [ocaller onext].
-       split; auto.
-       intros x ω1' [ocallee owitness].
-       rewrite H; eauto.
-       rewrite owitness.
-       cbn.
-       rewrite witness_equ.
-       eauto.
+    ++ now apply (caller_impl ω1 ω2 _ e).
+    ++ intros x ω2' [callee equω2'].
+       subst.
+       apply H with (ω1:=witness_update c1 ω1 e x).
+       +++ now apply witness_impl.
+       +++ apply onext.
+           split; auto.
+           apply (callee_impl ω2 ω1 _ e x); auto.
 Qed.
 
-#[global] Hint Resolve contract_equ_pre : freespec.
+#[global] Hint Resolve contract_impl_pre : freespec.
 
-Lemma contract_equ_post `(c1 : contract i Ω1) `(c2 : contract i Ω2)
-   `(equ : contract_equ c1 c2) (ω1 ω1' : Ω1)
-   `(p : impure i a) (x : a)
+Lemma contract_impl_post `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+   `(impl : c1 >- c2)
+    (callee : contract_callee_impl c1 c2 (ciso impl))
+    (ω1 ω1' : Ω1) (ω2 : Ω2)
+    (sync : ciso impl ω1 ω2) `(p : impure i a) (x : a)
     (post1 : post (to_hoare c1 p) ω1 x ω1')
-  : post (to_hoare c2 p) (contract_iso_lr equ ω1) x (contract_iso_lr equ  ω1').
+  : exists ω2', ciso impl ω1' ω2' /\ post (to_hoare c2 p) ω2 x ω2'.
 
 Proof.
-  induction equ.
+  induction impl.
   cbn in *.
-  revert x ω1 ω1' post1.
-  induction p; intros y ω1 ω1' post1.
+  revert x ω1 ω1' ω2 sync post1.
+  induction p; intros y ω1 ω1' ω2 sync post1.
   + destruct post1 as [xequ ω1equ].
     cbn.
+    exists ω2.
     now subst.
   + cbn in post1.
     destruct post1 as [x [ω1'' [[ocallee owitness] post1]]].
-    eapply H in post1.
-    exists x.
-    exists (f ω1'').
-    split; auto.
-    cbn.
-    repeat split.
-    ++ eapply callee_equ; eauto.
-    ++ rewrite owitness.
-       apply witness_equ.
+    subst.
+    apply H with (ω2 := witness_update c2 ω2 e x) in post1.
+    ++ destruct post1 as [ω2' [iso'' post1]].
+       exists ω2'.
+       split; auto.
+       cbn.
+       exists x, (witness_update c2 ω2 e x).
+       repeat split; auto.
+       apply (callee ω1 ω2 _ e x); auto.
+    ++ now apply witness_impl.
+Qed.
+
+#[global] Hint Resolve contract_impl_post : freespec.
+
+Lemma contract_strong_impl_post `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+    (simpl : c1 >>- c2)
+    (ω1 ω1' : Ω1) (ω2 : Ω2)
+    (sync : ciso simpl ω1 ω2) `(p : impure i a) (x : a)
+    (post1 : post (to_hoare c1 p) ω1 x ω1')
+  : exists ω2', ciso simpl ω1' ω2' /\ post (to_hoare c2 p) ω2 x ω2'.
+
+Proof.
+  eapply contract_impl_post; eauto.
+  induction simpl.
+  apply callee_strong_impl.
+Qed.
+
+#[global] Hint Resolve contract_strong_impl_post : freespec.
+
+Lemma contract_equ_post `(c1 : contract i Ω1) `(c2 : contract i Ω2)
+   `(equ : contract_equ c1 c2) (ω1 ω1' : Ω1) (ω2 : Ω2)
+    (sync : ciso equ ω1 ω2) `(p : impure i a) (x : a)
+    (post1 : post (to_hoare c1 p) ω1 x ω1')
+  : exists ω2', ciso equ ω1' ω2' /\ post (to_hoare c2 p) ω2 x ω2'.
+
+Proof.
+  eapply contract_impl_post; eauto.
+  clear ω1 ω1' ω2 post1 sync a p x.
+  induction equ.
+  induction impl1; induction impl2.
+  cbn in *.
+  intros ω1 ω2 a p x is_iso ocallee.
+  apply (callee_impl0 ω1 ω2); auto.
+  now apply iso_equ.
 Qed.
 
 #[global] Hint Resolve contract_equ_post : freespec.
