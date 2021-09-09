@@ -248,18 +248,20 @@ Infix "*" := contractprod : contract_scope.
 (** We also introduce a second composition operator which shares the
     witness state among its two operands. *)
 
-Definition sharedcontractprod `{StrictProvide2 ix i j}
+(* FIXME: Should be [StrictProvide2 ix i j] *)
+
+Definition sharedcontractprod `{Provide ix i, Provide ix j}
    `(ci : contract i Ω) (cj : contract j Ω)
   : contract ix Ω :=
   {|
   witness_update :=
     fun (ω : Ω) (α : Type) (e : ix α) (x : α) =>
-      (* we need to check [j] before [i] because [sharedcontractprod]
-         will be left associative *)
-      match proj_p (i:=j) e with
-      | Some e => witness_update cj ω e x
-      | _ => match proj_p (i:=i) e with
-             | Some e => witness_update ci ω e x
+      (* we need to check [i] before [j] because [sharedcontractprod]
+         will be right associative *)
+      match proj_p (i:=i) e with
+      | Some e => witness_update ci ω e x
+      | _ => match proj_p (i:=j) e with
+             | Some e => witness_update cj ω e x
              | _ => ω
              end
       end;
@@ -271,7 +273,7 @@ Definition sharedcontractprod `{StrictProvide2 ix i j}
       gen_callee_obligation ci ω e x /\ gen_callee_obligation cj ω e x
   |}.
 
-Infix "^" := sharedcontractprod : contract_scope.
+Infix "^" := sharedcontractprod  : contract_scope.
 
 (** * Contract By Example *)
 
