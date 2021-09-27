@@ -6,6 +6,7 @@
 
 From FreeSpec.Core Require Export
      Interface
+     Typeclasses
      Impure
      Semantics
      Component.

@@ -41,6 +41,7 @@ _build/default/plugins/exec/g_freespec_exec.mlg
 _build/default/theories/Core/Init.v
 
 _build/default/theories/Core/Interface.v
+_build/default/theories/Core/Typeclasses.v
 _build/default/theories/Core/Impure.v
 _build/default/theories/Core/Semantics.v
 _build/default/theories/Core/Component.v

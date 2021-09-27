@@ -1,6 +1,9 @@
+(executable
+ (name gen_type_classes))
+
+(rule (with-stdout-to Typeclasses.v (run ./gen_type_classes.exe)))
+
 (coq.theory
   (name FreeSpec.Core)
   (package coq-freespec-core)
   (flags -init-file ../../build.v))
-
-(include_subdirs qualified)
