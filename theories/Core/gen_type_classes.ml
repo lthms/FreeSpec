@@ -1,6 +1,14 @@
 open Format
 
-let max_interfaces = 20
+(* We arbitrarily fix a upper bound for the number of generated
+   [ProvideN] and [StrictProvideN] typeclasses.  Ideally, we would
+   like to come up with a setup where this is no longer needed, e.g.,
+   with a typeclass hierarchy that could scale with any number of
+   interfaces, but we failed to come up with a satisfying alternative.
+   There is nothing that prevent us from incrementing this value if
+   there is a good use cas that needs it, but the greater the constant
+   is, the longer it takes to compile the generated file. *)
+let max_interfaces = 15
 
 (** [x -- y] computes [[x; x+1; ...; y-1; y]] *)
 let rec ( -- ) x y = if x < y then x :: (x + 1 -- y) else [ y ]
