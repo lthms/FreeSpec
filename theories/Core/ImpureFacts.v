@@ -41,7 +41,7 @@ Infix "===" := impure_eq : impure_scope.
     of the treatment of the continuation. There is no much effort to put into
     proving this is indeed a proper equivalence. *)
 
-#[program]
+#[program, export]
 Instance impure_Equivalence i α : @Equivalence (impure i α) impure_eq := {}.
 
 Next Obligation.
@@ -89,7 +89,7 @@ Ltac change_impure_bind :=
     assert (R: function_eq impure_eq f g); [ intros ?x | now rewrite R ]
   end.
 
-#[program]
+#[program, export]
 Instance request_then_Proper i α β
   : Proper (eq ==> function_eq impure_eq ==> impure_eq) (@request_then i α β).
 
@@ -102,7 +102,7 @@ Next Obligation.
   now rewrite equ.
 Qed.
 
-#[program]
+#[program, export]
 Instance impure_bind_Proper i α β
   : Proper (impure_eq ==> function_eq impure_eq ==> impure_eq) (@impure_bind i α β).
 
@@ -118,6 +118,7 @@ Next Obligation.
     apply H.
 Qed.
 
+#[export]
 Instance impure_map_Proper i α β
   : Proper (function_eq eq ==> impure_eq ==> impure_eq) (@impure_map i α β).
 
@@ -130,7 +131,7 @@ Proof.
   now rewrite equf.
 Qed.
 
-#[program]
+#[program, export]
 Instance impure_apply_Proper i α β
   : Proper (impure_eq ==> impure_eq ==> impure_eq) (@impure_apply i α β).
 
