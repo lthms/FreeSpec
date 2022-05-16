@@ -149,7 +149,7 @@ Lemma contract_equ_sym `(c1 : contract i Ω1) `(c2 : contract i Ω2)
 
 Proof.
   induction equ.
-  apply mk_contract_equ with (f0:=g) (g0:=f).
+  apply (mk_contract_equ c2 c1 g f).
   + apply iso2.
   + apply iso1.
   + intros ω α p.

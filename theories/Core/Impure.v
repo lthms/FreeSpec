@@ -59,6 +59,7 @@ Fixpoint impure_bind {i α β} (p : impure i α) (f : α -> impure i β) : impur
 Definition impure_map {i α β} (f : α -> β) (p : impure i α) : impure i β :=
   impure_bind p (fun x => local (f x)).
 
+#[export]
 Instance impure_Functor i : Functor (impure i) :=
   { fmap := @impure_map i
   }.
@@ -68,11 +69,13 @@ Definition impure_pure {i α} (x : α) : impure i α := local x.
 Definition impure_apply {i α β} (p : impure i (α -> β)) (q : impure i α) : impure i β :=
   impure_bind p (fun f => fmap f q).
 
+#[export]
 Instance impure_Applicative i : Applicative (impure i) :=
   { pure := @impure_pure i
   ; ap := @impure_apply i
   }.
 
+#[export]
 Instance impure_Monad (i : interface) : Monad (impure i) :=
   { ret := @impure_pure i
   ; bind := @impure_bind i
@@ -108,6 +111,7 @@ Definition request `{Provide ix i} {α} (e : i α) : impure ix α :=
     Haskell) to write monadic functions more easily.  These notations live
     inside the [monad_scope]. *)
 
+#[export]
 Instance store_monad_state (s : Type) (ix : interface) `{Provide ix (STORE s)}
   : MonadState s (impure ix) :=
   { put := fun (x : s) => request (Put x)

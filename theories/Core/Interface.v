@@ -86,6 +86,7 @@ Class Provide (ix i : interface) `{MayProvide ix i} : Type :=
     ridiculously high priority number to ensure it is selected only if no other
     instances are found. *)
 
+#[export]
 Instance default_MayProvide (i j : interface) : MayProvide i j|1000 :=
   { proj_p := fun _ _ => None
   }.
@@ -140,15 +141,17 @@ with_state true (with_state false get)
 
     will return false (that is, the variable in the inner store). *)
 
+#[export]
 Instance refl_MayProvide (i : interface) : MayProvide i i :=
   { proj_p := fun _ e => Some e
   }.
 
-#[program]
+#[program, export]
 Instance refl_Provide (i : interface) : @Provide i i (refl_MayProvide i) :=
   { inj_p := fun (a : Type) (e : i a) => e
   }.
 
+#[export]
 Instance iplus_left_MayProvide (ix i j : interface) `{MayProvide ix i}
   : MayProvide (ix + j) i :=
   { proj_p := fun _ e =>
@@ -158,7 +161,7 @@ Instance iplus_left_MayProvide (ix i j : interface) `{MayProvide ix i}
                 end
   }.
 
-#[program]
+#[program, export]
 Instance iplus_left_Provide (ix i j : interface) `{Provide ix i}
   : @Provide (ix + j) i (iplus_left_MayProvide ix i j) :=
   { inj_p := fun (a : Type) (e : i a) => in_left (inj_p e)
@@ -168,6 +171,7 @@ Next Obligation.
   now rewrite proj_inj_p_equ.
 Qed.
 
+#[export]
 Instance iplus_right_MayProvide (i jx j : interface) `{MayProvide jx j}
   : MayProvide (i + jx) j :=
   { proj_p := fun _ e =>
@@ -177,7 +181,7 @@ Instance iplus_right_MayProvide (i jx j : interface) `{MayProvide jx j}
                 end
   }.
 
-#[program]
+#[program, export]
 Instance iplus_right_Provide (i jx j : interface) `{Provide jx j}
   : @Provide (i + jx) j (iplus_right_MayProvide i jx j) :=
   { inj_p := fun _ e => in_right (inj_p e)
@@ -205,11 +209,11 @@ Ltac find_may_provide :=
 
 #[global] Hint Extern 1 (MayProvide (iplus _ _) _) => find_may_provide : typeclass_instances.
 
-#[program]
+#[program, export]
 Instance refl_Distinguish (i j : interface)
   : @Distinguish i i j  (@refl_MayProvide i) (@refl_Provide i) (@default_MayProvide i j).
 
-#[program]
+#[program, export]
 Instance iplus_left_default_Distinguish (ix jx i j : interface)
    `{M1 : MayProvide ix i} `{P1 : @Provide ix i M1}
   : @Distinguish (ix + jx) i j
@@ -217,7 +221,7 @@ Instance iplus_left_default_Distinguish (ix jx i j : interface)
                  (@iplus_left_Provide ix i jx M1 P1)
                  (@default_MayProvide _ j).
 
-#[program]
+#[program, export]
 Instance iplus_right_default_Distinguish (ix jx i j : interface)
    `{M1 : MayProvide jx i} `{P1 : @Provide jx i M1}
   : @Distinguish (ix + jx) i j
@@ -225,7 +229,7 @@ Instance iplus_right_default_Distinguish (ix jx i j : interface)
                  (@iplus_right_Provide ix jx i M1 P1)
                  (@default_MayProvide _ j).
 
-#[program]
+#[program, export]
 Instance iplus_left_may_right_Distinguish (ix jx i j : interface)
    `{M1 : MayProvide ix i} `{P1 : @Provide ix i M1} `{M2 : MayProvide jx j}
   : @Distinguish (ix + jx) i j
@@ -233,7 +237,7 @@ Instance iplus_left_may_right_Distinguish (ix jx i j : interface)
                  (@iplus_left_Provide ix i jx M1 P1)
                  (@iplus_right_MayProvide ix jx j M2).
 
-#[program]
+#[program, export]
 Instance iplus_right_may_left_Distinguish (ix jx i j : interface)
    `{M1 : MayProvide jx i} `{P1 : @Provide jx i M1} `{M2 : MayProvide ix j}
   : @Distinguish (ix + jx) i j
@@ -241,7 +245,7 @@ Instance iplus_right_may_left_Distinguish (ix jx i j : interface)
                  (@iplus_right_Provide ix jx i M1 P1)
                  (@iplus_left_MayProvide ix j jx M2).
 
-#[program]
+#[program, export]
 Instance iplus_left_distinguish_left_Distinguish (ix jx i j : interface)
    `{M1 : MayProvide ix i} `{P1 : @Provide ix i M1} `{M2 : MayProvide ix j}
    `{@Distinguish ix i j M1 P1 M2}
@@ -254,7 +258,7 @@ Next Obligation.
   apply distinguish.
 Defined.
 
-#[program]
+#[program, export]
 Instance iplus_right_distinguish_right_Distinguish (ix jx i j : interface)
    `{M1 : MayProvide jx i} `{P1 : @Provide jx i M1} `{M2 : MayProvide jx j}
    `{@Distinguish jx i j M1 P1 M2}

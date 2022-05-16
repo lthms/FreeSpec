@@ -37,7 +37,7 @@ Notation "m '~>' n" :=
 Definition function_eq {a b} (r : b -> b -> Prop) (f g : a -> b) : Prop :=
   forall (x : a), r (f x) (g x).
 
-#[program]
+#[program, export]
 Instance function_eq_Equivalence a `(Equivalence b r)
   : @Equivalence (a -> b) (function_eq r).
 
