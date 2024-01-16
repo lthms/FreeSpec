@@ -1,4 +1,4 @@
 (coq.theory
   (name FreeSpec.Example)
-  (theories FreeSpec.Core FreeSpec.FFI FreeSpec.Exec)
+  (theories FreeSpec.Core FreeSpec.FFI FreeSpec.Exec FreeSpec.Contribs)
   (flags -init-file build.v))
