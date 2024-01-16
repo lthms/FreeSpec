@@ -23,7 +23,7 @@ build: [
 ]
 
 depends: [
-  "ocaml"
+  "ocaml" {>= "4.10"}
   "dune" {>= "2.5"}
   "coq" {>= "8.12" & < "8.14~" | = "dev"}
   "coq-ext-lib" {>= "0.11.2" | = "dev"}
